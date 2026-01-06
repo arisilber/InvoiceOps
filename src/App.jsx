@@ -5,6 +5,7 @@ import { setAuthHelpers } from './services/api';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import InvoiceList from './components/InvoiceList';
+import InvoiceDetail from './components/InvoiceDetail';
 import ClientList from './components/ClientList';
 import NewInvoiceModal from './components/NewInvoiceModal';
 import NewClientModal from './components/NewClientModal';
@@ -119,6 +120,7 @@ function App() {
           />
           <Route path="/dashboard" element={<Dashboard key={invoiceRefreshKey} onExploreInvoices={() => navigate('/invoices')} />} />
           <Route path="/invoices" element={<InvoiceList key={invoiceRefreshKey} />} />
+          <Route path="/invoices/:id" element={<InvoiceDetail />} />
           <Route 
             path="/clients" 
             element={

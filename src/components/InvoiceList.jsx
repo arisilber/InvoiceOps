@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, Download, Loader2, Trash2, Eye, AlertTriangle } from 'lucide-react';
 import api from '../services/api';
@@ -6,6 +7,7 @@ import InvoicePDFPreview from './InvoicePDFPreview';
 import { downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
 
 const InvoiceList = () => {
+    const navigate = useNavigate();
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -179,7 +181,22 @@ const InvoiceList = () => {
                                     transition: 'background 0.2s ease'
                                 }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-bg)'}
                                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                                    <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>INV-{invoice.invoice_number}</td>
+                                    <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>
+                                        <button
+                                            onClick={() => navigate(`/invoices/${invoice.id}`)}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'inherit',
+                                                cursor: 'pointer',
+                                                textDecoration: 'underline',
+                                                fontWeight: 500,
+                                                padding: 0
+                                            }}
+                                        >
+                                            INV-{invoice.invoice_number}
+                                        </button>
+                                    </td>
                                     <td style={{ padding: '1rem 1.5rem' }}>{invoice.client_name}</td>
                                     <td style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>${(invoice.total_cents / 100).toFixed(2)}</td>
                                     <td style={{ padding: '1rem 1.5rem', opacity: 0.7 }}>{new Date(invoice.invoice_date).toLocaleDateString()}</td>
