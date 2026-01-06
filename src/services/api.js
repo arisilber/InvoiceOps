@@ -124,6 +124,17 @@ const api = {
             }),
         });
     },
+    generateLineDescription: async (timeEntries, workTypeDescription, projectName = '') => {
+        const data = await makeRequest(`${API_BASE_URL}/invoices/generate-line-description`, {
+            method: 'POST',
+            body: JSON.stringify({
+                time_entries: timeEntries,
+                work_type_description: workTypeDescription,
+                project_name: projectName
+            }),
+        });
+        return data.description;
+    },
     createInvoiceFromTimeEntries: async (invoiceData) => {
         return makeRequest(`${API_BASE_URL}/invoices/from-time-entries`, {
             method: 'POST',
@@ -176,6 +187,12 @@ const api = {
     deleteInvoice: async (id) => {
         return makeRequest(`${API_BASE_URL}/invoices/${id}`, {
             method: 'DELETE',
+        });
+    },
+    updateInvoiceLineDescription: async (lineId, description) => {
+        return makeRequest(`${API_BASE_URL}/invoices/lines/${lineId}/description`, {
+            method: 'PUT',
+            body: JSON.stringify({ description }),
         });
     },
 

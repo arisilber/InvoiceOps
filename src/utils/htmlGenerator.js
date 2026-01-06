@@ -23,15 +23,27 @@ export const generateInvoiceHTML = (invoice) => {
   const dueDate = new Date(invoice.due_date).toLocaleDateString();
   
   const tableRows = invoice.lines?.map(line => {
-    const description = line.project_name 
-      ? `${line.work_type_description || line.work_type_code || 'Work'} - ${line.project_name}`
-      : (line.work_type_description || line.work_type_code || 'Work');
+    // Use AI-generated description if available, otherwise fallback to constructed description
+    let description;
+    if (line.description) {
+      // Format with work type and project as header, AI description as body
+      const header = line.work_type_code || line.work_type_description || 'Work';
+      const projectPart = line.project_name ? ` - ${line.project_name}` : '';
+      // Preserve spaces in the description text
+      const preservedDescription = preserveSpaces(line.description);
+      description = `<strong>${escapeHtml(header + projectPart)}</strong><br/><em style="font-size: 0.9em; color: #6b7280;">${escapeHtml(preservedDescription)}</em>`;
+    } else {
+      // Fallback to constructed description
+      description = line.project_name 
+        ? `${escapeHtml(line.work_type_description || line.work_type_code || 'Work')} - ${escapeHtml(line.project_name)}`
+        : escapeHtml(line.work_type_description || line.work_type_code || 'Work');
+    }
     
     const discount_cents = line.discount_cents || 0;
     
     return `
       <tr>
-        <td>${escapeHtml(description)}</td>
+        <td style="white-space: pre-wrap; word-wrap: break-word;">${description}</td>
         <td style="text-align: center;">${formatQuantity(line.total_minutes)}</td>
         <td style="text-align: right;">${formatCurrency(line.hourly_rate_cents)}</td>
         <td style="text-align: right; color: #22c55e;">${discount_cents > 0 ? '-' + formatCurrency(discount_cents) : formatCurrency(0)}</td>
@@ -139,6 +151,8 @@ export const generateInvoiceHTML = (invoice) => {
     td {
       padding: 1rem;
       color: #374151;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
     .totals {
       margin-top: 1.5rem;
@@ -269,6 +283,23 @@ const escapeHtml = (text) => {
 };
 
 /**
+ * Preserves spaces in text by replacing multiple spaces with a pattern
+ * that HTML will render correctly while still allowing word wrapping
+ * @param {string} text - Text to preserve spaces in
+ * @returns {string} Text with preserved spaces
+ */
+const preserveSpaces = (text) => {
+  if (!text) return '';
+  // Replace 2+ consecutive spaces with: space + non-breaking space(s)
+  // This preserves visual spacing while allowing wrapping
+  return String(text).replace(/ {2,}/g, (match) => {
+    // For 2 spaces: regular space + non-breaking space
+    // For 3+ spaces: regular space + multiple non-breaking spaces
+    return ' ' + '\u00A0'.repeat(match.length - 1);
+  });
+};
+
+/**
  * Downloads the invoice as an HTML file
  * @param {Object} invoice - The invoice object with lines and client info
  */
@@ -346,6 +377,7 @@ export const downloadInvoiceHTMLAsPDF = async (invoice) => {
         }
         
         // Use html2canvas directly for better style rendering
+        // Ensure whitespace is preserved in the cloned document
         const canvas = await html2canvas(invoiceContainer, {
           scale: 2,
           useCORS: true,
@@ -356,7 +388,23 @@ export const downloadInvoiceHTMLAsPDF = async (invoice) => {
           windowWidth: 900,
           windowHeight: invoiceContainer.scrollHeight,
           width: invoiceContainer.scrollWidth,
-          height: invoiceContainer.scrollHeight
+          height: invoiceContainer.scrollHeight,
+          onclone: (clonedDoc) => {
+            // Ensure all table cells preserve whitespace
+            const cells = clonedDoc.querySelectorAll('td');
+            cells.forEach(cell => {
+              // Force whitespace preservation
+              cell.style.whiteSpace = 'pre-wrap';
+              cell.style.wordWrap = 'break-word';
+              // Ensure computed style is applied
+              const computedStyle = clonedDoc.defaultView.getComputedStyle(cell);
+              if (computedStyle.whiteSpace !== 'pre-wrap') {
+                cell.setAttribute('style', 
+                  (cell.getAttribute('style') || '') + '; white-space: pre-wrap !important; word-wrap: break-word !important;'
+                );
+              }
+            });
+          }
         });
         
         // Convert canvas to PDF

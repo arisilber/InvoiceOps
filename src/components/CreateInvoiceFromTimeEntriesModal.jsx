@@ -49,6 +49,9 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
         }
     }, [formData.client_id, formData.start_date, formData.end_date, isOpen]);
 
+
+    // Generate AI descriptions line by line when preview loads
+
     const fetchClients = async () => {
         try {
             const clientsData = await api.getClients();
@@ -90,6 +93,7 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
             setPreviewLoading(false);
         }
     };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -284,6 +288,7 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                             <thead style={{ background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid var(--border)' }}>
                                                 <tr>
                                                     <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'left' }}>Work Type</th>
+                                                    <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'left' }}>Description</th>
                                                     <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'left' }}>Project</th>
                                                     <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'right' }}>Qty</th>
                                                     <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'right' }}>Rate</th>
@@ -297,6 +302,17 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                                         <td style={{ padding: '1rem' }}>
                                                             <div style={{ fontWeight: 600 }}>{line.work_type_code}</div>
                                                             <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>{line.work_type_description}</div>
+                                                        </td>
+                                                        <td style={{ padding: '1rem', maxWidth: '300px' }}>
+                                                            {line.description ? (
+                                                                <div style={{ fontSize: '0.875rem', lineHeight: '1.4', whiteSpace: 'pre-wrap', opacity: 0.9 }}>
+                                                                    {line.description}
+                                                                </div>
+                                                            ) : (
+                                                                <div style={{ fontSize: '0.875rem', opacity: 0.5, fontStyle: 'italic' }}>
+                                                                    No description
+                                                                </div>
+                                                            )}
                                                         </td>
                                                         <td style={{ padding: '1rem', opacity: line.project_name ? 1 : 0.5 }}>
                                                             {line.project_name || <em>No project</em>}
@@ -318,7 +334,7 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                             </tbody>
                                             <tfoot style={{ background: 'rgba(255,255,255,0.05)', borderTop: '2px solid var(--border)' }}>
                                                 <tr>
-                                                    <td colSpan="5" style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, fontSize: '1.1rem' }}>Total:</td>
+                                                    <td colSpan="6" style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, fontSize: '1.1rem' }}>Total:</td>
                                                     <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, fontSize: '1.1rem' }}>{formatCurrency(preview.total_cents)}</td>
                                                 </tr>
                                             </tfoot>

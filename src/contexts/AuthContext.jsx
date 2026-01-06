@@ -6,144 +6,97 @@ const API_BASE_URL = '/api';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [accessToken, setAccessToken] = useState(null);
-  const [refreshToken, setRefreshToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load tokens from localStorage on mount
+  // Load user from localStorage on mount
   useEffect(() => {
-    const storedAccessToken = localStorage.getItem('accessToken');
-    const storedRefreshToken = localStorage.getItem('refreshToken');
-    const storedUser = localStorage.getItem('user');
+    const initAuth = async () => {
+      try {
+        const storedUser = localStorage.getItem('user');
+        const storedAccessToken = localStorage.getItem('accessToken');
+        const storedRefreshToken = localStorage.getItem('refreshToken');
 
-    if (storedAccessToken && storedRefreshToken && storedUser) {
-      setAccessToken(storedAccessToken);
-      setRefreshToken(storedRefreshToken);
-      setUser(JSON.parse(storedUser));
-      
-      // Verify token is still valid by fetching user info
-      fetchUserInfo(storedAccessToken).catch(() => {
-        // Token invalid, try to refresh
-        if (storedRefreshToken) {
-          refreshAccessToken(storedRefreshToken).catch(() => {
-            // Refresh failed, clear everything
-            logout();
-          });
-        } else {
-          logout();
+        if (storedUser && storedAccessToken) {
+          // Verify token is still valid by fetching current user
+          try {
+            const response = await fetch(`${API_BASE_URL}/auth/me`, {
+              headers: {
+                'Authorization': `Bearer ${storedAccessToken}`,
+              },
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              setUser(data.user);
+            } else {
+              // Token invalid, try to refresh
+              if (storedRefreshToken) {
+                await refreshAccessToken();
+              } else {
+                // No refresh token, clear everything
+                localStorage.removeItem('user');
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+              }
+            }
+          } catch (error) {
+            console.error('Error validating token:', error);
+            // Try to refresh if we have a refresh token
+            if (storedRefreshToken) {
+              try {
+                await refreshAccessToken();
+              } catch (refreshError) {
+                // Refresh failed, clear everything
+                localStorage.removeItem('user');
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+              }
+            } else {
+              localStorage.removeItem('user');
+              localStorage.removeItem('accessToken');
+              localStorage.removeItem('refreshToken');
+            }
+          }
         }
-      });
-    }
-    setLoading(false);
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
   }, []);
 
-  // Fetch user info with access token
-  const fetchUserInfo = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch user info');
-    }
-
-    const data = await response.json();
-    return data.user;
-  };
-
-  // Refresh access token
-  const refreshAccessToken = async (refreshTokenValue) => {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+  const login = useCallback(async (email, password) => {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ refreshToken: refreshTokenValue }),
+      body: JSON.stringify({ email, password }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to refresh token');
+      const error = await response.json().catch(() => ({ error: 'Login failed' }));
+      throw new Error(error.error || 'Login failed');
     }
 
     const data = await response.json();
-    const newAccessToken = data.accessToken;
-    
-    setAccessToken(newAccessToken);
-    localStorage.setItem('accessToken', newAccessToken);
-    
-    return newAccessToken;
-  };
+    const { user: userData, accessToken, refreshToken } = data;
 
-  // Login
-  const login = async (email, password) => {
-    console.log('[AuthContext] login() called');
-    console.log('[AuthContext] API_BASE_URL:', API_BASE_URL);
-    console.log('[AuthContext] Email:', email);
-    console.log('[AuthContext] Password provided:', !!password);
-    
-    const loginUrl = `${API_BASE_URL}/auth/login`;
-    console.log('[AuthContext] Making request to:', loginUrl);
-    
-    try {
-      const requestBody = JSON.stringify({ email, password });
-      const response = await fetch(loginUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: requestBody,
-      });
-
-      console.log('[AuthContext] Response status:', response.status);
-      console.log('[AuthContext] Response ok:', response.ok);
-      console.log('[AuthContext] Response headers:', Object.fromEntries(response.headers.entries()));
-
-      if (!response.ok) {
-        console.error('[AuthContext] Response not ok, parsing error...');
-        let error;
-        try {
-          error = await response.json();
-          console.error('[AuthContext] Error response body:', error);
-        } catch (parseError) {
-          console.error('[AuthContext] Failed to parse error response:', parseError);
-          const text = await response.text();
-          console.error('[AuthContext] Error response text:', text);
-          throw new Error(`Login failed with status ${response.status}`);
-        }
-        throw new Error(error.error || 'Login failed');
-      }
-
-      console.log('[AuthContext] Response ok, parsing JSON...');
-      const data = await response.json();
-      console.log('[AuthContext] Response data received:', { 
-        hasUser: !!data.user, 
-        hasAccessToken: !!data.accessToken, 
-        hasRefreshToken: !!data.refreshToken 
-      });
-      
-      console.log('[AuthContext] Setting user state...');
-      setUser(data.user);
-      setAccessToken(data.accessToken);
-      setRefreshToken(data.refreshToken);
-      
-      console.log('[AuthContext] Saving to localStorage...');
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      console.log('[AuthContext] Login successful');
-    } catch (error) {
-      console.error('[AuthContext] Login fetch error:', error);
-      console.error('[AuthContext] Error name:', error.name);
-      console.error('[AuthContext] Error message:', error.message);
-      console.error('[AuthContext] Error stack:', error.stack);
-      throw error;
+    // Store tokens and user
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('accessToken', accessToken);
+    if (refreshToken) {
+      localStorage.setItem('refreshToken', refreshToken);
     }
-  };
 
-  // Register
-  const register = async (email, password, name) => {
+    setUser(userData);
+    return userData;
+  }, []);
+
+  const register = useCallback(async (email, password, name) => {
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: {
@@ -153,101 +106,110 @@ export const AuthProvider = ({ children }) => {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ error: 'Registration failed' }));
       throw new Error(error.error || 'Registration failed');
     }
 
     const data = await response.json();
-    
-    setUser(data.user);
-    setAccessToken(data.accessToken);
-    setRefreshToken(data.refreshToken);
-    
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    localStorage.setItem('user', JSON.stringify(data.user));
-  };
+    const { user: userData, accessToken, refreshToken } = data;
 
-  // Logout
-  const logout = async () => {
-    // Try to revoke refresh token on server
+    // Store tokens and user
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('accessToken', accessToken);
     if (refreshToken) {
-      try {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ refreshToken }),
-        });
-      } catch (error) {
-        // Ignore errors on logout
-        console.error('Logout error:', error);
-      }
+      localStorage.setItem('refreshToken', refreshToken);
     }
 
-    setUser(null);
-    setAccessToken(null);
-    setRefreshToken(null);
-    
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-  };
+    setUser(userData);
+    return userData;
+  }, []);
 
-  // Get access token (with automatic refresh if needed)
-  const getAccessToken = useCallback(async () => {
-    // Check state first, but fallback to localStorage if state is empty (handles race condition after login)
-    let token = accessToken;
-    let storedRefreshToken = refreshToken;
-    
-    if (!token) {
-      // State is empty, check localStorage (handles race condition where state hasn't updated yet)
-      token = localStorage.getItem('accessToken');
-      storedRefreshToken = localStorage.getItem('refreshToken');
-    }
-    
-    if (!token) {
-      return null;
-    }
-
-    // Check if token is expired (simple check - in production, decode and check exp)
+  const logout = useCallback(async () => {
     try {
-      // Try to use current token
-      return token;
-    } catch (error) {
-      // Token expired, try to refresh
-      if (storedRefreshToken) {
+      const refreshToken = localStorage.getItem('refreshToken');
+      const accessToken = localStorage.getItem('accessToken');
+
+      // Revoke refresh token on server
+      if (refreshToken && accessToken) {
         try {
-          const newToken = await refreshAccessToken(storedRefreshToken);
-          return newToken;
+          await fetch(`${API_BASE_URL}/auth/logout`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ refreshToken }),
+          });
         } catch (error) {
-          // Refresh failed, logout
-          logout();
-          return null;
+          console.error('Error during logout:', error);
+          // Continue with local logout even if server call fails
         }
       }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      // Clear local storage
+      localStorage.removeItem('user');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      setUser(null);
+    }
+  }, []);
+
+  const refreshAccessToken = useCallback(async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) {
+        // Refresh failed, logout
+        await logout();
+        throw new Error('Failed to refresh token');
+      }
+
+      const data = await response.json();
+      const { accessToken } = data;
+
+      // Update stored access token
+      localStorage.setItem('accessToken', accessToken);
+
+      return accessToken;
+    } catch (error) {
+      // Refresh failed, logout
+      await logout();
+      throw error;
+    }
+  }, [logout]);
+
+  const getAuthHeaders = useCallback(async () => {
+    const accessToken = localStorage.getItem('accessToken');
+
+    if (!accessToken) {
       return null;
     }
-  }, [accessToken, refreshToken]);
 
-  // Get auth headers for API requests
-  const getAuthHeaders = async () => {
-    const token = await getAccessToken();
-    if (!token) return null;
-    return { 'Authorization': `Bearer ${token}` };
-  };
+    return {
+      'Authorization': `Bearer ${accessToken}`,
+    };
+  }, []);
 
   const value = {
     user,
-    accessToken,
-    refreshToken,
     loading,
     login,
     register,
     logout,
-    getAccessToken,
     refreshAccessToken,
     getAuthHeaders,
   };
@@ -262,4 +224,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

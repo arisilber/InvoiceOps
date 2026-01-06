@@ -1,6 +1,25 @@
 import { query, getClient } from '../db/connection.js';
 
 /**
+ * Compile time entry descriptions into a single description string
+ * @param {Array} timeEntries - Array of time entry objects with detail field
+ * @returns {string} Compiled description from all time entry details
+ */
+function compileTimeEntryDescriptions(timeEntries) {
+    const descriptions = timeEntries
+        .map(entry => entry.detail)
+        .filter(detail => detail && detail.trim())
+        .map(detail => detail.trim())
+        .filter((value, index, self) => self.indexOf(value) === index); // Remove duplicates
+    
+    if (descriptions.length === 0) {
+        return '';
+    }
+    
+    return descriptions.join('\n');
+}
+
+/**
  * Creates an invoice from time entries for a specific client and date range.
  * 
  * Business Rules:
@@ -49,15 +68,17 @@ export async function createInvoiceFromTimeEntries(
         const clientData = clientResult.rows[0];
         const { hourly_rate_cents, discount_percent } = clientData;
 
-        // Step 2: Fetch all uninvoiced time entries for the client in the date range
+        // Step 2: Fetch all uninvoiced time entries for the client in the date range (including detail for AI)
         const timeEntriesResult = await client.query(
-            `SELECT id, work_type_id, project_name, minutes_spent
-       FROM time_entries
-       WHERE client_id = $1
-         AND work_date >= $2
-         AND work_date <= $3
-         AND invoice_id IS NULL
-       ORDER BY work_type_id, project_name`,
+            `SELECT te.id, te.work_type_id, te.project_name, te.minutes_spent, te.work_date, te.detail,
+                    wt.description as work_type_description
+       FROM time_entries te
+       JOIN work_types wt ON te.work_type_id = wt.id
+       WHERE te.client_id = $1
+         AND te.work_date >= $2
+         AND te.work_date <= $3
+         AND te.invoice_id IS NULL
+       ORDER BY te.work_type_id, te.project_name`,
             [clientId, startDate, endDate]
         );
 
@@ -78,14 +99,17 @@ export async function createInvoiceFromTimeEntries(
             if (!aggregatedLines[key]) {
                 aggregatedLines[key] = {
                     work_type_id: entry.work_type_id,
+                    work_type_description: entry.work_type_description,
                     project_name: projectName,
                     total_minutes: 0,
-                    time_entry_ids: []
+                    time_entry_ids: [],
+                    time_entries: [] // Store full entries for description compilation
                 };
             }
 
             aggregatedLines[key].total_minutes += entry.minutes_spent;
             aggregatedLines[key].time_entry_ids.push(entry.id);
+            aggregatedLines[key].time_entries.push(entry); // Store full entry
         }
 
         // Step 4: Calculate line amounts with discount per line and prepare invoice lines
@@ -104,6 +128,9 @@ export async function createInvoiceFromTimeEntries(
             // Calculate discounted amount (this is what we store)
             const amount_cents = pre_discount_amount_cents - line_discount_cents;
 
+            // Compile description from time entry details
+            const description = compileTimeEntryDescriptions(line.time_entries);
+
             invoiceLines.push({
                 work_type_id: line.work_type_id,
                 project_name: line.project_name,
@@ -111,7 +138,8 @@ export async function createInvoiceFromTimeEntries(
                 hourly_rate_cents: hourly_rate_cents,
                 amount_cents: amount_cents,
                 discount_cents: line_discount_cents,
-                time_entry_ids: line.time_entry_ids
+                time_entry_ids: line.time_entry_ids,
+                description: description
             });
 
             total_cents += amount_cents;
@@ -158,16 +186,18 @@ export async function createInvoiceFromTimeEntries(
           project_name, 
           total_minutes, 
           hourly_rate_cents, 
-          amount_cents
+          amount_cents,
+          description
         )
-        VALUES ($1, $2, $3, $4, $5, $6)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
                 [
                     invoice.id,
                     line.work_type_id,
                     line.project_name,
                     line.total_minutes,
                     line.hourly_rate_cents,
-                    line.amount_cents  // This is the discounted amount
+                    line.amount_cents,  // This is the discounted amount
+                    line.description || null
                 ]
             );
 
@@ -274,12 +304,14 @@ export async function previewInvoiceFromTimeEntries(clientId, startDate, endDate
                 work_type_description: entry.work_type_description,
                 project_name: projectName,
                 total_minutes: 0,
-                entry_count: 0
+                entry_count: 0,
+                time_entries: [] // Store full entries for AI description
             };
         }
 
         aggregatedLines[key].total_minutes += entry.minutes_spent;
         aggregatedLines[key].entry_count += 1;
+        aggregatedLines[key].time_entries.push(entry); // Store full entry
     }
 
     // Calculate amounts with discount per line
@@ -297,6 +329,9 @@ export async function previewInvoiceFromTimeEntries(clientId, startDate, endDate
         // Calculate discounted amount (this is what we display)
         const amount_cents = pre_discount_amount_cents - line_discount_cents;
 
+        // Compile description from time entry details
+        const description = compileTimeEntryDescriptions(line.time_entries);
+
         lines.push({
             work_type_id: line.work_type_id,
             work_type_code: line.work_type_code,
@@ -306,7 +341,8 @@ export async function previewInvoiceFromTimeEntries(clientId, startDate, endDate
             hourly_rate_cents: hourly_rate_cents,
             amount_cents: amount_cents,  // Discounted amount
             discount_cents: line_discount_cents,
-            entry_count: line.entry_count
+            entry_count: line.entry_count,
+            description: description
         });
 
         total_cents += amount_cents;
@@ -326,3 +362,15 @@ export async function previewInvoiceFromTimeEntries(clientId, startDate, endDate
         date_range: { start: startDate, end: endDate }
     };
 }
+
+/**
+ * Generate an AI description for invoice line from time entries
+ * @param {Array} timeEntries - Array of time entry objects
+ * @param {string} workTypeDescription - The work type description
+ * @param {string} projectName - The project name (optional)
+ * @returns {Promise<string>} AI-generated description
+ */
+export async function generateLineDescription(timeEntries, workTypeDescription, projectName = '') {
+    return generateInvoiceLineDescription(timeEntries, workTypeDescription, projectName);
+}
+

@@ -3,7 +3,8 @@ import { query, getClient } from '../db/connection.js';
 import {
   createInvoiceFromTimeEntries,
   getNextInvoiceNumber,
-  previewInvoiceFromTimeEntries
+  previewInvoiceFromTimeEntries,
+  generateLineDescription
 } from '../services/invoiceService.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -41,6 +42,16 @@ router.get('/', async (req, res, next) => {
 
     const result = await query(queryText, params);
     res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET next invoice number (must come before /:id route)
+router.get('/next-invoice-number', async (req, res, next) => {
+  try {
+    const nextNumber = await getNextInvoiceNumber();
+    res.json({ next_invoice_number: nextNumber });
   } catch (error) {
     next(error);
   }
@@ -110,16 +121,6 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// GET next invoice number
-router.get('/next-invoice-number', async (req, res, next) => {
-  try {
-    const nextNumber = await getNextInvoiceNumber();
-    res.json({ next_invoice_number: nextNumber });
-  } catch (error) {
-    next(error);
-  }
-});
-
 // POST preview invoice from time entries
 router.post('/preview-from-time-entries', async (req, res, next) => {
   try {
@@ -135,6 +136,31 @@ router.post('/preview-from-time-entries', async (req, res, next) => {
     if (error.message.includes('not found') || error.message.includes('No uninvoiced')) {
       return res.status(404).json({ error: error.message });
     }
+    next(error);
+  }
+});
+
+// POST generate AI description for an invoice line
+router.post('/generate-line-description', async (req, res, next) => {
+  try {
+    const { time_entries, work_type_description, project_name } = req.body;
+
+    if (!time_entries || !Array.isArray(time_entries) || time_entries.length === 0) {
+      return res.status(400).json({ error: 'Missing or invalid time_entries array' });
+    }
+
+    if (!work_type_description) {
+      return res.status(400).json({ error: 'Missing required field: work_type_description' });
+    }
+
+    const description = await generateLineDescription(
+      time_entries,
+      work_type_description,
+      project_name || ''
+    );
+    
+    res.json({ description });
+  } catch (error) {
     next(error);
   }
 });
@@ -316,6 +342,31 @@ router.delete('/:id', async (req, res, next) => {
     }
 
     res.json({ message: 'Invoice deleted successfully', invoice: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT update invoice line description
+router.put('/lines/:lineId/description', async (req, res, next) => {
+  try {
+    const { lineId } = req.params;
+    const { description } = req.body;
+
+    if (description === undefined) {
+      return res.status(400).json({ error: 'Description is required' });
+    }
+
+    const result = await query(
+      'UPDATE invoice_lines SET description = $1 WHERE id = $2 RETURNING *',
+      [description || null, lineId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Invoice line not found' });
+    }
+
+    res.json(result.rows[0]);
   } catch (error) {
     next(error);
   }

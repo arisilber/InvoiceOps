@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Download, Loader2, Calendar, User, FileText, AlertCircle, Send, FileEdit, Trash2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Calendar, User, FileText, AlertCircle, Send, FileEdit, Trash2, AlertTriangle, Edit2, Check, X } from 'lucide-react';
 import api from '../services/api';
 import InvoicePDFPreview from './InvoicePDFPreview';
 import { downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
@@ -17,6 +17,9 @@ const InvoiceDetail = () => {
   const [markingAsDraft, setMarkingAsDraft] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editingLineId, setEditingLineId] = useState(null);
+  const [editingDescription, setEditingDescription] = useState('');
+  const [savingDescription, setSavingDescription] = useState(false);
 
   useEffect(() => {
     fetchInvoice();
@@ -108,6 +111,41 @@ const InvoiceDetail = () => {
   const formatQuantity = (minutes) => {
     const hours = minutes / 60;
     return hours.toFixed(2);
+  };
+
+  const handleEditDescription = (line) => {
+    setEditingLineId(line.id);
+    setEditingDescription(line.description || '');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingLineId(null);
+    setEditingDescription('');
+  };
+
+  const handleSaveDescription = async (lineId) => {
+    try {
+      setSavingDescription(true);
+      await api.updateInvoiceLineDescription(lineId, editingDescription);
+      
+      // Update the invoice state
+      setInvoice(prev => ({
+        ...prev,
+        lines: prev.lines.map(line => 
+          line.id === lineId 
+            ? { ...line, description: editingDescription || null }
+            : line
+        )
+      }));
+      
+      setEditingLineId(null);
+      setEditingDescription('');
+    } catch (err) {
+      console.error('Error updating description:', err);
+      setError('Failed to update description. Please try again.');
+    } finally {
+      setSavingDescription(false);
+    }
   };
 
   if (loading) {
@@ -464,7 +502,8 @@ const InvoiceDetail = () => {
                   </thead>
                   <tbody>
                     {invoice.lines.map((line, index) => {
-                      const description = line.project_name 
+                      const isEditing = editingLineId === line.id;
+                      const fallbackDescription = line.project_name 
                         ? `${line.work_type_description || line.work_type_code || 'Work'} - ${line.project_name}`
                         : (line.work_type_description || line.work_type_code || 'Work');
                       
@@ -475,10 +514,104 @@ const InvoiceDetail = () => {
                             borderBottom: index !== invoice.lines.length - 1 ? '1px solid var(--border)' : 'none',
                             transition: 'background 0.2s ease'
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-bg)'}
-                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                          onMouseEnter={(e) => !isEditing && (e.currentTarget.style.background = 'var(--glass-bg)')}
+                          onMouseLeave={(e) => !isEditing && (e.currentTarget.style.background = 'transparent')}
                         >
-                          <td style={{ padding: '1.25rem 2rem' }}>{description}</td>
+                          <td style={{ padding: '1.25rem 2rem' }}>
+                            {isEditing ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                                  {line.work_type_code || line.work_type_description || 'Work'}
+                                  {line.project_name && ` - ${line.project_name}`}
+                                </div>
+                                <textarea
+                                  value={editingDescription}
+                                  onChange={(e) => setEditingDescription(e.target.value)}
+                                  style={{
+                                    width: '100%',
+                                    minHeight: '80px',
+                                    padding: '0.75rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid var(--border)',
+                                    background: 'var(--card-bg)',
+                                    color: 'inherit',
+                                    fontFamily: 'inherit',
+                                    fontSize: '0.875rem',
+                                    resize: 'vertical'
+                                  }}
+                                  placeholder="Enter description..."
+                                />
+                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    disabled={savingDescription}
+                                    className="btn btn-secondary"
+                                    style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+                                  >
+                                    <X size={14} />
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={() => handleSaveDescription(line.id)}
+                                    disabled={savingDescription}
+                                    className="btn btn-primary"
+                                    style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+                                  >
+                                    {savingDescription ? (
+                                      <>
+                                        <Loader2 className="animate-spin" size={14} />
+                                        Saving...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Check size={14} />
+                                        Save
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ position: 'relative' }}>
+                                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                                  {line.work_type_code || line.work_type_description || 'Work'}
+                                  {line.project_name && ` - ${line.project_name}`}
+                                </div>
+                                <div style={{ 
+                                  fontSize: '0.875rem', 
+                                  opacity: 0.8, 
+                                  lineHeight: 1.5,
+                                  whiteSpace: 'pre-wrap',
+                                  minHeight: line.description ? 'auto' : '1.5rem'
+                                }}>
+                                  {line.description || <span style={{ opacity: 0.5, fontStyle: 'italic' }}>No description</span>}
+                                </div>
+                                <button
+                                  onClick={() => handleEditDescription(line)}
+                                  style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    right: 0,
+                                    padding: '0.25rem 0.5rem',
+                                    background: 'var(--card-bg)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    cursor: 'pointer',
+                                    opacity: 0.7,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
+                                    fontSize: '0.75rem'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+                                >
+                                  <Edit2 size={12} />
+                                  Edit
+                                </button>
+                              </div>
+                            )}
+                          </td>
                           <td style={{ padding: '1.25rem 2rem', textAlign: 'center' }}>
                             {formatQuantity(line.total_minutes)}
                           </td>

@@ -76,24 +76,35 @@ echo "✅ Using server IP: $DROPLET_IP"
 echo ""
 
 # Get Supabase connection details
-echo "📝 Enter your Supabase connection details:"
-echo ""
-echo "   Option 1: IPv4 Address (Recommended):"
-echo "   Format: postgresql://postgres:[PASSWORD]@[IPv4-ADDRESS]:5432/postgres"
-echo "   Find IPv4: nslookup db.[PROJECT-REF].supabase.co"
-echo ""
-echo "   Option 2: Hostname (Default):"
-echo "   Format: postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres"
-echo "   Get from: Supabase Dashboard → Settings → Database → Connection String → URI"
-echo ""
-echo "   See SUPABASE_IPV4_SETUP.md for IPv4 configuration guide"
-echo ""
-
-read -p "Supabase DATABASE_URL: " DATABASE_URL
-
-if [ -z "$DATABASE_URL" ]; then
-    echo "❌ Error: DATABASE_URL is required"
-    exit 1
+# Check if DATABASE_URL or SUPABASE_CONNECTION_STRING is already loaded from .env
+if [ -z "$DATABASE_URL" ] && [ -z "$SUPABASE_CONNECTION_STRING" ]; then
+    echo "📝 Enter your Supabase connection details:"
+    echo ""
+    echo "   Option 1: IPv4 Address (Recommended):"
+    echo "   Format: postgresql://postgres:[PASSWORD]@[IPv4-ADDRESS]:5432/postgres"
+    echo "   Find IPv4: nslookup db.[PROJECT-REF].supabase.co"
+    echo ""
+    echo "   Option 2: Hostname (Default):"
+    echo "   Format: postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres"
+    echo "   Get from: Supabase Dashboard → Settings → Database → Connection String → URI"
+    echo ""
+    echo "   See SUPABASE_IPV4_SETUP.md for IPv4 configuration guide"
+    echo ""
+    
+    read -p "Supabase DATABASE_URL: " DATABASE_URL
+    
+    if [ -z "$DATABASE_URL" ]; then
+        echo "❌ Error: DATABASE_URL is required"
+        exit 1
+    fi
+else
+    # If SUPABASE_CONNECTION_STRING is set but DATABASE_URL is not, use it
+    if [ -n "$SUPABASE_CONNECTION_STRING" ] && [ -z "$DATABASE_URL" ]; then
+        export DATABASE_URL="$SUPABASE_CONNECTION_STRING"
+        echo "✅ Using SUPABASE_CONNECTION_STRING from .env file as DATABASE_URL"
+    else
+        echo "✅ Using DATABASE_URL from .env file"
+    fi
 fi
 
 # Confirm
@@ -101,6 +112,11 @@ echo ""
 echo "📋 Configuration:"
 echo "  Server IP: $DROPLET_IP"
 echo "  Database URL: ${DATABASE_URL:0:50}..."
+if [ -n "$OPENAI_API_KEY" ]; then
+    echo "  OpenAI API Key: ${OPENAI_API_KEY:0:20}... (configured)"
+else
+    echo "  OpenAI API Key: (not set in local .env)"
+fi
 echo ""
 read -p "Update environment variables on server? (y/N) " -n 1 -r
 echo ""
@@ -120,7 +136,10 @@ DB_SSL=true
 
 # Server Configuration
 PORT=3001
-NODE_ENV=production"
+NODE_ENV=production
+
+# OpenAI Configuration
+OPENAI_API_KEY=${OPENAI_API_KEY:-}"
 
 # Use SSH to update the file
 ssh root@$DROPLET_IP "cat > /var/www/invoiceops/.env << 'ENVEOF'
