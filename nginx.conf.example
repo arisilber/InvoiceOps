@@ -1,3 +1,7 @@
+# HTTP Configuration (Basic)
+# For HTTPS/SSL setup, see: docs/deployment/SSL_SETUP.md
+# After running setup-ssl.sh, Certbot will automatically configure HTTPS
+
 server {
     listen 80;
     server_name your-domain.com _;  # Replace with your domain or use IP
@@ -21,5 +25,7 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 }
+
+# For HTTPS configuration example, see: nginx.conf.https.example
 
 

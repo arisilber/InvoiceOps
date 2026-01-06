@@ -387,8 +387,10 @@ sudo ufw enable
 
 After deployment, your application will be available at:
 
-- **Frontend**: `http://<your-droplet-ip>`
-- **API**: `http://<your-droplet-ip>/api`
+- **Frontend**: `http://<your-droplet-ip>` (or `https://<your-domain>` after SSL setup)
+- **API**: `http://<your-droplet-ip>/api` (or `https://<your-domain>/api` after SSL setup)
+
+⚠️ **Security**: For production, set up SSL/HTTPS using the [SSL Setup Guide](./SSL_SETUP.md).
 
 ## Useful Commands
 
@@ -517,10 +519,20 @@ pm2 restart invoiceops-api
 5. 🔐 **Use HTTPS** - Set up SSL certificate (Let's Encrypt is free)
 6. 🔒 **Regular updates** - Keep system packages updated: `apt update && apt upgrade`
 
+## Setting Up SSL/HTTPS
+
+To secure your application with HTTPS, see the [SSL Setup Guide](./SSL_SETUP.md).
+
+**Quick start**:
+1. Point your domain to your droplet IP (DNS A record)
+2. Run: `bash scripts/deployment/setup-ssl.sh your-domain.com your-email@example.com`
+
+⚠️ **Note**: Let's Encrypt requires a domain name - it cannot issue certificates for IP addresses.
+
 ## Next Steps
 
 - [ ] Set up a domain name and point it to your Droplet IP
-- [ ] Configure SSL certificate with Let's Encrypt
+- [ ] Configure SSL certificate with Let's Encrypt (see [SSL Setup Guide](./SSL_SETUP.md))
 - [ ] Set up automated backups
 - [ ] Configure monitoring and alerts
 - [ ] Set up SSH key authentication

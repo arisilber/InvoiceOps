@@ -14,6 +14,7 @@ Welcome to the InvoiceOps documentation! This directory contains all project doc
 - **[DIGITALOCEAN_QUICKSTART.md](./deployment/DIGITALOCEAN_QUICKSTART.md)** - Quick start guide for deploying to Digital Ocean
 - **[DIGITALOCEAN_DEPLOYMENT.md](./deployment/DIGITALOCEAN_DEPLOYMENT.md)** - Comprehensive Digital Ocean deployment guide
 - **[DIGITALOCEAN_SUPABASE_SETUP.md](./deployment/DIGITALOCEAN_SUPABASE_SETUP.md)** - Guide for deploying with Supabase on Digital Ocean
+- **[SSL_SETUP.md](./deployment/SSL_SETUP.md)** - Guide for setting up HTTPS/SSL certificates with Let's Encrypt
 
 ### 🗄️ Database Documentation
 - **[SUPABASE_SETUP.md](./database/SUPABASE_SETUP.md)** - Complete guide for setting up Supabase PostgreSQL database
@@ -42,6 +43,7 @@ Welcome to the InvoiceOps documentation! This directory contains all project doc
 1. Quick start: [DIGITALOCEAN_QUICKSTART.md](./deployment/DIGITALOCEAN_QUICKSTART.md)
 2. Full guide: [DIGITALOCEAN_DEPLOYMENT.md](./deployment/DIGITALOCEAN_DEPLOYMENT.md)
 3. With Supabase: [DIGITALOCEAN_SUPABASE_SETUP.md](./deployment/DIGITALOCEAN_SUPABASE_SETUP.md)
+4. Set up SSL/HTTPS: [SSL_SETUP.md](./deployment/SSL_SETUP.md)
 
 **Development:**
 1. API reference: [server/README.md](../server/README.md)
