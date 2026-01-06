@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, Mail, Phone, MapPin, MoreVertical, ExternalLink, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Plus, Mail, Phone, MapPin, MoreVertical, ExternalLink, Loader2, BarChart3 } from 'lucide-react';
 import api from '../services/api';
 
 const ClientList = ({ onNewClient, onEditClient }) => {
+    const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -226,9 +228,13 @@ const ClientList = ({ onNewClient, onEditClient }) => {
                             </div>
                         </div>
 
-                        <button className="btn btn-secondary" style={{ width: '100%', marginTop: '0.5rem' }}>
-                            View Billing History
-                            <ExternalLink size={14} />
+                        <button 
+                            className="btn btn-primary" 
+                            style={{ width: '100%', marginTop: '0.5rem' }}
+                            onClick={() => navigate(`/clients/${client.id}/dashboard`)}
+                        >
+                            <BarChart3 size={14} />
+                            View Dashboard
                         </button>
                     </motion.div>
                 ))}

@@ -6,57 +6,57 @@ let refreshAccessToken = null;
 let logout = null;
 
 export const setAuthHelpers = (helpers) => {
-  getAuthHeaders = helpers.getAuthHeaders;
-  refreshAccessToken = helpers.refreshAccessToken;
-  logout = helpers.logout;
+    getAuthHeaders = helpers.getAuthHeaders;
+    refreshAccessToken = helpers.refreshAccessToken;
+    logout = helpers.logout;
 };
 
 const makeRequest = async (url, options = {}) => {
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+    };
 
-  // Add auth token if available
-  if (getAuthHeaders) {
-    const authHeaders = await getAuthHeaders();
-    if (authHeaders) {
-      Object.assign(headers, authHeaders);
+    // Add auth token if available
+    if (getAuthHeaders) {
+        const authHeaders = await getAuthHeaders();
+        if (authHeaders) {
+            Object.assign(headers, authHeaders);
+        }
     }
-  }
 
-  let response = await fetch(url, {
-    ...options,
-    headers,
-  });
+    let response = await fetch(url, {
+        ...options,
+        headers,
+    });
 
-  // If token expired (401) or forbidden (403), try to refresh and retry once
-  if ((response.status === 401 || response.status === 403) && refreshAccessToken) {
-    try {
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        // Retry with new token
-        headers['Authorization'] = `Bearer ${newToken}`;
-        response = await fetch(url, {
-          ...options,
-          headers,
-        });
-      }
-    } catch (error) {
-      // Refresh failed, logout user
-      if (logout) {
-        logout();
-      }
-      throw new Error('Session expired. Please log in again.');
+    // If token expired (401) or forbidden (403), try to refresh and retry once
+    if ((response.status === 401 || response.status === 403) && refreshAccessToken) {
+        try {
+            const newToken = await refreshAccessToken();
+            if (newToken) {
+                // Retry with new token
+                headers['Authorization'] = `Bearer ${newToken}`;
+                response = await fetch(url, {
+                    ...options,
+                    headers,
+                });
+            }
+        } catch (error) {
+            // Refresh failed, logout user
+            if (logout) {
+                logout();
+            }
+            throw new Error('Session expired. Please log in again.');
+        }
     }
-  }
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `Request failed with status ${response.status}`);
-  }
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(error.error || `Request failed with status ${response.status}`);
+    }
 
-  return response.json();
+    return response.json();
 };
 
 const api = {
@@ -66,6 +66,9 @@ const api = {
     },
     getClient: async (id) => {
         return makeRequest(`${API_BASE_URL}/clients/${id}`);
+    },
+    getClientDashboard: async (id) => {
+        return makeRequest(`${API_BASE_URL}/clients/${id}/dashboard`);
     },
     createClient: async (clientData) => {
         return makeRequest(`${API_BASE_URL}/clients`, {
@@ -268,10 +271,18 @@ const api = {
     getPayments: async () => {
         return makeRequest(`${API_BASE_URL}/payments`);
     },
+    getPayment: async (id) => {
+        return makeRequest(`${API_BASE_URL}/payments/${id}`);
+    },
     createPayment: async (paymentData) => {
         return makeRequest(`${API_BASE_URL}/payments`, {
             method: 'POST',
             body: JSON.stringify(paymentData),
+        });
+    },
+    deletePayment: async (id) => {
+        return makeRequest(`${API_BASE_URL}/payments/${id}`, {
+            method: 'DELETE',
         });
     }
 };

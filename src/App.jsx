@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import InvoiceList from './components/InvoiceList';
 import InvoiceDetail from './components/InvoiceDetail';
 import ClientList from './components/ClientList';
+import ClientDashboard from './components/ClientDashboard';
 import NewInvoiceModal from './components/NewInvoiceModal';
 import NewClientModal from './components/NewClientModal';
 import TimeEntryList from './components/TimeEntryList';
@@ -131,6 +132,7 @@ function App() {
               />
             } 
           />
+          <Route path="/clients/:id/dashboard" element={<ClientDashboard />} />
           <Route path="/time-entry" element={<TimeEntryList />} />
           <Route path="/work-types" element={<WorkTypeList />} />
           <Route 
