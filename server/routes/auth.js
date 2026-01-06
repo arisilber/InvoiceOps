@@ -77,18 +77,12 @@ router.post('/register', async (req, res, next) => {
 
 // Login
 router.post('/login', async (req, res, next) => {
-  // #region agent log
-  fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server/routes/auth.js:79',message:'Login route handler entered',data:{hasBody:!!req.body,hasEmail:!!req.body?.email,hasPassword:!!req.body?.password},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-  // #endregion
   console.log('[Auth Route] POST /login received');
   console.log('[Auth Route] Request body:', { email: req.body?.email, hasPassword: !!req.body?.password });
   console.log('[Auth Route] Request headers:', req.headers);
   
   try {
     const { email, password } = req.body;
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server/routes/auth.js:87',message:'Login route - extracted credentials',data:{email:email,hasPassword:!!password},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     console.log('[Auth Route] Extracted email:', email);
     console.log('[Auth Route] Extracted password:', !!password);
 
@@ -99,17 +93,11 @@ router.post('/login', async (req, res, next) => {
     }
 
     console.log('[Auth Route] Querying database for user...');
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server/routes/auth.js:97',message:'Login route - before database query',data:{email:email},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     // Find user
     const result = await query(
       'SELECT id, email, password_hash, name FROM users WHERE email = $1',
       [email]
     );
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server/routes/auth.js:103',message:'Login route - after database query',data:{rowsFound:result.rows.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
 
     console.log('[Auth Route] Database query result rows:', result.rows.length);
     if (result.rows.length === 0) {
@@ -141,9 +129,6 @@ router.post('/login', async (req, res, next) => {
     console.log('[Auth Route] Refresh token stored');
 
     console.log('[Auth Route] Sending success response...');
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server/routes/auth.js:132',message:'Login route - sending success response',data:{userId:user.id,hasAccessToken:!!accessToken,hasRefreshToken:!!refreshToken},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     res.json({
       user: {
         id: user.id,
@@ -155,9 +140,6 @@ router.post('/login', async (req, res, next) => {
     });
     console.log('[Auth Route] Response sent successfully');
   } catch (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server/routes/auth.js:143',message:'Login route - error caught',data:{errorName:error.name,errorMessage:error.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     console.error('[Auth Route] Login error:', error);
     console.error('[Auth Route] Error name:', error.name);
     console.error('[Auth Route] Error message:', error.message);

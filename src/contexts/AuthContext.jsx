@@ -78,9 +78,6 @@ export const AuthProvider = ({ children }) => {
 
   // Login
   const login = async (email, password) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/contexts/AuthContext.jsx:80',message:'Client login function called',data:{apiBaseUrl:API_BASE_URL,hasEmail:!!email,hasPassword:!!password},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     console.log('[AuthContext] login() called');
     console.log('[AuthContext] API_BASE_URL:', API_BASE_URL);
     console.log('[AuthContext] Email:', email);
@@ -91,9 +88,6 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const requestBody = JSON.stringify({ email, password });
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/contexts/AuthContext.jsx:92',message:'Client making fetch request',data:{url:loginUrl,method:'POST'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       const response = await fetch(loginUrl, {
         method: 'POST',
         headers: {
@@ -101,35 +95,20 @@ export const AuthProvider = ({ children }) => {
         },
         body: requestBody,
       });
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/contexts/AuthContext.jsx:100',message:'Client received response',data:{status:response.status,ok:response.ok,contentType:response.headers.get('content-type')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
 
       console.log('[AuthContext] Response status:', response.status);
       console.log('[AuthContext] Response ok:', response.ok);
       console.log('[AuthContext] Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/contexts/AuthContext.jsx:103',message:'Client response not ok',data:{status:response.status,contentType:response.headers.get('content-type')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
         console.error('[AuthContext] Response not ok, parsing error...');
         let error;
         try {
           error = await response.json();
-          // #region agent log
-          fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/contexts/AuthContext.jsx:107',message:'Client parsed error as JSON',data:{error:error},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
           console.error('[AuthContext] Error response body:', error);
         } catch (parseError) {
-          // #region agent log
-          fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/contexts/AuthContext.jsx:110',message:'Client failed to parse error as JSON',data:{parseErrorName:parseError.name,parseErrorMessage:parseError.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
           console.error('[AuthContext] Failed to parse error response:', parseError);
           const text = await response.text();
-          // #region agent log
-          fetch('http://127.0.0.1:7244/ingest/91688a60-4570-42ad-b24f-59d4a9d774d5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/contexts/AuthContext.jsx:112',message:'Client got error response text',data:{textLength:text.length,textPreview:text.substring(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
           console.error('[AuthContext] Error response text:', text);
           throw new Error(`Login failed with status ${response.status}`);
         }

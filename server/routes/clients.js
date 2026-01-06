@@ -129,12 +129,12 @@ router.get('/:id/dashboard', async (req, res, next) => {
       [id]
     );
     
-    const totalMinutes = parseInt(uninvoicedResult.rows[0].total_minutes) || 0;
+    const uninvoicedTotalMinutes = parseInt(uninvoicedResult.rows[0].total_minutes) || 0;
     const hourlyRateCents = parseInt(client.hourly_rate_cents) || 0;
     const discountPercent = parseFloat(client.discount_percent) || 0;
     
     // Calculate pre-discount amount
-    const preDiscountAmount = Math.round((totalMinutes / 60) * hourlyRateCents);
+    const preDiscountAmount = Math.round((uninvoicedTotalMinutes / 60) * hourlyRateCents);
     // Apply discount
     const discountAmount = Math.round((preDiscountAmount * discountPercent) / 100);
     const amountUninvoiced = preDiscountAmount - discountAmount;
@@ -147,8 +147,8 @@ router.get('/:id/dashboard', async (req, res, next) => {
        WHERE te.client_id = $1 AND te.work_date >= $2`,
       [id, fourWeeksAgo.toISOString().split('T')[0]]
     );
-    const totalMinutes = parseInt(hoursResult.rows[0].total_minutes) || 0;
-    const averageHoursPerWeek = (totalMinutes / 60) / 4; // 4 weeks
+    const weeklyTotalMinutes = parseInt(hoursResult.rows[0].total_minutes) || 0;
+    const averageHoursPerWeek = (weeklyTotalMinutes / 60) / 4; // 4 weeks
     
     // 3. Total amount invoiced not paid
     // Get all invoices for this client
