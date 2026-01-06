@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, MoreVertical, Download, Loader2, Trash2, Eye } from 'lucide-react';
+import { Search, Filter, Download, Loader2, Trash2, Eye, AlertTriangle } from 'lucide-react';
 import api from '../services/api';
 import InvoicePDFPreview from './InvoicePDFPreview';
 import { downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
@@ -10,23 +10,16 @@ const InvoiceList = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeMenu, setActiveMenu] = useState(null);
     const [previewInvoice, setPreviewInvoice] = useState(null);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [loadingInvoice, setLoadingInvoice] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [invoiceToDelete, setInvoiceToDelete] = useState(null);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         fetchInvoices();
     }, []);
-
-    // Close menu when clicking outside
-    useEffect(() => {
-        const handleClickOutside = () => setActiveMenu(null);
-        if (activeMenu) {
-            window.addEventListener('click', handleClickOutside);
-        }
-        return () => window.removeEventListener('click', handleClickOutside);
-    }, [activeMenu]);
 
     const fetchInvoices = async () => {
         try {
@@ -81,19 +74,33 @@ const InvoiceList = () => {
         setPreviewInvoice(null);
     };
 
-    const handleDeleteInvoice = async (invoiceId) => {
-        if (!window.confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
-            return;
-        }
+    const handleDeleteClick = (invoice) => {
+        setInvoiceToDelete(invoice);
+        setDeleteModalOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!invoiceToDelete) return;
 
         try {
-            await api.deleteInvoice(invoiceId);
-            setInvoices(invoices.filter(invoice => invoice.id !== invoiceId));
-            setActiveMenu(null);
+            setDeleting(true);
+            await api.deleteInvoice(invoiceToDelete.id);
+            setInvoices(invoices.filter(invoice => invoice.id !== invoiceToDelete.id));
+            setDeleteModalOpen(false);
+            setInvoiceToDelete(null);
         } catch (err) {
             console.error('Error deleting invoice:', err);
             setError('Failed to delete invoice. Please try again.');
+            setDeleteModalOpen(false);
+            setInvoiceToDelete(null);
+        } finally {
+            setDeleting(false);
         }
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteModalOpen(false);
+        setInvoiceToDelete(null);
     };
 
     if (loading) {
@@ -199,53 +206,15 @@ const InvoiceList = () => {
                                             >
                                                 <Download size={16} />
                                             </button>
-                                            <div style={{ position: 'relative' }}>
-                                                <button
-                                                    className="btn btn-secondary"
-                                                    style={{ padding: '0.5rem' }}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setActiveMenu(activeMenu === invoice.id ? null : invoice.id);
-                                                    }}
-                                                >
-                                                    <MoreVertical size={16} />
-                                                </button>
-
-                                                <AnimatePresence>
-                                                    {activeMenu === invoice.id && (
-                                                        <motion.div
-                                                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                                            style={{
-                                                                position: 'absolute',
-                                                                top: '100%',
-                                                                right: 0,
-                                                                marginTop: '0.5rem',
-                                                                background: 'var(--card-bg)',
-                                                                border: '1px solid var(--border)',
-                                                                borderRadius: 'var(--radius-md)',
-                                                                boxShadow: 'var(--shadow-lg)',
-                                                                zIndex: 10,
-                                                                minWidth: '150px',
-                                                                overflow: 'hidden'
-                                                            }}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        >
-                                                            <button
-                                                                className="btn-menu-item"
-                                                                style={{ color: 'var(--error)' }}
-                                                                onClick={() => {
-                                                                    handleDeleteInvoice(invoice.id);
-                                                                }}
-                                                            >
-                                                                <Trash2 size={16} />
-                                                                Delete Invoice
-                                                            </button>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
+                                            <button
+                                                className="btn btn-secondary"
+                                                style={{ padding: '0.5rem', color: '#ef4444' }}
+                                                onClick={() => handleDeleteClick(invoice)}
+                                                title="Delete Invoice"
+                                                disabled={loadingInvoice || deleting}
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -260,6 +229,93 @@ const InvoiceList = () => {
                 onClose={handleClosePreview}
                 invoice={previewInvoice}
             />
+
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {deleteModalOpen && (
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.5)',
+                        backdropFilter: 'blur(4px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        padding: '2rem'
+                    }} onClick={handleDeleteCancel}>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            style={{
+                                background: 'var(--background)',
+                                width: '100%',
+                                maxWidth: '400px',
+                                borderRadius: 'var(--radius-lg)',
+                                boxShadow: 'var(--shadow-lg)',
+                                overflow: 'hidden'
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div style={{ padding: '2rem' }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '1rem',
+                                    marginBottom: '1.5rem'
+                                }}>
+                                    <div style={{
+                                        padding: '0.75rem',
+                                        background: 'rgba(239, 68, 68, 0.1)',
+                                        borderRadius: 'var(--radius-md)',
+                                        color: '#ef4444'
+                                    }}>
+                                        <AlertTriangle size={24} />
+                                    </div>
+                                    <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Delete Invoice</h2>
+                                </div>
+                                <p style={{ marginBottom: '2rem', opacity: 0.8, lineHeight: 1.6 }}>
+                                    Are you sure you want to delete invoice <strong>INV-{invoiceToDelete?.invoice_number}</strong> for <strong>{invoiceToDelete?.client_name}</strong>? This action cannot be undone.
+                                </p>
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '1rem'
+                                }}>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={handleDeleteCancel}
+                                        disabled={deleting}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn"
+                                        onClick={handleDeleteConfirm}
+                                        disabled={deleting}
+                                        style={{
+                                            background: '#ef4444',
+                                            color: 'white'
+                                        }}
+                                    >
+                                        {deleting ? (
+                                            <>
+                                                <Loader2 className="animate-spin" size={18} style={{ marginRight: '0.5rem' }} />
+                                                Deleting...
+                                            </>
+                                        ) : (
+                                            'Delete Invoice'
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };
