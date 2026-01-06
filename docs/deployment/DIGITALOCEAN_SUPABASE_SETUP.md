@@ -42,7 +42,7 @@ This creates a Digital Ocean Droplet and saves the IP to `.do-droplet-ip`.
 SERVER_IP=$(cat .do-droplet-ip)
 
 # Copy setup script to server
-scp setup-server-supabase.sh root@$SERVER_IP:/root/
+scp scripts/deployment/setup-server-supabase.sh root@$SERVER_IP:/root/
 
 # SSH into server
 ssh root@$SERVER_IP
@@ -236,7 +236,7 @@ sudo ufw enable
 
 | Aspect | Local PostgreSQL | Supabase |
 |--------|------------------|----------|
-| Setup Script | `setup-server.sh` | `setup-server-supabase.sh` |
+| Setup Script | `scripts/deployment/setup-server.sh` | `scripts/deployment/setup-server-supabase.sh` |
 | PostgreSQL Installation | ✅ Installed on Droplet | ❌ Not installed (managed) |
 | Database Connection | `localhost:5432` | Supabase connection string |
 | Database Setup | Run `schema.sql` on server | Run in Supabase SQL Editor |

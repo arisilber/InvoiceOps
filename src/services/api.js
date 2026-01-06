@@ -1,95 +1,120 @@
-const API_BASE_URL = 'http://localhost:4567/api';
+const API_BASE_URL = '/api';
+
+// Helper function to make authenticated requests with automatic token refresh
+let getAuthHeaders = null;
+let refreshAccessToken = null;
+let logout = null;
+
+export const setAuthHelpers = (helpers) => {
+  getAuthHeaders = helpers.getAuthHeaders;
+  refreshAccessToken = helpers.refreshAccessToken;
+  logout = helpers.logout;
+};
+
+const makeRequest = async (url, options = {}) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  // Add auth token if available
+  if (getAuthHeaders) {
+    const authHeaders = await getAuthHeaders();
+    if (authHeaders) {
+      Object.assign(headers, authHeaders);
+    }
+  }
+
+  let response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  // If token expired (401) or forbidden (403), try to refresh and retry once
+  if ((response.status === 401 || response.status === 403) && refreshAccessToken) {
+    try {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        // Retry with new token
+        headers['Authorization'] = `Bearer ${newToken}`;
+        response = await fetch(url, {
+          ...options,
+          headers,
+        });
+      }
+    } catch (error) {
+      // Refresh failed, logout user
+      if (logout) {
+        logout();
+      }
+      throw new Error('Session expired. Please log in again.');
+    }
+  }
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(error.error || `Request failed with status ${response.status}`);
+  }
+
+  return response.json();
+};
 
 const api = {
     // Clients
     getClients: async () => {
-        const response = await fetch(`${API_BASE_URL}/clients`);
-        if (!response.ok) throw new Error('Failed to fetch clients');
-        return response.json();
+        return makeRequest(`${API_BASE_URL}/clients`);
     },
     getClient: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/clients/${id}`);
-        if (!response.ok) throw new Error('Failed to fetch client');
-        return response.json();
+        return makeRequest(`${API_BASE_URL}/clients/${id}`);
     },
     createClient: async (clientData) => {
-        const response = await fetch(`${API_BASE_URL}/clients`, {
+        return makeRequest(`${API_BASE_URL}/clients`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(clientData),
         });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to create client');
-        }
-        return response.json();
     },
     updateClient: async (id, clientData) => {
-        const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
+        return makeRequest(`${API_BASE_URL}/clients/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(clientData),
         });
-        if (!response.ok) throw new Error('Failed to update client');
-        return response.json();
     },
     deleteClient: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
+        return makeRequest(`${API_BASE_URL}/clients/${id}`, {
             method: 'DELETE',
         });
-        if (!response.ok) throw new Error('Failed to delete client');
-        return response.json();
     },
 
     // Invoices
     getInvoices: async () => {
-        const response = await fetch(`${API_BASE_URL}/invoices`);
-        if (!response.ok) throw new Error('Failed to fetch invoices');
-        return response.json();
+        return makeRequest(`${API_BASE_URL}/invoices`);
     },
     getInvoice: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/invoices/${id}`);
-        if (!response.ok) throw new Error('Failed to fetch invoice');
-        return response.json();
+        return makeRequest(`${API_BASE_URL}/invoices/${id}`);
     },
     getNextInvoiceNumber: async () => {
-        const response = await fetch(`${API_BASE_URL}/invoices/next-invoice-number`);
-        if (!response.ok) throw new Error('Failed to fetch next invoice number');
-        const data = await response.json();
+        const data = await makeRequest(`${API_BASE_URL}/invoices/next-invoice-number`);
         return data.next_invoice_number;
     },
     createInvoice: async (invoiceData) => {
-        const response = await fetch(`${API_BASE_URL}/invoices`, {
+        return makeRequest(`${API_BASE_URL}/invoices`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(invoiceData),
         });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to create invoice');
-        }
-        return response.json();
     },
     previewInvoiceFromTimeEntries: async (clientId, startDate, endDate) => {
-        const response = await fetch(`${API_BASE_URL}/invoices/preview-from-time-entries`, {
+        return makeRequest(`${API_BASE_URL}/invoices/preview-from-time-entries`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 client_id: clientId,
                 start_date: startDate,
                 end_date: endDate
             }),
         });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to preview invoice');
-        }
-        return response.json();
     },
     createInvoiceFromTimeEntries: async (invoiceData) => {
-        const response = await fetch(`${API_BASE_URL}/invoices/from-time-entries`, {
+        return makeRequest(`${API_BASE_URL}/invoices/from-time-entries`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 client_id: invoiceData.client_id,
                 start_date: invoiceData.start_date,
@@ -99,101 +124,62 @@ const api = {
                 due_date: invoiceData.due_date
             }),
         });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to create invoice from time entries');
-        }
-        return response.json();
     },
 
     // Work Types
     getWorkTypes: async () => {
-        const response = await fetch(`${API_BASE_URL}/work-types`);
-        if (!response.ok) throw new Error('Failed to fetch work types');
-        return response.json();
+        return makeRequest(`${API_BASE_URL}/work-types`);
     },
     createWorkType: async (workTypeData) => {
-        const response = await fetch(`${API_BASE_URL}/work-types`, {
+        return makeRequest(`${API_BASE_URL}/work-types`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(workTypeData),
         });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to create work type');
-        }
-        return response.json();
     },
     updateWorkType: async (id, workTypeData) => {
-        const response = await fetch(`${API_BASE_URL}/work-types/${id}`, {
+        return makeRequest(`${API_BASE_URL}/work-types/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(workTypeData),
         });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to update work type');
-        }
-        return response.json();
     },
     deleteWorkType: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/work-types/${id}`, {
+        return makeRequest(`${API_BASE_URL}/work-types/${id}`, {
             method: 'DELETE',
         });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to delete work type');
-        }
-        return response.json();
     },
 
     // Time Entries
     getTimeEntries: async (filters = {}) => {
         const params = new URLSearchParams(filters);
-        const response = await fetch(`${API_BASE_URL}/time-entries?${params.toString()}`);
-        if (!response.ok) throw new Error('Failed to fetch time entries');
-        return response.json();
+        return makeRequest(`${API_BASE_URL}/time-entries?${params.toString()}`);
     },
     createTimeEntry: async (entryData) => {
-        const response = await fetch(`${API_BASE_URL}/time-entries`, {
+        return makeRequest(`${API_BASE_URL}/time-entries`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(entryData),
         });
-        if (!response.ok) throw new Error('Failed to create time entry');
-        return response.json();
     },
     updateTimeEntry: async (id, entryData) => {
-        const response = await fetch(`${API_BASE_URL}/time-entries/${id}`, {
+        return makeRequest(`${API_BASE_URL}/time-entries/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(entryData),
         });
-        if (!response.ok) throw new Error('Failed to update time entry');
-        return response.json();
     },
     deleteTimeEntry: async (id) => {
-        const response = await fetch(`${API_BASE_URL}/time-entries/${id}`, {
+        return makeRequest(`${API_BASE_URL}/time-entries/${id}`, {
             method: 'DELETE',
         });
-        if (!response.ok) throw new Error('Failed to delete time entry');
-        return response.json();
     },
 
     // Payments
     getPayments: async () => {
-        const response = await fetch(`${API_BASE_URL}/payments`);
-        if (!response.ok) throw new Error('Failed to fetch payments');
-        return response.json();
+        return makeRequest(`${API_BASE_URL}/payments`);
     },
     createPayment: async (paymentData) => {
-        const response = await fetch(`${API_BASE_URL}/payments`, {
+        return makeRequest(`${API_BASE_URL}/payments`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(paymentData),
         });
-        if (!response.ok) throw new Error('Failed to create payment');
-        return response.json();
     }
 };
 

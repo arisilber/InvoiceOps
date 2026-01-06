@@ -39,7 +39,7 @@ async function setupDatabase() {
     await client.query('BEGIN');
     
     console.log('🔄 Reading schema file...');
-    const schemaPath = join(__dirname, 'database', 'schema.sql');
+    const schemaPath = join(__dirname, '../../database', 'schema.sql');
     let schemaSQL = readFileSync(schemaPath, 'utf8');
     
     // Remove comments

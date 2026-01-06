@@ -2,7 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-// Import routes (we'll create these next)
+// Import routes
+import authRoutes from './routes/auth.js';
 import clientsRoutes from './routes/clients.js';
 import workTypesRoutes from './routes/workTypes.js';
 import timeEntriesRoutes from './routes/timeEntries.js';
@@ -25,6 +26,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientsRoutes);
 app.use('/api/work-types', workTypesRoutes);
 app.use('/api/time-entries', timeEntriesRoutes);

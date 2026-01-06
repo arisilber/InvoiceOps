@@ -36,7 +36,7 @@ async function enableRLS() {
   
   try {
     console.log('🔄 Reading RLS configuration file...');
-    const rlsPath = join(__dirname, 'database', 'enable-rls.sql');
+    const rlsPath = join(__dirname, '../../database', 'enable-rls.sql');
     let rlsSQL = readFileSync(rlsPath, 'utf8');
     
     // Remove comments

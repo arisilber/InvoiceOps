@@ -24,9 +24,9 @@ CREATE DATABASE invoiceops;
 \q
 ```
 
-### 2. Run the Schema
+### 2. Run the Initial Schema
 
-Run the schema file to create all tables:
+Run the main schema file to create the base tables:
 
 ```bash
 # From the project root directory
@@ -39,6 +39,16 @@ Or if you're already connected to the database:
 psql -U postgres -d invoiceops
 \i database/schema.sql
 ```
+
+### 3. Run Migrations
+
+After running the initial schema, run migrations to apply any additional schema changes:
+
+```bash
+npm run migrate
+```
+
+This will execute all pending migrations in order. Migrations are tracked in the database, so you can safely run this command multiple times.
 
 ### 3. Verify the Setup
 
@@ -86,11 +96,21 @@ postgresql://username:password@localhost:5432/invoiceops
 
 Update `username` and `password` with your PostgreSQL credentials.
 
+## Database Migrations
+
+This project uses a migration system to manage database schema changes. See [`migrations/README.md`](./migrations/README.md) for details on:
+- Running migrations
+- Creating new migrations
+- Migration best practices
+
+**Important**: For production deployments, always use migrations rather than running SQL files directly.
+
 ## Notes
 
 - The schema uses `SERIAL` for auto-incrementing primary keys
 - Timestamps use `TIMESTAMP WITH TIME ZONE` for accurate time tracking
 - Foreign key constraints are set up with appropriate CASCADE/RESTRICT behaviors
+- Schema changes should be made through migrations, not by modifying `schema.sql` directly
 - Indexes are created on frequently queried columns for performance
 - Triggers automatically update the `updated_at` timestamp on `clients` and `invoices` tables
 

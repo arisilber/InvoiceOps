@@ -80,5 +80,5 @@ ssh root@$DROPLET_IP "
 "
 
 echo ""
-echo "✅ Done! You can now try running ./check-setup-status.sh again"
+echo "✅ Done! You can now try running scripts/diagnostics/check-setup-status.sh again"
 

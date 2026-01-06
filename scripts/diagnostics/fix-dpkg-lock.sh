@@ -46,5 +46,5 @@ ssh root@$DROPLET_IP "
 echo ""
 echo "✅ Lock files removed (if they existed)"
 echo ""
-echo "You can now try running ./check-setup-status.sh again"
+echo "You can now try running scripts/diagnostics/check-setup-status.sh again"
 

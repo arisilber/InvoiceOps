@@ -1,7 +1,11 @@
 import express from 'express';
 import { query } from '../db/connection.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// All routes require authentication
+router.use(authenticateToken);
 
 // GET all work types
 router.get('/', async (req, res, next) => {

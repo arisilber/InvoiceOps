@@ -30,8 +30,8 @@ DO_API_TOKEN=your_api_token_here
 ### 3. Deploy Droplet
 
 ```bash
-chmod +x deploy-do.sh
-./deploy-do.sh
+chmod +x scripts/deployment/deploy-do.sh
+./scripts/deployment/deploy-do.sh
 ```
 
 This creates a Droplet and saves the IP to `.do-droplet-ip`.
@@ -42,7 +42,7 @@ This creates a Droplet and saves the IP to `.do-droplet-ip`.
 SERVER_IP=$(cat .do-droplet-ip)
 
 # Copy setup script
-scp setup-server-supabase.sh root@$SERVER_IP:/root/
+scp scripts/deployment/setup-server-supabase.sh root@$SERVER_IP:/root/
 
 # SSH and run setup
 ssh root@$SERVER_IP

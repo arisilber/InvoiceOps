@@ -5,8 +5,12 @@ import {
   getNextInvoiceNumber,
   previewInvoiceFromTimeEntries
 } from '../services/invoiceService.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// All routes require authentication
+router.use(authenticateToken);
 
 // GET all invoices
 router.get('/', async (req, res, next) => {

@@ -1,7 +1,9 @@
 import React from 'react';
-import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = ({ activeTab, setActiveTab, onNewInvoice }) => {
+  const { user, logout } = useAuth();
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'invoices', label: 'Invoices', icon: FileText },
@@ -67,10 +69,40 @@ const Sidebar = ({ activeTab, setActiveTab, onNewInvoice }) => {
         })}
       </nav>
 
-      <button className="btn btn-primary" style={{ marginTop: 'auto', width: '100%' }} onClick={onNewInvoice}>
-        <PlusCircle size={20} />
-        New Invoice
-      </button>
+      <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <button className="btn btn-primary" style={{ width: '100%' }} onClick={onNewInvoice}>
+          <PlusCircle size={20} />
+          New Invoice
+        </button>
+        
+        {user && (
+          <div style={{
+            padding: '0.75rem 1rem',
+            borderTop: '1px solid var(--border)',
+            marginTop: '1rem',
+            paddingTop: '1rem',
+          }}>
+            <div style={{
+              fontSize: '0.875rem',
+              opacity: 0.7,
+              marginBottom: '0.5rem',
+            }}>
+              {user.name}
+            </div>
+            <button
+              onClick={logout}
+              className="btn btn-secondary"
+              style={{
+                width: '100%',
+                fontSize: '0.875rem',
+              }}
+            >
+              <LogOut size={16} />
+              Logout
+            </button>
+          </div>
+        )}
+      </div>
     </aside>
   );
 };

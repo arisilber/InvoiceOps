@@ -45,7 +45,7 @@ if [ $? -eq 0 ]; then
         echo "   ssh root@$DROPLET_IP"
         echo ""
         echo "📋 Next steps:"
-        echo "   1. Run: scp setup-server-supabase.sh root@$DROPLET_IP:/root/"
+        echo "   1. Run: scp scripts/deployment/setup-server-supabase.sh root@$DROPLET_IP:/root/"
         echo "   2. SSH in: ssh root@$DROPLET_IP"
         echo "   3. Run setup: bash /root/setup-server-supabase.sh"
     fi

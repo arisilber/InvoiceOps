@@ -42,7 +42,7 @@ doctl auth init --access-token YOUR_API_TOKEN
 You can customize the deployment by setting these environment variables (optional):
 
 ```bash
-# In .env or export before running deploy-do.sh
+# In .env or export before running scripts/deployment/deploy-do.sh
 DO_REGION=nyc1              # Region code (nyc1 = New York, default)
 DO_SIZE=s-1vcpu-1gb         # Size (s-1vcpu-1gb = 1 CPU, 1 GB RAM, ~$6/month)
 DO_NAME=invoiceops          # Droplet name
@@ -79,7 +79,7 @@ InvoiceOps supports two database deployment options:
 
 **When to use:** Most deployments, especially if you want a managed database solution.
 
-**Setup:** Use `setup-server-supabase.sh` (see [Deploying with Supabase](#deploying-with-supabase) below)
+**Setup:** Use `scripts/deployment/setup-server-supabase.sh` (see [Deploying with Supabase](#deploying-with-supabase) below)
 
 ### Option B: Local PostgreSQL
 
@@ -90,7 +90,7 @@ InvoiceOps supports two database deployment options:
 
 **When to use:** If you need full control over the database or want to avoid external dependencies.
 
-**Setup:** Use `setup-server.sh` (see [Deploying with Local PostgreSQL](#deploying-with-local-postgresql) below)
+**Setup:** Use `scripts/deployment/setup-server.sh` (see [Deploying with Local PostgreSQL](#deploying-with-local-postgresql) below)
 
 ## Deployment Steps
 
@@ -99,8 +99,8 @@ InvoiceOps supports two database deployment options:
 Run the deployment script:
 
 ```bash
-chmod +x deploy-do.sh
-./deploy-do.sh
+chmod +x scripts/deployment/deploy-do.sh
+./scripts/deployment/deploy-do.sh
 ```
 
 The script will:
@@ -143,7 +143,7 @@ Choose your database option and follow the corresponding instructions:
 
 ```bash
 # Copy the setup script to the server
-scp setup-server-supabase.sh root@<your-droplet-ip>:/root/
+scp scripts/deployment/setup-server-supabase.sh root@<your-droplet-ip>:/root/
 
 # SSH into the server
 ssh root@<your-droplet-ip>
@@ -168,7 +168,7 @@ This script installs:
 
 ```bash
 # Copy the setup script to the server
-scp setup-server.sh root@<your-droplet-ip>:/root/
+scp scripts/deployment/setup-server.sh root@<your-droplet-ip>:/root/
 
 # SSH into the server
 ssh root@<your-droplet-ip>
@@ -263,8 +263,8 @@ DB_PASSWORD=your_secure_password_here
 PORT=3001
 NODE_ENV=production
 
-# Note: Update DB_PASSWORD to match what was set in setup-server.sh
-# (default in setup-server.sh is 'changeme_in_production' - CHANGE THIS!)
+# Note: Update DB_PASSWORD to match what was set in scripts/deployment/setup-server.sh
+# (default in scripts/deployment/setup-server.sh is 'changeme_in_production' - CHANGE THIS!)
 ```
 
 **⚠️ IMPORTANT**: 
