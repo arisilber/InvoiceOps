@@ -12,14 +12,49 @@ const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
     const [success, setSuccess] = useState(null);
     const fileInputRef = useRef(null);
 
+    // Parse CSV line handling quoted fields with commas
+    const parseCSVLine = (line) => {
+        const values = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const nextChar = line[i + 1];
+            
+            if (char === '"') {
+                if (inQuotes && nextChar === '"') {
+                    // Escaped quote
+                    current += '"';
+                    i++; // Skip next quote
+                } else {
+                    // Toggle quote state
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                // End of field
+                values.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        
+        // Add the last field
+        values.push(current.trim());
+        return values;
+    };
+
     // Expected CSV format: client_name, work_type_code, project_name (optional), work_date, time_spent, detail
     const parseCSV = (text) => {
-        const lines = text.trim().split('\n');
+        // Normalize line endings (handle both \r\n and \n)
+        const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        const lines = normalizedText.trim().split('\n');
         if (lines.length < 2) {
             throw new Error('CSV must have at least a header row and one data row');
         }
 
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
         const requiredHeaders = ['client_name', 'work_type_code', 'work_date', 'time_spent'];
         
         // Check if all required headers are present
@@ -35,9 +70,9 @@ const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
             const line = lines[i].trim();
             if (!line) continue;
 
-            const values = line.split(',').map(v => v.trim());
+            const values = parseCSVLine(line).map(v => v.replace(/^"|"$/g, '')); // Remove surrounding quotes
             if (values.length !== headers.length) {
-                errors.push(`Row ${i + 1}: Column count mismatch`);
+                errors.push(`Row ${i + 1}: Column count mismatch (expected ${headers.length} columns, got ${values.length})`);
                 continue;
             }
 
