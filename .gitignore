@@ -17,9 +17,18 @@ dist-ssr
 .env.local
 .env.production
 
+# Vultr deployment files
+.vultr-instance-id
+.vultr-instance-ip
+
+# DigitalOcean deployment files
+.do-droplet-id
+.do-droplet-ip
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+.cursor/
 .idea
 .DS_Store
 *.suo

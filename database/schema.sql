@@ -40,20 +40,7 @@ CREATE TABLE work_types (
     description TEXT
 );
 
--- time_entries table
-CREATE TABLE time_entries (
-    id SERIAL PRIMARY KEY,
-    client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
-    work_type_id INTEGER NOT NULL REFERENCES work_types(id) ON DELETE RESTRICT,
-    invoice_id INTEGER REFERENCES invoices(id) ON DELETE SET NULL,
-    project_name TEXT NOT NULL,
-    work_date DATE NOT NULL,
-    minutes_spent INTEGER NOT NULL CHECK (minutes_spent > 0),
-    detail TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- invoices table
+-- invoices table (created before time_entries because time_entries references it)
 CREATE TABLE invoices (
     id SERIAL PRIMARY KEY,
     invoice_number INTEGER UNIQUE NOT NULL,
@@ -72,6 +59,19 @@ CREATE TABLE invoices (
         discount_cents >= 0 AND
         total_cents >= 0
     )
+);
+
+-- time_entries table (created after invoices because it references invoices)
+CREATE TABLE time_entries (
+    id SERIAL PRIMARY KEY,
+    client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+    work_type_id INTEGER NOT NULL REFERENCES work_types(id) ON DELETE RESTRICT,
+    invoice_id INTEGER REFERENCES invoices(id) ON DELETE SET NULL,
+    project_name TEXT NOT NULL,
+    work_date DATE NOT NULL,
+    minutes_spent INTEGER NOT NULL CHECK (minutes_spent > 0),
+    detail TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- invoice_lines table

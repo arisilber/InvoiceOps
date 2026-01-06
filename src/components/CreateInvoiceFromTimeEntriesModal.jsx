@@ -420,3 +420,4 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
 
 export default CreateInvoiceFromTimeEntriesModal;
 
+

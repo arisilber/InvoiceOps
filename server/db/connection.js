@@ -5,16 +5,37 @@ dotenv.config();
 
 const { Pool } = pg;
 
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'invoiceops',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+// Supabase connection configuration
+// Supports both hostname and IPv4 addresses
+// If DATABASE_URL is provided, use it (Supabase provides this)
+// Otherwise, use individual connection parameters
+let poolConfig;
+
+if (process.env.DATABASE_URL) {
+  // Use connection string (recommended for Supabase)
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DB_SSL !== 'false' ? { rejectUnauthorized: false } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  };
+} else {
+  // Use individual connection parameters
+  poolConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432'),
+    database: process.env.DB_NAME || 'invoiceops',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000, // Increased timeout
+  };
+}
+
+const pool = new Pool(poolConfig);
 
 // Test the connection
 pool.on('connect', () => {
