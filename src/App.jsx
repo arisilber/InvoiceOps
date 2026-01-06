@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { setAuthHelpers } from './services/api';
 import Sidebar from './components/Sidebar';
@@ -14,8 +15,8 @@ import Register from './components/Register';
 
 function App() {
   const { user, loading, getAuthHeaders, refreshAccessToken, logout } = useAuth();
+  const navigate = useNavigate();
   const [showRegister, setShowRegister] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
@@ -97,8 +98,6 @@ function App() {
   return (
     <div style={{ display: 'flex' }}>
       <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
         onNewInvoice={() => setIsModalOpen(true)}
       />
 
@@ -108,28 +107,40 @@ function App() {
         minHeight: '100vh',
         paddingTop: '2rem'
       }}>
-        {activeTab === 'dashboard' && (
-          <Dashboard
-            key={invoiceRefreshKey} // Refresh dashboard stats too
-            onExploreInvoices={() => setActiveTab('invoices')}
+        <Routes>
+          <Route 
+            path="/" 
+            element={
+              <Dashboard
+                key={invoiceRefreshKey}
+                onExploreInvoices={() => navigate('/invoices')}
+              />
+            } 
           />
-        )}
-        {activeTab === 'invoices' && <InvoiceList key={invoiceRefreshKey} />}
-        {activeTab === 'clients' && (
-          <ClientList
-            key={clientRefreshKey}
-            onNewClient={openNewClientModal}
-            onEditClient={openEditClientModal}
+          <Route path="/dashboard" element={<Dashboard key={invoiceRefreshKey} onExploreInvoices={() => navigate('/invoices')} />} />
+          <Route path="/invoices" element={<InvoiceList key={invoiceRefreshKey} />} />
+          <Route 
+            path="/clients" 
+            element={
+              <ClientList
+                key={clientRefreshKey}
+                onNewClient={openNewClientModal}
+                onEditClient={openEditClientModal}
+              />
+            } 
           />
-        )}
-        {activeTab === 'time-entry' && <TimeEntryList />}
-        {activeTab === 'work-types' && <WorkTypeList />}
-        {activeTab === 'settings' && (
-          <div className="card">
-            <h2>Settings</h2>
-            <p style={{ opacity: 0.7 }}>Settings coming soon...</p>
-          </div>
-        )}
+          <Route path="/time-entry" element={<TimeEntryList />} />
+          <Route path="/work-types" element={<WorkTypeList />} />
+          <Route 
+            path="/settings" 
+            element={
+              <div className="card">
+                <h2>Settings</h2>
+                <p style={{ opacity: 0.7 }}>Settings coming soon...</p>
+              </div>
+            } 
+          />
+        </Routes>
       </main>
 
       <NewInvoiceModal

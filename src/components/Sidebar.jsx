@@ -1,16 +1,18 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-const Sidebar = ({ activeTab, setActiveTab, onNewInvoice }) => {
+const Sidebar = ({ onNewInvoice }) => {
   const { user, logout } = useAuth();
+  const location = useLocation();
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'invoices', label: 'Invoices', icon: FileText },
-    { id: 'time-entry', label: 'Time Tracking', icon: Clock },
-    { id: 'clients', label: 'Clients', icon: Users },
-    { id: 'work-types', label: 'Work Types', icon: Tag },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    { id: 'invoices', label: 'Invoices', icon: FileText, path: '/invoices' },
+    { id: 'time-entry', label: 'Time Tracking', icon: Clock, path: '/time-entry' },
+    { id: 'clients', label: 'Clients', icon: Users, path: '/clients' },
+    { id: 'work-types', label: 'Work Types', icon: Tag, path: '/work-types' },
+    { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
   ];
 
   return (
@@ -46,11 +48,11 @@ const Sidebar = ({ activeTab, setActiveTab, onNewInvoice }) => {
       <nav style={{ flex: 1 }}>
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
+          const isActive = location.pathname === item.path || (item.path === '/' && location.pathname === '/dashboard');
           return (
-            <button
+            <Link
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              to={item.path}
               className="btn"
               style={{
                 width: '100%',
@@ -59,12 +61,16 @@ const Sidebar = ({ activeTab, setActiveTab, onNewInvoice }) => {
                 color: isActive ? 'white' : 'var(--foreground)',
                 marginBottom: '0.5rem',
                 opacity: isActive ? 1 : 0.7,
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem'
               }}
             >
               <Icon size={20} />
               {item.label}
-            </button>
+            </Link>
           );
         })}
       </nav>
