@@ -118,11 +118,9 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
         }
     };
 
-    const formatMinutes = (minutes) => {
-        const h = Math.floor(minutes / 60);
-        const m = minutes % 60;
-        if (h > 0) return `${h}h ${m}m`;
-        return `${m}m`;
+    const formatQuantity = (minutes) => {
+        const hours = minutes / 60;
+        return hours.toFixed(2);
     };
 
     const formatCurrency = (cents) => {
@@ -287,7 +285,7 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                                 <tr>
                                                     <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'left' }}>Work Type</th>
                                                     <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'left' }}>Project</th>
-                                                    <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'right' }}>Hours</th>
+                                                    <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'right' }}>Qty</th>
                                                     <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'right' }}>Rate</th>
                                                     <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'right' }}>Amount</th>
                                                 </tr>
@@ -303,7 +301,7 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                                             {line.project_name || <em>No project</em>}
                                                         </td>
                                                         <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 500 }}>
-                                                            {formatMinutes(line.total_minutes)}
+                                                            {formatQuantity(line.total_minutes)}
                                                         </td>
                                                         <td style={{ padding: '1rem', textAlign: 'right' }}>
                                                             {formatCurrency(line.hourly_rate_cents)}

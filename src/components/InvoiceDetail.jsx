@@ -47,12 +47,9 @@ const InvoiceDetail = () => {
     return `$${(cents / 100).toFixed(2)}`;
   };
 
-  const formatTime = (minutes) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours === 0) return `${mins}m`;
-    if (mins === 0) return `${hours}h`;
-    return `${hours}h ${mins}m`;
+  const formatQuantity = (minutes) => {
+    const hours = minutes / 60;
+    return hours.toFixed(2);
   };
 
   if (loading) {
@@ -238,7 +235,7 @@ const InvoiceDetail = () => {
                 <thead>
                   <tr style={{ background: 'var(--glass-bg)', borderBottom: '1px solid var(--border)' }}>
                     <th style={{ padding: '1rem 1.5rem', fontWeight: 600, textAlign: 'left' }}>Description</th>
-                    <th style={{ padding: '1rem 1.5rem', fontWeight: 600, textAlign: 'center' }}>Time</th>
+                    <th style={{ padding: '1rem 1.5rem', fontWeight: 600, textAlign: 'center' }}>Qty</th>
                     <th style={{ padding: '1rem 1.5rem', fontWeight: 600, textAlign: 'right' }}>Rate</th>
                     <th style={{ padding: '1rem 1.5rem', fontWeight: 600, textAlign: 'right' }}>Amount</th>
                   </tr>
@@ -261,7 +258,7 @@ const InvoiceDetail = () => {
                       >
                         <td style={{ padding: '1rem 1.5rem' }}>{description}</td>
                         <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
-                          {formatTime(line.total_minutes)}
+                          {formatQuantity(line.total_minutes)}
                         </td>
                         <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                           {formatCurrency(line.hourly_rate_cents)}

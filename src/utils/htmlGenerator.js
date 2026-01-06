@@ -6,14 +6,11 @@ const formatCurrency = (cents) => {
 };
 
 /**
- * Formats minutes to hours and minutes
+ * Formats minutes to quantity (hours as decimal)
  */
-const formatTime = (minutes) => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours === 0) return `${mins}m`;
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}m`;
+const formatQuantity = (minutes) => {
+  const hours = minutes / 60;
+  return hours.toFixed(2);
 };
 
 /**
@@ -33,7 +30,7 @@ export const generateInvoiceHTML = (invoice) => {
     return `
       <tr>
         <td>${escapeHtml(description)}</td>
-        <td style="text-align: center;">${formatTime(line.total_minutes)}</td>
+        <td style="text-align: center;">${formatQuantity(line.total_minutes)}</td>
         <td style="text-align: right;">${formatCurrency(line.hourly_rate_cents)}</td>
         <td style="text-align: right;">${formatCurrency(line.amount_cents)}</td>
       </tr>
@@ -224,7 +221,7 @@ export const generateInvoiceHTML = (invoice) => {
       <thead>
         <tr>
           <th>Description</th>
-          <th>Time</th>
+          <th>Qty</th>
           <th>Rate</th>
           <th>Amount</th>
         </tr>
