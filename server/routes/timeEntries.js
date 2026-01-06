@@ -112,6 +112,23 @@ router.put('/:id', async (req, res, next) => {
     const { id } = req.params;
     const { client_id, work_type_id, project_name, work_date, minutes_spent, detail, invoice_id } = req.body;
 
+    // Check if time entry exists and is associated with an invoice
+    const existingEntry = await query(
+      `SELECT invoice_id FROM time_entries WHERE id = $1`,
+      [id]
+    );
+
+    if (existingEntry.rows.length === 0) {
+      return res.status(404).json({ error: 'Time entry not found' });
+    }
+
+    // Prevent edits to time entries that are associated with an invoice
+    if (existingEntry.rows[0].invoice_id !== null) {
+      return res.status(403).json({ 
+        error: 'Cannot edit time entry that is associated with an invoice' 
+      });
+    }
+
     const result = await query(
       `UPDATE time_entries
        SET client_id = $1, work_type_id = $2, project_name = $3, work_date = $4, minutes_spent = $5, detail = $6, invoice_id = $7
@@ -134,6 +151,24 @@ router.put('/:id', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    
+    // Check if time entry exists and is associated with an invoice
+    const existingEntry = await query(
+      `SELECT invoice_id FROM time_entries WHERE id = $1`,
+      [id]
+    );
+
+    if (existingEntry.rows.length === 0) {
+      return res.status(404).json({ error: 'Time entry not found' });
+    }
+
+    // Prevent deletion of time entries that are associated with an invoice
+    if (existingEntry.rows[0].invoice_id !== null) {
+      return res.status(403).json({ 
+        error: 'Cannot delete time entry that is associated with an invoice' 
+      });
+    }
+
     const result = await query('DELETE FROM time_entries WHERE id = $1 RETURNING *', [id]);
 
     if (result.rows.length === 0) {

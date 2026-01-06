@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Download, Loader2, Trash2, Eye, AlertTriangle, Send } from 'lucide-react';
+import { Search, Filter, Download, Loader2, Trash2, Eye, AlertTriangle, Send, FileEdit } from 'lucide-react';
 import api from '../services/api';
 import InvoicePDFPreview from './InvoicePDFPreview';
 import { downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
@@ -19,6 +19,7 @@ const InvoiceList = () => {
     const [invoiceToDelete, setInvoiceToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
     const [markingAsSent, setMarkingAsSent] = useState(null);
+    const [markingAsDraft, setMarkingAsDraft] = useState(null);
 
     useEffect(() => {
         fetchInvoices();
@@ -119,6 +120,22 @@ const InvoiceList = () => {
             setError('Failed to mark invoice as sent. Please try again.');
         } finally {
             setMarkingAsSent(null);
+        }
+    };
+
+    const handleMarkAsDraft = async (invoice) => {
+        try {
+            setMarkingAsDraft(invoice.id);
+            await api.markInvoiceAsDraft(invoice.id);
+            // Update the invoice in the list
+            setInvoices(invoices.map(inv => 
+                inv.id === invoice.id ? { ...inv, status: 'draft' } : inv
+            ));
+        } catch (err) {
+            console.error('Error marking invoice as draft:', err);
+            setError('Failed to mark invoice as draft. Please try again.');
+        } finally {
+            setMarkingAsDraft(null);
         }
     };
 
@@ -234,6 +251,21 @@ const InvoiceList = () => {
                                                         <Loader2 className="animate-spin" size={16} />
                                                     ) : (
                                                         <Send size={16} />
+                                                    )}
+                                                </button>
+                                            )}
+                                            {(invoice.status === 'sent' || invoice.status === 'partially_paid') && (
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    style={{ padding: '0.5rem' }}
+                                                    onClick={() => handleMarkAsDraft(invoice)}
+                                                    title="Mark as Draft"
+                                                    disabled={loadingInvoice || markingAsDraft === invoice.id}
+                                                >
+                                                    {markingAsDraft === invoice.id ? (
+                                                        <Loader2 className="animate-spin" size={16} />
+                                                    ) : (
+                                                        <FileEdit size={16} />
                                                     )}
                                                 </button>
                                             )}

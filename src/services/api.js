@@ -146,6 +146,21 @@ const api = {
             }),
         });
     },
+    markInvoiceAsDraft: async (id) => {
+        // Fetch current invoice to preserve other fields
+        const invoice = await makeRequest(`${API_BASE_URL}/invoices/${id}`);
+        return makeRequest(`${API_BASE_URL}/invoices/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                invoice_date: invoice.invoice_date,
+                due_date: invoice.due_date,
+                status: 'draft',
+                subtotal_cents: invoice.subtotal_cents,
+                discount_cents: invoice.discount_cents,
+                total_cents: invoice.total_cents
+            }),
+        });
+    },
     deleteInvoice: async (id) => {
         return makeRequest(`${API_BASE_URL}/invoices/${id}`, {
             method: 'DELETE',

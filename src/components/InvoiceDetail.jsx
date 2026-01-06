@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Download, Loader2, Calendar, User, FileText, AlertCircle, Send } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Calendar, User, FileText, AlertCircle, Send, FileEdit } from 'lucide-react';
 import api from '../services/api';
 import InvoicePDFPreview from './InvoicePDFPreview';
 import { downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
@@ -14,6 +14,7 @@ const InvoiceDetail = () => {
   const [error, setError] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [markingAsSent, setMarkingAsSent] = useState(false);
+  const [markingAsDraft, setMarkingAsDraft] = useState(false);
 
   useEffect(() => {
     fetchInvoice();
@@ -59,6 +60,21 @@ const InvoiceDetail = () => {
     }
   };
 
+  const handleMarkAsDraft = async () => {
+    if (!invoice) return;
+    
+    try {
+      setMarkingAsDraft(true);
+      const updatedInvoice = await api.markInvoiceAsDraft(invoice.id);
+      setInvoice({ ...invoice, status: 'draft' });
+    } catch (err) {
+      console.error('Error marking invoice as draft:', err);
+      setError('Failed to mark invoice as draft. Please try again.');
+    } finally {
+      setMarkingAsDraft(false);
+    }
+  };
+
   const formatCurrency = (cents) => {
     return `$${(cents / 100).toFixed(2)}`;
   };
@@ -100,14 +116,9 @@ const InvoiceDetail = () => {
           <button
             className="btn btn-secondary"
             onClick={() => navigate('/invoices')}
-            style={{ 
-              alignSelf: 'flex-start', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.5rem' 
-            }}
+            style={{ alignSelf: 'flex-start' }}
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={16} />
             Back to Invoices
           </button>
           <div className="card" style={{ 
@@ -155,13 +166,10 @@ const InvoiceDetail = () => {
               className="btn btn-secondary"
               onClick={() => navigate('/invoices')}
               style={{ 
-                marginBottom: '1.5rem', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '0.5rem' 
+                marginBottom: '1.5rem'
               }}
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={16} />
               Back to Invoices
             </button>
             <h2 style={{ 
@@ -186,17 +194,35 @@ const InvoiceDetail = () => {
                 className="btn"
                 onClick={handleMarkAsSent}
                 disabled={markingAsSent}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
               >
                 {markingAsSent ? (
                   <>
-                    <Loader2 className="animate-spin" size={18} />
+                    <Loader2 className="animate-spin" size={16} />
                     Marking...
                   </>
                 ) : (
                   <>
-                    <Send size={18} />
+                    <Send size={16} />
                     Mark as Sent
+                  </>
+                )}
+              </button>
+            )}
+            {(invoice.status === 'sent' || invoice.status === 'partially_paid') && (
+              <button
+                className="btn btn-secondary"
+                onClick={handleMarkAsDraft}
+                disabled={markingAsDraft}
+              >
+                {markingAsDraft ? (
+                  <>
+                    <Loader2 className="animate-spin" size={16} />
+                    Marking...
+                  </>
+                ) : (
+                  <>
+                    <FileEdit size={16} />
+                    Mark as Draft
                   </>
                 )}
               </button>
@@ -204,17 +230,15 @@ const InvoiceDetail = () => {
             <button
               className="btn btn-secondary"
               onClick={() => setIsPreviewOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
             >
-              <FileText size={18} />
+              <FileText size={16} />
               Preview
             </button>
             <button
               className="btn"
               onClick={handleDownload}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
             >
-              <Download size={18} />
+              <Download size={16} />
               Download PDF
             </button>
           </div>
