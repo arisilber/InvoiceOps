@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, Download, Loader2, Trash2, Eye, AlertTriangle, Send, FileEdit } from 'lucide-react';
 import api from '../services/api';
@@ -8,6 +8,7 @@ import { downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
 
 const InvoiceList = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -21,14 +22,12 @@ const InvoiceList = () => {
     const [markingAsSent, setMarkingAsSent] = useState(null);
     const [markingAsDraft, setMarkingAsDraft] = useState(null);
 
-    useEffect(() => {
-        fetchInvoices();
-    }, []);
-
-    const fetchInvoices = async () => {
+    const fetchInvoices = useCallback(async () => {
         try {
             setLoading(true);
-            const data = await api.getInvoices();
+            const statusFilter = searchParams.get('status');
+            const filters = statusFilter ? { status: statusFilter } : {};
+            const data = await api.getInvoices(filters);
             setInvoices(data);
             setError(null);
         } catch (err) {
@@ -37,12 +36,30 @@ const InvoiceList = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [searchParams]);
 
-    const filteredInvoices = invoices.filter(invoice =>
-        String(invoice.invoice_number).includes(searchTerm) ||
-        invoice.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    useEffect(() => {
+        fetchInvoices();
+    }, [fetchInvoices]);
+
+    const filteredInvoices = invoices.filter(invoice => {
+        // Search filter
+        const matchesSearch = String(invoice.invoice_number).includes(searchTerm) ||
+            invoice.client_name?.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        if (!matchesSearch) return false;
+
+        // Overdue filter from URL params
+        const overdueFilter = searchParams.get('overdue');
+        if (overdueFilter === 'true') {
+            const now = new Date();
+            const dueDate = new Date(invoice.due_date);
+            const isOverdue = dueDate < now && (invoice.status === 'sent' || invoice.status === 'partially_paid');
+            return isOverdue;
+        }
+
+        return true;
+    });
 
     const handlePreview = async (invoice) => {
         try {

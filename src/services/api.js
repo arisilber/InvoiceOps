@@ -89,8 +89,17 @@ const api = {
     },
 
     // Invoices
-    getInvoices: async () => {
-        return makeRequest(`${API_BASE_URL}/invoices`);
+    getInvoices: async (filters = {}) => {
+        const params = new URLSearchParams();
+        if (filters.status) {
+            params.append('status', filters.status);
+        }
+        if (filters.client_id) {
+            params.append('client_id', filters.client_id);
+        }
+        const queryString = params.toString();
+        const url = queryString ? `${API_BASE_URL}/invoices?${queryString}` : `${API_BASE_URL}/invoices`;
+        return makeRequest(url);
     },
     getInvoice: async (id) => {
         return makeRequest(`${API_BASE_URL}/invoices/${id}`);

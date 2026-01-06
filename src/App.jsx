@@ -14,6 +14,7 @@ import TimeEntryList from './components/TimeEntryList';
 import WorkTypeList from './components/WorkTypeList';
 import Login from './components/Login';
 import Register from './components/Register';
+import PaymentList from './components/PaymentList';
 
 function App() {
   const { user, loading, getAuthHeaders, refreshAccessToken, logout } = useAuth();
@@ -85,14 +86,14 @@ function App() {
   if (!user) {
     // Only allow registration in development
     const allowRegistration = import.meta.env.DEV;
-    
+
     if (showRegister && allowRegistration) {
       return <Register onSwitchToLogin={() => setShowRegister(false)} />;
     }
-    
+
     return (
-      <Login 
-        onSwitchToRegister={allowRegistration ? () => setShowRegister(true) : undefined} 
+      <Login
+        onSwitchToRegister={allowRegistration ? () => setShowRegister(true) : undefined}
       />
     );
   }
@@ -110,39 +111,39 @@ function App() {
         paddingTop: '2rem'
       }}>
         <Routes>
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
               <Dashboard
                 key={invoiceRefreshKey}
                 onExploreInvoices={() => navigate('/invoices')}
               />
-            } 
+            }
           />
           <Route path="/dashboard" element={<Dashboard key={invoiceRefreshKey} onExploreInvoices={() => navigate('/invoices')} />} />
           <Route path="/invoices" element={<InvoiceList key={invoiceRefreshKey} />} />
           <Route path="/invoices/:id" element={<InvoiceDetail />} />
-          <Route 
-            path="/clients" 
+          <Route
+            path="/clients"
             element={
               <ClientList
                 key={clientRefreshKey}
                 onNewClient={openNewClientModal}
                 onEditClient={openEditClientModal}
               />
-            } 
+            }
           />
           <Route path="/clients/:id/dashboard" element={<ClientDashboard />} />
           <Route path="/time-entry" element={<TimeEntryList />} />
           <Route path="/work-types" element={<WorkTypeList />} />
-          <Route 
-            path="/settings" 
+          <Route
+            path="/settings"
             element={
               <div className="card">
                 <h2>Settings</h2>
                 <p style={{ opacity: 0.7 }}>Settings coming soon...</p>
               </div>
-            } 
+            }
           />
         </Routes>
       </main>

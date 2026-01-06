@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag, LogOut, DollarSign } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = ({ onNewInvoice }) => {
@@ -9,6 +9,7 @@ const Sidebar = ({ onNewInvoice }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { id: 'invoices', label: 'Invoices', icon: FileText, path: '/invoices' },
+    { id: 'payments', label: 'Payments', icon: DollarSign, path: '/payments' },
     { id: 'time-entry', label: 'Time Tracking', icon: Clock, path: '/time-entry' },
     { id: 'clients', label: 'Clients', icon: Users, path: '/clients' },
     { id: 'work-types', label: 'Work Types', icon: Tag, path: '/work-types' },
@@ -80,7 +81,7 @@ const Sidebar = ({ onNewInvoice }) => {
           <PlusCircle size={20} />
           New Invoice
         </button>
-        
+
         {user && (
           <div style={{
             padding: '0.75rem 1rem',
