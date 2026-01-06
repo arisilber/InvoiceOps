@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Filter, MoreVertical, Download, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Filter, MoreVertical, Download, Loader2, Trash2 } from 'lucide-react';
 import api from '../services/api';
 
 const InvoiceList = () => {
@@ -8,10 +8,20 @@ const InvoiceList = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeMenu, setActiveMenu] = useState(null);
 
     useEffect(() => {
         fetchInvoices();
     }, []);
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = () => setActiveMenu(null);
+        if (activeMenu) {
+            window.addEventListener('click', handleClickOutside);
+        }
+        return () => window.removeEventListener('click', handleClickOutside);
+    }, [activeMenu]);
 
     const fetchInvoices = async () => {
         try {
@@ -31,6 +41,21 @@ const InvoiceList = () => {
         String(invoice.invoice_number).includes(searchTerm) ||
         invoice.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const handleDeleteInvoice = async (invoiceId) => {
+        if (!window.confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            await api.deleteInvoice(invoiceId);
+            setInvoices(invoices.filter(invoice => invoice.id !== invoiceId));
+            setActiveMenu(null);
+        } catch (err) {
+            console.error('Error deleting invoice:', err);
+            setError('Failed to delete invoice. Please try again.');
+        }
+    };
 
     if (loading) {
         return (
@@ -120,9 +145,53 @@ const InvoiceList = () => {
                                             <button className="btn btn-secondary" style={{ padding: '0.5rem' }}>
                                                 <Download size={16} />
                                             </button>
-                                            <button className="btn btn-secondary" style={{ padding: '0.5rem' }}>
-                                                <MoreVertical size={16} />
-                                            </button>
+                                            <div style={{ position: 'relative' }}>
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    style={{ padding: '0.5rem' }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveMenu(activeMenu === invoice.id ? null : invoice.id);
+                                                    }}
+                                                >
+                                                    <MoreVertical size={16} />
+                                                </button>
+
+                                                <AnimatePresence>
+                                                    {activeMenu === invoice.id && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                top: '100%',
+                                                                right: 0,
+                                                                marginTop: '0.5rem',
+                                                                background: 'var(--card-bg)',
+                                                                border: '1px solid var(--border)',
+                                                                borderRadius: 'var(--radius-md)',
+                                                                boxShadow: 'var(--shadow-lg)',
+                                                                zIndex: 10,
+                                                                minWidth: '150px',
+                                                                overflow: 'hidden'
+                                                            }}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <button
+                                                                className="btn-menu-item"
+                                                                style={{ color: 'var(--error)' }}
+                                                                onClick={() => {
+                                                                    handleDeleteInvoice(invoice.id);
+                                                                }}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                                Delete Invoice
+                                                            </button>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>

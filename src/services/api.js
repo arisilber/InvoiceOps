@@ -125,6 +125,11 @@ const api = {
             }),
         });
     },
+    deleteInvoice: async (id) => {
+        return makeRequest(`${API_BASE_URL}/invoices/${id}`, {
+            method: 'DELETE',
+        });
+    },
 
     // Work Types
     getWorkTypes: async () => {
