@@ -68,17 +68,20 @@ export const generateInvoicePDF = (invoice) => {
       ? `${line.work_type_description || line.work_type_code || 'Work'} - ${line.project_name}`
       : (line.work_type_description || line.work_type_code || 'Work');
     
+    const discount_cents = line.discount_cents || 0;
+    
     return [
       description,
       formatTime(line.total_minutes),
       formatCurrency(line.hourly_rate_cents),
+      discount_cents > 0 ? `-${formatCurrency(discount_cents)}` : formatCurrency(0),
       formatCurrency(line.amount_cents)
     ];
   }) || [];
 
   autoTable(doc, {
     startY: yPosition,
-    head: [['Description', 'Time', 'Rate', 'Amount']],
+    head: [['Description', 'Time', 'Rate', 'Discount', 'Amount']],
     body: tableData,
     theme: 'striped',
     headStyles: {
@@ -98,7 +101,8 @@ export const generateInvoicePDF = (invoice) => {
       0: { cellWidth: 'auto' },
       1: { halign: 'center', cellWidth: 30 },
       2: { halign: 'right', cellWidth: 40 },
-      3: { halign: 'right', cellWidth: 40 }
+      3: { halign: 'right', cellWidth: 40 },
+      4: { halign: 'right', cellWidth: 40 }
     },
     margin: { left: margin, right: margin },
     styles: {
@@ -112,18 +116,6 @@ export const generateInvoicePDF = (invoice) => {
 
   // Totals
   const totalsX = pageWidth - margin - 80;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Subtotal:', totalsX, yPosition, { align: 'right' });
-  doc.text(formatCurrency(invoice.subtotal_cents), pageWidth - margin, yPosition);
-  yPosition += 7;
-
-  if (invoice.discount_cents > 0) {
-    doc.text('Discount:', totalsX, yPosition, { align: 'right' });
-    doc.text(`-${formatCurrency(invoice.discount_cents)}`, pageWidth - margin, yPosition);
-    yPosition += 7;
-  }
-
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.text('Total:', totalsX, yPosition, { align: 'right' });

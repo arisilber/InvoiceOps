@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Download, Loader2, Calendar, User, FileText, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Calendar, User, FileText, AlertCircle, Send } from 'lucide-react';
 import api from '../services/api';
 import InvoicePDFPreview from './InvoicePDFPreview';
 import { downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
@@ -13,6 +13,7 @@ const InvoiceDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [markingAsSent, setMarkingAsSent] = useState(false);
 
   useEffect(() => {
     fetchInvoice();
@@ -43,6 +44,21 @@ const InvoiceDetail = () => {
     }
   };
 
+  const handleMarkAsSent = async () => {
+    if (!invoice) return;
+    
+    try {
+      setMarkingAsSent(true);
+      const updatedInvoice = await api.markInvoiceAsSent(invoice.id);
+      setInvoice({ ...invoice, status: 'sent' });
+    } catch (err) {
+      console.error('Error marking invoice as sent:', err);
+      setError('Failed to mark invoice as sent. Please try again.');
+    } finally {
+      setMarkingAsSent(false);
+    }
+  };
+
   const formatCurrency = (cents) => {
     return `$${(cents / 100).toFixed(2)}`;
   };
@@ -54,7 +70,15 @@ const InvoiceDetail = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center" style={{ height: '400px' }}>
+      <div 
+        className="flex items-center justify-center" 
+        style={{ 
+          height: '400px',
+          maxWidth: '1400px',
+          margin: '0 auto',
+          padding: '2rem 2.5rem'
+        }}
+      >
         <Loader2 className="animate-spin" size={48} style={{ opacity: 0.5 }} />
       </div>
     );
@@ -65,20 +89,36 @@ const InvoiceDetail = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="flex flex-col gap-4"
+        style={{
+          maxWidth: '1400px',
+          margin: '0 auto',
+          padding: '2rem 2.5rem',
+          width: '100%'
+        }}
       >
-        <button
-          className="btn btn-secondary"
-          onClick={() => navigate('/invoices')}
-          style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-        >
-          <ArrowLeft size={18} />
-          Back to Invoices
-        </button>
-        <div className="card" style={{ borderColor: 'var(--error)', color: 'var(--error-text)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <AlertCircle size={20} />
-            {error}
+        <div className="flex flex-col gap-6">
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate('/invoices')}
+            style={{ 
+              alignSelf: 'flex-start', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem' 
+            }}
+          >
+            <ArrowLeft size={18} />
+            Back to Invoices
+          </button>
+          <div className="card" style={{ 
+            borderColor: 'var(--error)', 
+            color: 'var(--error-text)',
+            padding: '1.5rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <AlertCircle size={20} />
+              {error}
+            </div>
           </div>
         </div>
       </motion.div>
@@ -93,64 +133,127 @@ const InvoiceDetail = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col gap-6"
+      className="invoice-detail-container"
+      style={{
+        maxWidth: '1400px',
+        margin: '0 auto',
+        padding: '2rem 2.5rem',
+        width: '100%'
+      }}
     >
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <button
-            className="btn btn-secondary"
-            onClick={() => navigate('/invoices')}
+      <div className="flex flex-col gap-8" style={{ width: '100%' }}>
+        {/* Header */}
+        <div 
+          className="flex justify-between items-start invoice-detail-header"
+          style={{
+            paddingBottom: '1.5rem',
+            borderBottom: '1px solid var(--border)'
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => navigate('/invoices')}
+              style={{ 
+                marginBottom: '1.5rem', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem' 
+              }}
+            >
+              <ArrowLeft size={18} />
+              Back to Invoices
+            </button>
+            <h2 style={{ 
+              fontSize: '2.25rem', 
+              marginBottom: '0.5rem',
+              fontWeight: 700,
+              letterSpacing: '-0.02em'
+            }}>
+              Invoice INV-{invoice.invoice_number}
+            </h2>
+            <p style={{ 
+              opacity: 0.7,
+              fontSize: '1.125rem',
+              marginTop: '0.25rem'
+            }}>
+              {invoice.client_name}
+            </p>
+          </div>
+          <div className="flex gap-3 invoice-detail-header-actions" style={{ marginLeft: '2rem' }}>
+            {invoice.status === 'draft' && (
+              <button
+                className="btn"
+                onClick={handleMarkAsSent}
+                disabled={markingAsSent}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              >
+                {markingAsSent ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    Marking...
+                  </>
+                ) : (
+                  <>
+                    <Send size={18} />
+                    Mark as Sent
+                  </>
+                )}
+              </button>
+            )}
+            <button
+              className="btn btn-secondary"
+              onClick={() => setIsPreviewOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <FileText size={18} />
+              Preview
+            </button>
+            <button
+              className="btn"
+              onClick={handleDownload}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <Download size={18} />
+              Download PDF
+            </button>
+          </div>
+        </div>
+
+        {error && (
+          <div 
+            className="card" 
             style={{ 
-              marginBottom: '1rem', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.5rem' 
+              borderColor: 'var(--error)', 
+              color: 'var(--error-text)',
+              marginBottom: '1rem'
             }}
           >
-            <ArrowLeft size={18} />
-            Back to Invoices
-          </button>
-          <h2 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>
-            Invoice INV-{invoice.invoice_number}
-          </h2>
-          <p style={{ opacity: 0.7 }}>
-            {invoice.client_name}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            className="btn btn-secondary"
-            onClick={() => setIsPreviewOpen(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-          >
-            <FileText size={18} />
-            Preview
-          </button>
-          <button
-            className="btn"
-            onClick={handleDownload}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-          >
-            <Download size={18} />
-            Download PDF
-          </button>
-        </div>
-      </div>
+            {error}
+          </div>
+        )}
 
-      {error && (
-        <div className="card" style={{ borderColor: 'var(--error)', color: 'var(--error-text)' }}>
-          {error}
-        </div>
-      )}
-
-      <div className="grid" style={{ gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+        <div 
+          className="grid invoice-detail-grid" 
+          style={{ 
+            gridTemplateColumns: '2fr 1fr', 
+            gap: '2rem',
+            alignItems: 'start'
+          }}
+        >
         {/* Main Content */}
         <div className="flex flex-col gap-6">
           {/* Invoice Information */}
-          <div className="card">
-            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem' }}>Invoice Information</h3>
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+          <div className="card invoice-detail-card" style={{ padding: '2rem' }}>
+            <h3 style={{ 
+              marginBottom: '2rem', 
+              fontSize: '1.375rem',
+              fontWeight: 700,
+              letterSpacing: '-0.01em'
+            }}>
+              Invoice Information
+            </h3>
+            <div className="grid invoice-detail-info-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
               <div>
                 <div style={{ 
                   display: 'flex', 
@@ -227,52 +330,117 @@ const InvoiceDetail = () => {
 
           {/* Invoice Lines */}
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-              <h3 style={{ fontSize: '1.25rem' }}>Line Items</h3>
+            <div style={{ 
+              padding: '2rem 2rem 1.5rem 2rem', 
+              borderBottom: '1px solid var(--border)' 
+            }}>
+              <h3 style={{ 
+                fontSize: '1.375rem',
+                fontWeight: 700,
+                letterSpacing: '-0.01em'
+              }}>
+                Line Items
+              </h3>
             </div>
             {invoice.lines && invoice.lines.length > 0 ? (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: 'var(--glass-bg)', borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ padding: '1rem 1.5rem', fontWeight: 600, textAlign: 'left' }}>Description</th>
-                    <th style={{ padding: '1rem 1.5rem', fontWeight: 600, textAlign: 'center' }}>Qty</th>
-                    <th style={{ padding: '1rem 1.5rem', fontWeight: 600, textAlign: 'right' }}>Rate</th>
-                    <th style={{ padding: '1rem 1.5rem', fontWeight: 600, textAlign: 'right' }}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoice.lines.map((line, index) => {
-                    const description = line.project_name 
-                      ? `${line.work_type_description || line.work_type_code || 'Work'} - ${line.project_name}`
-                      : (line.work_type_description || line.work_type_code || 'Work');
-                    
-                    return (
-                      <tr 
-                        key={line.id}
-                        style={{
-                          borderBottom: index !== invoice.lines.length - 1 ? '1px solid var(--border)' : 'none',
-                          transition: 'background 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-bg)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                      >
-                        <td style={{ padding: '1rem 1.5rem' }}>{description}</td>
-                        <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
-                          {formatQuantity(line.total_minutes)}
-                        </td>
-                        <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                          {formatCurrency(line.hourly_rate_cents)}
-                        </td>
-                        <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontWeight: 600 }}>
-                          {formatCurrency(line.amount_cents)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--glass-bg)', borderBottom: '1px solid var(--border)' }}>
+                      <th style={{ 
+                        padding: '1.25rem 2rem', 
+                        fontWeight: 600, 
+                        textAlign: 'left',
+                        fontSize: '0.875rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        opacity: 0.7
+                      }}>
+                        Description
+                      </th>
+                      <th style={{ 
+                        padding: '1.25rem 2rem', 
+                        fontWeight: 600, 
+                        textAlign: 'center',
+                        fontSize: '0.875rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        opacity: 0.7
+                      }}>
+                        Qty
+                      </th>
+                      <th style={{ 
+                        padding: '1.25rem 2rem', 
+                        fontWeight: 600, 
+                        textAlign: 'right',
+                        fontSize: '0.875rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        opacity: 0.7
+                      }}>
+                        Rate
+                      </th>
+                      <th style={{ 
+                        padding: '1.25rem 2rem', 
+                        fontWeight: 600, 
+                        textAlign: 'right',
+                        fontSize: '0.875rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        opacity: 0.7
+                      }}>
+                        Discount
+                      </th>
+                      <th style={{ 
+                        padding: '1.25rem 2rem', 
+                        fontWeight: 600, 
+                        textAlign: 'right',
+                        fontSize: '0.875rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        opacity: 0.7
+                      }}>
+                        Amount
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoice.lines.map((line, index) => {
+                      const description = line.project_name 
+                        ? `${line.work_type_description || line.work_type_code || 'Work'} - ${line.project_name}`
+                        : (line.work_type_description || line.work_type_code || 'Work');
+                      
+                      return (
+                        <tr 
+                          key={line.id}
+                          style={{
+                            borderBottom: index !== invoice.lines.length - 1 ? '1px solid var(--border)' : 'none',
+                            transition: 'background 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-bg)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ padding: '1.25rem 2rem' }}>{description}</td>
+                          <td style={{ padding: '1.25rem 2rem', textAlign: 'center' }}>
+                            {formatQuantity(line.total_minutes)}
+                          </td>
+                          <td style={{ padding: '1.25rem 2rem', textAlign: 'right' }}>
+                            {formatCurrency(line.hourly_rate_cents)}
+                          </td>
+                          <td style={{ padding: '1.25rem 2rem', textAlign: 'right', color: 'var(--secondary)' }}>
+                            {line.discount_cents > 0 ? `-${formatCurrency(line.discount_cents)}` : formatCurrency(0)}
+                          </td>
+                          <td style={{ padding: '1.25rem 2rem', textAlign: 'right', fontWeight: 600 }}>
+                            {formatCurrency(line.amount_cents)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5 }}>
+              <div style={{ padding: '3rem 2rem', textAlign: 'center', opacity: 0.5 }}>
                 No line items found
               </div>
             )}
@@ -280,20 +448,27 @@ const InvoiceDetail = () => {
         </div>
 
         {/* Summary Sidebar */}
-        <div className="flex flex-col gap-6">
-          <div className="card">
-            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem' }}>Summary</h3>
-            <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6 invoice-detail-sidebar" style={{ position: 'sticky', top: '2rem' }}>
+          <div className="card invoice-detail-card" style={{ padding: '2rem' }}>
+            <h3 style={{ 
+              marginBottom: '2rem', 
+              fontSize: '1.375rem',
+              fontWeight: 700,
+              letterSpacing: '-0.01em'
+            }}>
+              Summary
+            </h3>
+            <div className="flex flex-col gap-5">
               <div className="flex justify-between items-center">
-                <div style={{ opacity: 0.7 }}>Subtotal</div>
+                <div style={{ opacity: 0.7, fontSize: '0.9375rem' }}>Subtotal</div>
                 <div style={{ fontWeight: 600, fontSize: '1.125rem' }}>
                   {formatCurrency(invoice.subtotal_cents)}
                 </div>
               </div>
               {invoice.discount_cents > 0 && (
                 <div className="flex justify-between items-center">
-                  <div style={{ opacity: 0.7 }}>Discount</div>
-                  <div style={{ fontWeight: 600, color: 'var(--secondary)' }}>
+                  <div style={{ opacity: 0.7, fontSize: '0.9375rem' }}>Discount</div>
+                  <div style={{ fontWeight: 600, color: 'var(--secondary)', fontSize: '1.125rem' }}>
                     -{formatCurrency(invoice.discount_cents)}
                   </div>
                 </div>
@@ -301,13 +476,13 @@ const InvoiceDetail = () => {
               <div style={{ 
                 height: '1px', 
                 background: 'var(--border)', 
-                margin: '0.5rem 0' 
+                margin: '0.75rem 0' 
               }} />
-              <div className="flex justify-between items-center">
-                <div style={{ fontWeight: 600, fontSize: '1.125rem' }}>Total</div>
+              <div className="flex justify-between items-center" style={{ paddingTop: '0.5rem' }}>
+                <div style={{ fontWeight: 700, fontSize: '1.25rem' }}>Total</div>
                 <div style={{ 
                   fontWeight: 800, 
-                  fontSize: '1.5rem',
+                  fontSize: '1.75rem',
                   color: 'var(--primary)'
                 }}>
                   {formatCurrency(invoice.total_cents)}
@@ -317,31 +492,59 @@ const InvoiceDetail = () => {
           </div>
 
           {/* Additional Info */}
-          <div className="card">
-            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem' }}>Details</h3>
-            <div className="flex flex-col gap-3">
+          <div className="card invoice-detail-card" style={{ padding: '2rem' }}>
+            <h3 style={{ 
+              marginBottom: '2rem', 
+              fontSize: '1.375rem',
+              fontWeight: 700,
+              letterSpacing: '-0.01em'
+            }}>
+              Details
+            </h3>
+            <div className="flex flex-col gap-4">
               <div>
-                <div style={{ opacity: 0.7, fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                <div style={{ 
+                  opacity: 0.7, 
+                  fontSize: '0.875rem', 
+                  marginBottom: '0.5rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontWeight: 600
+                }}>
                   Invoice Number
                 </div>
-                <div style={{ fontWeight: 600 }}>
+                <div style={{ fontWeight: 600, fontSize: '1rem' }}>
                   INV-{invoice.invoice_number}
                 </div>
               </div>
               <div>
-                <div style={{ opacity: 0.7, fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                <div style={{ 
+                  opacity: 0.7, 
+                  fontSize: '0.875rem', 
+                  marginBottom: '0.5rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontWeight: 600
+                }}>
                   Created
                 </div>
-                <div style={{ fontWeight: 600 }}>
+                <div style={{ fontWeight: 600, fontSize: '1rem' }}>
                   {new Date(invoice.created_at).toLocaleDateString()}
                 </div>
               </div>
               {invoice.updated_at && (
                 <div>
-                  <div style={{ opacity: 0.7, fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                  <div style={{ 
+                    opacity: 0.7, 
+                    fontSize: '0.875rem', 
+                    marginBottom: '0.5rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontWeight: 600
+                  }}>
                     Last Updated
                   </div>
-                  <div style={{ fontWeight: 600 }}>
+                  <div style={{ fontWeight: 600, fontSize: '1rem' }}>
                     {new Date(invoice.updated_at).toLocaleDateString()}
                   </div>
                 </div>
@@ -349,6 +552,7 @@ const InvoiceDetail = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Preview Modal */}

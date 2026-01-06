@@ -66,7 +66,7 @@ router.get('/:id', async (req, res, next) => {
 
     const invoice = invoiceResult.rows[0];
 
-    // Get invoice lines
+    // Get invoice lines and calculate discount per line
     const linesResult = await query(
       `SELECT il.*, wt.code as work_type_code, wt.description as work_type_description
        FROM invoice_lines il
@@ -76,7 +76,33 @@ router.get('/:id', async (req, res, next) => {
       [id]
     );
 
-    invoice.lines = linesResult.rows;
+    // Get client discount_percent to calculate discount per line
+    const clientResult = await query(
+      'SELECT discount_percent FROM clients WHERE id = $1',
+      [invoice.client_id]
+    );
+    const discount_percent = clientResult.rows[0]?.discount_percent || 0;
+
+    // Calculate discount_cents for each line (amount_cents is already discounted)
+    // We need to reverse-calculate: if amount_cents = pre_discount * (1 - discount_percent/100)
+    // then pre_discount = amount_cents / (1 - discount_percent/100)
+    // and discount_cents = pre_discount - amount_cents
+    invoice.lines = linesResult.rows.map(line => {
+      if (discount_percent > 0 && discount_percent < 100) {
+        // Reverse calculate: discounted_amount = pre_discount * (1 - discount_percent/100)
+        // So pre_discount = discounted_amount / (1 - discount_percent/100)
+        const pre_discount_amount = line.amount_cents / (1 - discount_percent / 100);
+        const discount_cents = Math.round(pre_discount_amount - line.amount_cents);
+        return { ...line, discount_cents };
+      } else if (discount_percent >= 100) {
+        // If discount is 100%, the amount_cents should be 0, and discount equals the pre-discount amount
+        // We can't reverse-calculate accurately, so we'll estimate based on hourly_rate
+        const estimated_pre_discount = Math.round((line.total_minutes / 60) * line.hourly_rate_cents);
+        const discount_cents = estimated_pre_discount;
+        return { ...line, discount_cents };
+      }
+      return { ...line, discount_cents: 0 };
+    });
 
     res.json(invoice);
   } catch (error) {

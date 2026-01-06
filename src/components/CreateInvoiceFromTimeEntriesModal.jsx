@@ -287,6 +287,7 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                                     <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'left' }}>Project</th>
                                                     <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'right' }}>Qty</th>
                                                     <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'right' }}>Rate</th>
+                                                    <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'right' }}>Discount</th>
                                                     <th style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7, textAlign: 'right' }}>Amount</th>
                                                 </tr>
                                             </thead>
@@ -306,6 +307,9 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                                         <td style={{ padding: '1rem', textAlign: 'right' }}>
                                                             {formatCurrency(line.hourly_rate_cents)}
                                                         </td>
+                                                        <td style={{ padding: '1rem', textAlign: 'right', color: 'var(--secondary)' }}>
+                                                            {line.discount_cents > 0 ? `-${formatCurrency(line.discount_cents)}` : formatCurrency(0)}
+                                                        </td>
                                                         <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600 }}>
                                                             {formatCurrency(line.amount_cents)}
                                                         </td>
@@ -314,17 +318,7 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                             </tbody>
                                             <tfoot style={{ background: 'rgba(255,255,255,0.05)', borderTop: '2px solid var(--border)' }}>
                                                 <tr>
-                                                    <td colSpan="4" style={{ padding: '1rem', textAlign: 'right', fontWeight: 600 }}>Subtotal:</td>
-                                                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(preview.subtotal_cents)}</td>
-                                                </tr>
-                                                {preview.discount_cents > 0 && (
-                                                    <tr>
-                                                        <td colSpan="4" style={{ padding: '0 1rem 1rem', textAlign: 'right', opacity: 0.7 }}>Discount:</td>
-                                                        <td style={{ padding: '0 1rem 1rem', textAlign: 'right', opacity: 0.7 }}>-{formatCurrency(preview.discount_cents)}</td>
-                                                    </tr>
-                                                )}
-                                                <tr>
-                                                    <td colSpan="4" style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, fontSize: '1.1rem' }}>Total:</td>
+                                                    <td colSpan="5" style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, fontSize: '1.1rem' }}>Total:</td>
                                                     <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 700, fontSize: '1.1rem' }}>{formatCurrency(preview.total_cents)}</td>
                                                 </tr>
                                             </tfoot>

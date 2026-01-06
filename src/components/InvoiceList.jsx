@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Download, Loader2, Trash2, Eye, AlertTriangle } from 'lucide-react';
+import { Search, Filter, Download, Loader2, Trash2, Eye, AlertTriangle, Send } from 'lucide-react';
 import api from '../services/api';
 import InvoicePDFPreview from './InvoicePDFPreview';
 import { downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
@@ -18,6 +18,7 @@ const InvoiceList = () => {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [invoiceToDelete, setInvoiceToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [markingAsSent, setMarkingAsSent] = useState(null);
 
     useEffect(() => {
         fetchInvoices();
@@ -103,6 +104,22 @@ const InvoiceList = () => {
     const handleDeleteCancel = () => {
         setDeleteModalOpen(false);
         setInvoiceToDelete(null);
+    };
+
+    const handleMarkAsSent = async (invoice) => {
+        try {
+            setMarkingAsSent(invoice.id);
+            await api.markInvoiceAsSent(invoice.id);
+            // Update the invoice in the list
+            setInvoices(invoices.map(inv => 
+                inv.id === invoice.id ? { ...inv, status: 'sent' } : inv
+            ));
+        } catch (err) {
+            console.error('Error marking invoice as sent:', err);
+            setError('Failed to mark invoice as sent. Please try again.');
+        } finally {
+            setMarkingAsSent(null);
+        }
     };
 
     if (loading) {
@@ -205,6 +222,21 @@ const InvoiceList = () => {
                                     </td>
                                     <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                                         <div className="flex gap-2 justify-end">
+                                            {invoice.status === 'draft' && (
+                                                <button
+                                                    className="btn"
+                                                    style={{ padding: '0.5rem' }}
+                                                    onClick={() => handleMarkAsSent(invoice)}
+                                                    title="Mark as Sent"
+                                                    disabled={loadingInvoice || markingAsSent === invoice.id}
+                                                >
+                                                    {markingAsSent === invoice.id ? (
+                                                        <Loader2 className="animate-spin" size={16} />
+                                                    ) : (
+                                                        <Send size={16} />
+                                                    )}
+                                                </button>
+                                            )}
                                             <button
                                                 className="btn btn-secondary"
                                                 style={{ padding: '0.5rem' }}

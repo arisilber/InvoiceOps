@@ -88,15 +88,21 @@ export async function createInvoiceFromTimeEntries(
             aggregatedLines[key].time_entry_ids.push(entry.id);
         }
 
-        // Step 4: Calculate line amounts and prepare invoice lines
+        // Step 4: Calculate line amounts with discount per line and prepare invoice lines
         const invoiceLines = [];
-        let subtotal_cents = 0;
+        let total_cents = 0;
 
         for (const key in aggregatedLines) {
             const line = aggregatedLines[key];
 
-            // Calculate amount: (total_minutes / 60) * hourly_rate_cents
-            const amount_cents = Math.round((line.total_minutes / 60) * hourly_rate_cents);
+            // Calculate pre-discount amount: (total_minutes / 60) * hourly_rate_cents
+            const pre_discount_amount_cents = Math.round((line.total_minutes / 60) * hourly_rate_cents);
+            
+            // Calculate discount per line
+            const line_discount_cents = Math.round((pre_discount_amount_cents * discount_percent) / 100);
+            
+            // Calculate discounted amount (this is what we store)
+            const amount_cents = pre_discount_amount_cents - line_discount_cents;
 
             invoiceLines.push({
                 work_type_id: line.work_type_id,
@@ -104,15 +110,16 @@ export async function createInvoiceFromTimeEntries(
                 total_minutes: line.total_minutes,
                 hourly_rate_cents: hourly_rate_cents,
                 amount_cents: amount_cents,
+                discount_cents: line_discount_cents,
                 time_entry_ids: line.time_entry_ids
             });
 
-            subtotal_cents += amount_cents;
+            total_cents += amount_cents;
         }
 
-        // Step 5: Calculate discount and total
-        const discount_cents = Math.round((subtotal_cents * discount_percent) / 100);
-        const total_cents = subtotal_cents - discount_cents;
+        // Step 5: Calculate totals (discount already applied per line)
+        const subtotal_cents = invoiceLines.reduce((sum, line) => sum + line.amount_cents + line.discount_cents, 0);
+        const discount_cents = invoiceLines.reduce((sum, line) => sum + line.discount_cents, 0);
 
         // Step 6: Create the invoice
         const invoiceResult = await client.query(
@@ -142,7 +149,7 @@ export async function createInvoiceFromTimeEntries(
 
         const invoice = invoiceResult.rows[0];
 
-        // Step 7: Insert invoice lines
+        // Step 7: Insert invoice lines (amount_cents already contains discounted amount)
         for (const line of invoiceLines) {
             await client.query(
                 `INSERT INTO invoice_lines (
@@ -160,7 +167,7 @@ export async function createInvoiceFromTimeEntries(
                     line.project_name,
                     line.total_minutes,
                     line.hourly_rate_cents,
-                    line.amount_cents
+                    line.amount_cents  // This is the discounted amount
                 ]
             );
 
@@ -275,13 +282,20 @@ export async function previewInvoiceFromTimeEntries(clientId, startDate, endDate
         aggregatedLines[key].entry_count += 1;
     }
 
-    // Calculate amounts
+    // Calculate amounts with discount per line
     const lines = [];
-    let subtotal_cents = 0;
+    let total_cents = 0;
 
     for (const key in aggregatedLines) {
         const line = aggregatedLines[key];
-        const amount_cents = Math.round((line.total_minutes / 60) * hourly_rate_cents);
+        // Calculate pre-discount amount
+        const pre_discount_amount_cents = Math.round((line.total_minutes / 60) * hourly_rate_cents);
+        
+        // Calculate discount per line
+        const line_discount_cents = Math.round((pre_discount_amount_cents * discount_percent) / 100);
+        
+        // Calculate discounted amount (this is what we display)
+        const amount_cents = pre_discount_amount_cents - line_discount_cents;
 
         lines.push({
             work_type_id: line.work_type_id,
@@ -290,15 +304,17 @@ export async function previewInvoiceFromTimeEntries(clientId, startDate, endDate
             project_name: line.project_name,
             total_minutes: line.total_minutes,
             hourly_rate_cents: hourly_rate_cents,
-            amount_cents: amount_cents,
+            amount_cents: amount_cents,  // Discounted amount
+            discount_cents: line_discount_cents,
             entry_count: line.entry_count
         });
 
-        subtotal_cents += amount_cents;
+        total_cents += amount_cents;
     }
 
-    const discount_cents = Math.round((subtotal_cents * discount_percent) / 100);
-    const total_cents = subtotal_cents - discount_cents;
+    // Calculate totals for display (discount already applied per line)
+    const subtotal_cents = lines.reduce((sum, line) => sum + line.amount_cents + line.discount_cents, 0);
+    const discount_cents = lines.reduce((sum, line) => sum + line.discount_cents, 0);
 
     return {
         client: clientData,

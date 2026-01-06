@@ -27,22 +27,18 @@ export const generateInvoiceHTML = (invoice) => {
       ? `${line.work_type_description || line.work_type_code || 'Work'} - ${line.project_name}`
       : (line.work_type_description || line.work_type_code || 'Work');
     
+    const discount_cents = line.discount_cents || 0;
+    
     return `
       <tr>
         <td>${escapeHtml(description)}</td>
         <td style="text-align: center;">${formatQuantity(line.total_minutes)}</td>
         <td style="text-align: right;">${formatCurrency(line.hourly_rate_cents)}</td>
+        <td style="text-align: right; color: #22c55e;">${discount_cents > 0 ? '-' + formatCurrency(discount_cents) : formatCurrency(0)}</td>
         <td style="text-align: right;">${formatCurrency(line.amount_cents)}</td>
       </tr>
     `;
   }).join('') || '';
-
-  const discountRow = invoice.discount_cents > 0 ? `
-    <tr>
-      <td style="text-align: right; font-weight: normal;">Discount:</td>
-      <td style="text-align: right; font-weight: normal;">-${formatCurrency(invoice.discount_cents)}</td>
-    </tr>
-  ` : '';
 
   const html = `
 <!DOCTYPE html>
@@ -127,7 +123,8 @@ export const generateInvoiceHTML = (invoice) => {
       text-align: center;
     }
     th:nth-child(3),
-    th:nth-child(4) {
+    th:nth-child(4),
+    th:nth-child(5) {
       text-align: right;
     }
     tbody tr {
@@ -223,6 +220,7 @@ export const generateInvoiceHTML = (invoice) => {
           <th>Description</th>
           <th>Qty</th>
           <th>Rate</th>
+          <th>Discount</th>
           <th>Amount</th>
         </tr>
       </thead>
@@ -233,11 +231,6 @@ export const generateInvoiceHTML = (invoice) => {
 
     <div class="totals">
       <table class="totals-table">
-        <tr>
-          <td>Subtotal:</td>
-          <td>${formatCurrency(invoice.subtotal_cents)}</td>
-        </tr>
-        ${discountRow}
         <tr class="total-row">
           <td>Total:</td>
           <td>${formatCurrency(invoice.total_cents)}</td>

@@ -226,3 +226,50 @@ main {
     transform: rotate(360deg);
   }
 }
+
+/* Responsive utilities */
+@media (max-width: 1024px) {
+  main {
+    padding: 1.5rem;
+  }
+  
+  .invoice-detail-container {
+    padding: 1.5rem !important;
+  }
+  
+  .invoice-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .invoice-detail-header {
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+  }
+  
+  .invoice-detail-header-actions {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  main {
+    padding: 1rem;
+  }
+  
+  .invoice-detail-container {
+    padding: 1rem !important;
+  }
+  
+  .invoice-detail-card {
+    padding: 1.5rem !important;
+  }
+  
+  .invoice-detail-info-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .invoice-detail-sidebar {
+    position: static !important;
+  }
+}
