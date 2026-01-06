@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileText, X, Check, AlertCircle, Loader2, Download } from 'lucide-react';
 import api from '../services/api';
-import { parseTimeToMinutes } from '../utils/timeParser';
+import { parseTimeToMinutes, formatDate } from '../utils/timeParser';
 
 const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
     const [file, setFile] = useState(null);
@@ -362,7 +362,7 @@ Tech Solutions,DEV,,2024-01-18,90,Fixed bug in authentication`;
                                                 <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{client?.name || 'N/A'}</td>
                                                 <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{workType?.code || 'N/A'}</td>
                                                 <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{entry.project_name}</td>
-                                                <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{entry.work_date}</td>
+                                                <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>{formatDate(entry.work_date)}</td>
                                                 <td style={{ padding: '0.75rem', fontSize: '0.875rem' }}>
                                                     {hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`}
                                                 </td>

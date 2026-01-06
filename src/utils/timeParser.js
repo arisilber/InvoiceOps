@@ -76,3 +76,28 @@ export const formatMinutes = (minutes) => {
     return `${m}m`;
 };
 
+/**
+ * Formats a date string (YYYY-MM-DD) to MM/DD/YYYY format
+ * Parses the date as a local date to avoid timezone issues.
+ * When using new Date("YYYY-MM-DD"), JavaScript interprets it as UTC midnight,
+ * which can cause off-by-one errors when converted to local time.
+ * 
+ * @param {string} dateString - Date string in YYYY-MM-DD format
+ * @returns {string} Formatted date string in MM/DD/YYYY format
+ */
+export const formatDate = (dateString) => {
+    if (!dateString) return '';
+    
+    // Handle ISO format strings (e.g., "2025-11-05T00:00:00.000Z")
+    const datePart = dateString.split('T')[0];
+    
+    // Parse date string as local date to avoid timezone issues
+    const [year, month, day] = datePart.split('-').map(Number);
+    if (!year || !month || !day) return dateString; // Return original if parsing fails
+    
+    // Format as MM/DD/YYYY
+    const monthStr = month.toString().padStart(2, '0');
+    const dayStr = day.toString().padStart(2, '0');
+    return `${monthStr}/${dayStr}/${year}`;
+};
+

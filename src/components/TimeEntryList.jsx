@@ -23,6 +23,7 @@ import api from '../services/api';
 import LogTimeEntry from './LogTimeEntry';
 import CreateInvoiceFromTimeEntriesModal from './CreateInvoiceFromTimeEntriesModal';
 import CSVTimeEntryUpload from './CSVTimeEntryUpload';
+import { formatDate as formatDateUtil } from '../utils/timeParser';
 
 const TimeEntryList = () => {
     const navigate = useNavigate();
@@ -100,11 +101,7 @@ const TimeEntryList = () => {
     };
 
     const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
+        return formatDateUtil(dateString);
     };
 
     return (
