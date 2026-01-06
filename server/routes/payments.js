@@ -12,9 +12,12 @@ router.get('/', async (req, res, next) => {
   try {
     const result = await query(
       `SELECT p.*, 
-       COALESCE(SUM(pa.amount_cents), 0) as applied_amount_cents
+       COALESCE(SUM(pa.amount_cents), 0) as applied_amount_cents,
+       STRING_AGG(DISTINCT c.name, ', ' ORDER BY c.name) as client_names
        FROM payments p
        LEFT JOIN payment_applications pa ON p.id = pa.payment_id
+       LEFT JOIN invoices i ON pa.invoice_id = i.id
+       LEFT JOIN clients c ON i.client_id = c.id
        GROUP BY p.id
        ORDER BY p.payment_date DESC, p.created_at DESC`
     );
