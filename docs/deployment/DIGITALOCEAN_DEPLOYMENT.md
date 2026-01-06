@@ -135,7 +135,7 @@ Choose your database option and follow the corresponding instructions:
 #### Deploying with Supabase
 
 1. **Set up your Supabase database** (if not already done):
-   - Follow the [Supabase Setup Guide](SUPABASE_SETUP.md)
+   - Follow the [Supabase Setup Guide](../database/SUPABASE_SETUP.md)
    - Make sure your database schema is set up
    - Get your Supabase connection string from the Supabase dashboard
 

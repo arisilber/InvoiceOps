@@ -10,7 +10,7 @@ Deploy your application to a Digital Ocean Droplet while using Supabase as your 
 - ✅ Simplifies deployment (no database setup on server)
 - ✅ Allows using smaller/cheaper Droplet plans
 
-> **💡 Tip**: For Digital Ocean deployments, using IPv4 addresses instead of hostnames provides more reliable connections. See [SUPABASE_IPV4_SETUP.md](SUPABASE_IPV4_SETUP.md) for detailed IPv4 configuration instructions.
+> **💡 Tip**: For Digital Ocean deployments, using IPv4 addresses instead of hostnames provides more reliable connections. See the [Supabase Setup Guide](../database/SUPABASE_SETUP.md) for detailed IPv4 configuration instructions.
 
 ## Quick Steps
 
@@ -21,7 +21,7 @@ Deploy your application to a Digital Ocean Droplet while using Supabase as your 
 3. Get your connection string: **Settings** → **Database** → **Connection String** → **URI**
 4. Set up your database schema in Supabase (use `database/schema.sql`)
 
-See [SUPABASE_SETUP.md](SUPABASE_SETUP.md) for detailed instructions.
+See [SUPABASE_SETUP.md](../database/SUPABASE_SETUP.md) for detailed instructions.
 
 ### 2. Deploy Droplet
 
@@ -215,7 +215,7 @@ sudo ufw enable
 - Check that `DB_SSL=true` is set
 - Verify your Supabase project is active
 - Check Supabase Dashboard → Settings → Database for connection limits
-- For IPv4 issues, see [SUPABASE_IPV4_SETUP.md](SUPABASE_IPV4_SETUP.md)
+- For IPv4 issues, see the [Supabase Setup Guide](../database/SUPABASE_SETUP.md)
 
 ### Application Not Starting
 

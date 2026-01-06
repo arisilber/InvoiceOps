@@ -117,9 +117,9 @@ Visit: `http://$(cat .do-droplet-ip)`
 
 ## Next Steps
 
-- See [DIGITALOCEAN_DEPLOYMENT.md](DIGITALOCEAN_DEPLOYMENT.md) for detailed instructions
-- See [DIGITALOCEAN_SUPABASE_SETUP.md](DIGITALOCEAN_SUPABASE_SETUP.md) for Supabase setup
-- See [SUPABASE_IPV4_SETUP.md](SUPABASE_IPV4_SETUP.md) for IPv4 configuration
+- See [DIGITALOCEAN_DEPLOYMENT.md](./DIGITALOCEAN_DEPLOYMENT.md) for detailed instructions
+- See [DIGITALOCEAN_SUPABASE_SETUP.md](./DIGITALOCEAN_SUPABASE_SETUP.md) for Supabase setup
+- See [SUPABASE_SETUP.md](../database/SUPABASE_SETUP.md) for Supabase database setup
 
 ## Useful Commands
 
