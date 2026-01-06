@@ -12,7 +12,7 @@ const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
     const [success, setSuccess] = useState(null);
     const fileInputRef = useRef(null);
 
-    // Expected CSV format: client_name, work_type_code, project_name, work_date, time_spent, detail
+    // Expected CSV format: client_name, work_type_code, project_name (optional), work_date, time_spent, detail
     const parseCSV = (text) => {
         const lines = text.trim().split('\n');
         if (lines.length < 2) {
@@ -20,7 +20,7 @@ const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
         }
 
         const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-        const requiredHeaders = ['client_name', 'work_type_code', 'project_name', 'work_date', 'time_spent'];
+        const requiredHeaders = ['client_name', 'work_type_code', 'work_date', 'time_spent'];
         
         // Check if all required headers are present
         const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
@@ -86,7 +86,7 @@ const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
             entries.push({
                 client_id: client.id,
                 work_type_id: workType.id,
-                project_name: row.project_name,
+                project_name: row.project_name || '',
                 work_date: work_date,
                 minutes_spent: minutes_spent,
                 detail: row.detail || null
@@ -103,7 +103,6 @@ const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
     const validateRow = (row, rowNum) => {
         if (!row.client_name) return `Row ${rowNum}: client_name is required`;
         if (!row.work_type_code) return `Row ${rowNum}: work_type_code is required`;
-        if (!row.project_name) return `Row ${rowNum}: project_name is required`;
         if (!row.work_date) return `Row ${rowNum}: work_date is required`;
         if (!row.time_spent) return `Row ${rowNum}: time_spent is required`;
 
@@ -185,7 +184,7 @@ const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
 Acme Corp,DEV,Website Redesign,2024-01-15,120,Implemented new homepage layout
 Acme Corp,DEV,Website Redesign,2024-01-16,0.75,Added contact form functionality
 Tech Solutions,CONS,API Integration,2024-01-17,1:30,Integrated payment gateway
-Tech Solutions,DEV,API Integration,2024-01-18,90,Fixed bug in authentication`;
+Tech Solutions,DEV,,2024-01-18,90,Fixed bug in authentication`;
 
         const blob = new Blob([template], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
@@ -248,7 +247,7 @@ Tech Solutions,DEV,API Integration,2024-01-18,90,Fixed bug in authentication`;
                 >
                     <Upload size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
                     <p style={{ marginBottom: '0.5rem', fontWeight: 600 }}>Click to select CSV file</p>
-                    <p style={{ fontSize: '0.875rem', opacity: 0.6 }}>CSV format: client_name, work_type_code, project_name, work_date, time_spent, detail</p>
+                    <p style={{ fontSize: '0.875rem', opacity: 0.6 }}>CSV format: client_name, work_type_code, project_name (optional), work_date, time_spent, detail</p>
                     <p style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: '0.25rem' }}>Time can be minutes (90), hours:minutes (1:30), or decimal hours (0.75). Rounds up to nearest 5 minutes.</p>
                 </div>
             )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Clock,
@@ -24,6 +25,7 @@ import CreateInvoiceFromTimeEntriesModal from './CreateInvoiceFromTimeEntriesMod
 import CSVTimeEntryUpload from './CSVTimeEntryUpload';
 
 const TimeEntryList = () => {
+    const navigate = useNavigate();
     const [entries, setEntries] = useState([]);
     const [clients, setClients] = useState([]);
     const [workTypes, setWorkTypes] = useState([]);
@@ -308,9 +310,25 @@ const TimeEntryList = () => {
                                                         Invoiced
                                                     </span>
                                                     {entry.invoice_number && (
-                                                        <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>
+                                                        <button
+                                                            onClick={() => navigate(`/invoices/${entry.invoice_id}`)}
+                                                            style={{
+                                                                fontSize: '0.7rem',
+                                                                background: 'none',
+                                                                border: 'none',
+                                                                color: 'var(--primary)',
+                                                                cursor: 'pointer',
+                                                                textDecoration: 'underline',
+                                                                padding: 0,
+                                                                textAlign: 'left',
+                                                                fontWeight: 500,
+                                                                opacity: 0.9
+                                                            }}
+                                                            onMouseEnter={(e) => e.target.style.opacity = '1'}
+                                                            onMouseLeave={(e) => e.target.style.opacity = '0.9'}
+                                                        >
                                                             #{entry.invoice_number}
-                                                        </span>
+                                                        </button>
                                                     )}
                                                 </div>
                                             ) : (

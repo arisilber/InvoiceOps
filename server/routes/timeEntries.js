@@ -165,8 +165,8 @@ router.post('/bulk', async (req, res, next) => {
       const entry = entries[i];
       const { client_id, work_type_id, project_name, work_date, minutes_spent, detail, invoice_id } = entry;
 
-      // Validate required fields
-      if (!client_id || !work_type_id || !project_name || !work_date || !minutes_spent) {
+      // Validate required fields (project_name is optional)
+      if (!client_id || !work_type_id || !work_date || !minutes_spent) {
         errors.push({
           index: i,
           error: 'Missing required fields',
@@ -190,7 +190,7 @@ router.post('/bulk', async (req, res, next) => {
           `INSERT INTO time_entries (client_id, work_type_id, project_name, work_date, minutes_spent, detail, invoice_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7)
            RETURNING *`,
-          [client_id, work_type_id, project_name, work_date, minutes_spent, detail || null, invoice_id || null]
+          [client_id, work_type_id, project_name || '', work_date, minutes_spent, detail || null, invoice_id || null]
         );
         insertedEntries.push(result.rows[0]);
       } catch (err) {
