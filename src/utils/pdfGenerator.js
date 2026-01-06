@@ -82,13 +82,17 @@ export const generateInvoicePDF = (invoice) => {
     body: tableData,
     theme: 'striped',
     headStyles: {
-      fillColor: [99, 102, 241], // Primary color
-      textColor: 255,
+      fillColor: [0, 0, 0], // Black
+      textColor: 255, // White text
       fontStyle: 'bold',
       fontSize: 10
     },
     bodyStyles: {
-      fontSize: 9
+      fontSize: 9,
+      textColor: [0, 0, 0] // Black text
+    },
+    alternateRowStyles: {
+      fillColor: [240, 240, 240] // Light gray for alternating rows
     },
     columnStyles: {
       0: { cellWidth: 'auto' },

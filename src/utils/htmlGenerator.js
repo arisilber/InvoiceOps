@@ -81,7 +81,7 @@ export const generateInvoiceHTML = (invoice) => {
       align-items: flex-start;
       margin-bottom: 2rem;
       padding-bottom: 1.5rem;
-      border-bottom: 2px solid #6366f1;
+      border-bottom: 2px solid #000000;
     }
     .invoice-title {
       font-size: 2.5rem;
@@ -117,7 +117,7 @@ export const generateInvoiceHTML = (invoice) => {
       margin-bottom: 1.5rem;
     }
     thead {
-      background: #6366f1;
+      background: #000000;
       color: white;
     }
     th {
@@ -178,7 +178,7 @@ export const generateInvoiceHTML = (invoice) => {
     .total-row td {
       font-size: 1.2rem;
       padding-top: 1rem;
-      border-top: 2px solid #6366f1;
+      border-top: 2px solid #000000;
     }
     .status {
       margin-top: 2rem;
