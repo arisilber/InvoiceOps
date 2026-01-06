@@ -4,7 +4,7 @@ import { TrendingUp, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, AlertCirc
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
-const StatCard = ({ title, value, change, icon: Icon, trend, onClick }) => (
+const StatCard = ({ title, value, change, icon: Icon, trend, onClick, subtitle }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -41,6 +41,9 @@ const StatCard = ({ title, value, change, icon: Icon, trend, onClick }) => (
         </div>
         <div style={{ fontSize: '0.875rem', opacity: 0.7 }}>{title}</div>
         <div style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem' }}>{value}</div>
+        {subtitle && (
+            <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.25rem' }}>{subtitle}</div>
+        )}
     </motion.div>
 );
 
@@ -59,7 +62,12 @@ const Dashboard = ({ onExploreInvoices }) => {
         averageInvoiceValue: 0,
         invoiceStatusBreakdown: {},
         topClients: [],
-        recentActivity: []
+        recentActivity: [],
+        averageHoursPerWeek: 0,
+        invoicedLast30Days: 0,
+        invoicedLast60Days: 0,
+        invoicedLast90Days: 0,
+        invoicedAllTime: 0
     });
     const [loading, setLoading] = useState(true);
 
@@ -140,6 +148,45 @@ const Dashboard = ({ onExploreInvoices }) => {
             });
             const paymentReceivedThisMonth = paymentsThisMonth.reduce((sum, p) => sum + (p.amount_cents / 100), 0);
 
+            // Calculate average hours per week (last 4 weeks)
+            const fourWeeksAgo = new Date(now);
+            fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+            const timeLast4Weeks = timeEntries.filter(te => {
+                const workDate = new Date(te.work_date);
+                return workDate >= fourWeeksAgo;
+            });
+            const totalMinutesLast4Weeks = timeLast4Weeks.reduce((sum, te) => sum + te.minutes_spent, 0);
+            const averageHoursPerWeek = (totalMinutesLast4Weeks / 60) / 4;
+
+            // Calculate invoiced amount by period
+            const thirtyDaysAgo = new Date(now);
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const sixtyDaysAgo = new Date(now);
+            sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+            const ninetyDaysAgo = new Date(now);
+            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+            let invoicedLast30Days = 0;
+            let invoicedLast60Days = 0;
+            let invoicedLast90Days = 0;
+            let invoicedAllTime = 0;
+
+            invoices.forEach(inv => {
+                const invDate = new Date(inv.invoice_date);
+                const amount = inv.total_cents / 100;
+                invoicedAllTime += amount;
+                
+                if (invDate >= thirtyDaysAgo) {
+                    invoicedLast30Days += amount;
+                }
+                if (invDate >= sixtyDaysAgo) {
+                    invoicedLast60Days += amount;
+                }
+                if (invDate >= ninetyDaysAgo) {
+                    invoicedLast90Days += amount;
+                }
+            });
+
             // Calculate top clients by revenue
             const clientRevenue = {};
             invoices.forEach(inv => {
@@ -166,7 +213,12 @@ const Dashboard = ({ onExploreInvoices }) => {
                 averageInvoiceValue: Math.round(averageInvoiceValue * 100) / 100,
                 invoiceStatusBreakdown: statusBreakdown,
                 topClients,
-                recentActivity: invoices.slice(0, 5)
+                recentActivity: invoices.slice(0, 5),
+                averageHoursPerWeek: Math.round(averageHoursPerWeek * 100) / 100,
+                invoicedLast30Days: Math.round(invoicedLast30Days * 100) / 100,
+                invoicedLast60Days: Math.round(invoicedLast60Days * 100) / 100,
+                invoicedLast90Days: Math.round(invoicedLast90Days * 100) / 100,
+                invoicedAllTime: Math.round(invoicedAllTime * 100) / 100
             });
         } catch (err) {
             console.error('Error fetching dashboard stats:', err);
@@ -269,6 +321,13 @@ const Dashboard = ({ onExploreInvoices }) => {
                     value={`$${stats.averageInvoiceValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
                     icon={FileText}
                     onClick={() => navigate('/invoices')}
+                />
+                <StatCard
+                    title="Average Hours/Week"
+                    value={`${stats.averageHoursPerWeek.toLocaleString(undefined, { minimumFractionDigits: 2 })}h`}
+                    icon={Clock}
+                    subtitle="Last 4 weeks average"
+                    onClick={() => navigate('/time-entries')}
                 />
             </div>
 
@@ -437,6 +496,44 @@ const Dashboard = ({ onExploreInvoices }) => {
                                 </div>
                             ))
                         )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="card">
+                <h3 style={{ marginBottom: '1.5rem' }}>Invoiced Amount by Period</h3>
+                <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                    <div>
+                        <div style={{ fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.5rem' }}>
+                            Last 30 Days
+                        </div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                            ${stats.invoicedLast30Days.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.5rem' }}>
+                            Last 60 Days
+                        </div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                            ${stats.invoicedLast60Days.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.5rem' }}>
+                            Last 90 Days
+                        </div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                            ${stats.invoicedLast90Days.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.5rem' }}>
+                            All Time
+                        </div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                            ${stats.invoicedAllTime.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </div>
                     </div>
                 </div>
             </div>
