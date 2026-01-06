@@ -159,6 +159,58 @@ const api = {
             body: JSON.stringify(entryData),
         });
     },
+    bulkUploadTimeEntries: async (entries) => {
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+
+        // Add auth token if available
+        if (getAuthHeaders) {
+            const authHeaders = await getAuthHeaders();
+            if (authHeaders) {
+                Object.assign(headers, authHeaders);
+            }
+        }
+
+        let response = await fetch(`${API_BASE_URL}/time-entries/bulk`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(entries),
+        });
+
+        // Handle token refresh if needed
+        if ((response.status === 401 || response.status === 403) && refreshAccessToken) {
+            try {
+                const newToken = await refreshAccessToken();
+                if (newToken) {
+                    headers['Authorization'] = `Bearer ${newToken}`;
+                    response = await fetch(`${API_BASE_URL}/time-entries/bulk`, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify(entries),
+                    });
+                }
+            } catch (error) {
+                if (logout) {
+                    logout();
+                }
+                throw new Error('Session expired. Please log in again.');
+            }
+        }
+
+        // Handle 207 (Multi-Status) for partial success
+        if (response.status === 207) {
+            const data = await response.json();
+            return data;
+        }
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Request failed' }));
+            throw new Error(error.error || `Request failed with status ${response.status}`);
+        }
+
+        return response.json();
+    },
     updateTimeEntry: async (id, entryData) => {
         return makeRequest(`${API_BASE_URL}/time-entries/${id}`, {
             method: 'PUT',

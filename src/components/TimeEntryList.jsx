@@ -15,11 +15,13 @@ import {
     X,
     Loader2,
     AlertCircle,
-    FileText
+    FileText,
+    Upload
 } from 'lucide-react';
 import api from '../services/api';
 import LogTimeEntry from './LogTimeEntry';
 import CreateInvoiceFromTimeEntriesModal from './CreateInvoiceFromTimeEntriesModal';
+import CSVTimeEntryUpload from './CSVTimeEntryUpload';
 
 const TimeEntryList = () => {
     const [entries, setEntries] = useState([]);
@@ -41,6 +43,7 @@ const TimeEntryList = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingEntry, setEditingEntry] = useState(null);
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+    const [isCSVUploadOpen, setIsCSVUploadOpen] = useState(false);
 
     const fetchData = async () => {
         setLoading(true);
@@ -110,6 +113,14 @@ const TimeEntryList = () => {
                     <p style={{ opacity: 0.7 }}>Review and manage your logged work</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={() => setIsCSVUploadOpen(true)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                        <Upload size={18} />
+                        Bulk Upload
+                    </button>
                     <button
                         className="btn btn-secondary"
                         onClick={() => setIsInvoiceModalOpen(true)}
@@ -425,6 +436,76 @@ const TimeEntryList = () => {
                     fetchData(); // Refresh time entries to show invoice status
                 }}
             />
+
+            {/* CSV Upload Modal */}
+            <AnimatePresence>
+                {isCSVUploadOpen && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '1rem'
+                    }}>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsCSVUploadOpen(false)}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: 'rgba(0,0,0,0.6)',
+                                backdropFilter: 'blur(4px)'
+                            }}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="card"
+                            style={{
+                                width: '100%',
+                                maxWidth: '800px',
+                                position: 'relative',
+                                background: 'var(--background)',
+                                zIndex: 1001,
+                                maxHeight: '90vh',
+                                overflowY: 'auto',
+                                padding: '2rem'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                <h3 style={{ fontSize: '1.5rem' }}>Bulk Upload Time Entries</h3>
+                                <button
+                                    onClick={() => setIsCSVUploadOpen(false)}
+                                    style={{ background: 'transparent', border: 'none', color: 'var(--foreground)', cursor: 'pointer', opacity: 0.5 }}
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <CSVTimeEntryUpload
+                                onUploadComplete={() => {
+                                    setIsCSVUploadOpen(false);
+                                    fetchData();
+                                }}
+                                clients={clients}
+                                workTypes={workTypes}
+                            />
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             <style>{`
                 .table-row-hover:hover {

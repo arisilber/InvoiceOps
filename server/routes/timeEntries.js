@@ -1,5 +1,5 @@
 import express from 'express';
-import { query } from '../db/connection.js';
+import { query, getClient } from '../db/connection.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -143,6 +143,106 @@ router.delete('/:id', async (req, res, next) => {
     res.json({ message: 'Time entry deleted successfully', time_entry: result.rows[0] });
   } catch (error) {
     next(error);
+  }
+});
+
+// POST bulk upload time entries
+router.post('/bulk', async (req, res, next) => {
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
+
+    const entries = req.body;
+    if (!Array.isArray(entries) || entries.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Expected an array of time entries' });
+    }
+
+    const insertedEntries = [];
+    const errors = [];
+
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      const { client_id, work_type_id, project_name, work_date, minutes_spent, detail, invoice_id } = entry;
+
+      // Validate required fields
+      if (!client_id || !work_type_id || !project_name || !work_date || !minutes_spent) {
+        errors.push({
+          index: i,
+          error: 'Missing required fields',
+          entry
+        });
+        continue;
+      }
+
+      // Validate minutes_spent is positive
+      if (minutes_spent <= 0) {
+        errors.push({
+          index: i,
+          error: 'minutes_spent must be greater than 0',
+          entry
+        });
+        continue;
+      }
+
+      try {
+        const result = await client.query(
+          `INSERT INTO time_entries (client_id, work_type_id, project_name, work_date, minutes_spent, detail, invoice_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           RETURNING *`,
+          [client_id, work_type_id, project_name, work_date, minutes_spent, detail || null, invoice_id || null]
+        );
+        insertedEntries.push(result.rows[0]);
+      } catch (err) {
+        // Check if it's a foreign key constraint error
+        if (err.code === '23503') {
+          errors.push({
+            index: i,
+            error: `Invalid client_id or work_type_id: ${err.message}`,
+            entry
+          });
+        } else {
+          errors.push({
+            index: i,
+            error: err.message,
+            entry
+          });
+        }
+      }
+    }
+
+    if (errors.length > 0 && insertedEntries.length === 0) {
+      // If all entries failed, rollback
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: 'All entries failed validation',
+        errors: errors
+      });
+    }
+
+    if (errors.length > 0) {
+      // Some entries failed, but some succeeded - commit what we can
+      await client.query('COMMIT');
+      return res.status(207).json({
+        success_count: insertedEntries.length,
+        error_count: errors.length,
+        errors: errors,
+        entries: insertedEntries
+      });
+    }
+
+    // All entries succeeded
+    await client.query('COMMIT');
+    res.status(201).json({
+      success_count: insertedEntries.length,
+      error_count: 0,
+      entries: insertedEntries
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    next(error);
+  } finally {
+    client.release();
   }
 });
 
