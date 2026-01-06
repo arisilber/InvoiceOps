@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileText, X, Check, AlertCircle, Loader2, Download } from 'lucide-react';
 import api from '../services/api';
+import { parseTimeToMinutes } from '../utils/timeParser';
 
 const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
     const [file, setFile] = useState(null);
@@ -66,14 +67,9 @@ const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
                 continue;
             }
 
-            // Parse time_spent (can be minutes or HH:MM format)
-            let minutes_spent = 0;
-            if (row.time_spent.includes(':')) {
-                const [hours, minutes] = row.time_spent.split(':').map(Number);
-                minutes_spent = (hours || 0) * 60 + (minutes || 0);
-            } else {
-                minutes_spent = parseInt(row.time_spent) || 0;
-            }
+            // Parse time_spent (can be minutes, HH:MM format, or decimal hours)
+            // This will round up to nearest 5 minutes
+            const minutes_spent = parseTimeToMinutes(row.time_spent);
 
             if (minutes_spent <= 0) {
                 errors.push(`Row ${i + 1}: Invalid time_spent value`);
@@ -187,8 +183,9 @@ const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
     const handleDownloadTemplate = () => {
         const template = `client_name,work_type_code,project_name,work_date,time_spent,detail
 Acme Corp,DEV,Website Redesign,2024-01-15,120,Implemented new homepage layout
-Acme Corp,DEV,Website Redesign,2024-01-16,90,Added contact form functionality
-Tech Solutions,CONS,API Integration,2024-01-17,180,Integrated payment gateway`;
+Acme Corp,DEV,Website Redesign,2024-01-16,0.75,Added contact form functionality
+Tech Solutions,CONS,API Integration,2024-01-17,1:30,Integrated payment gateway
+Tech Solutions,DEV,API Integration,2024-01-18,90,Fixed bug in authentication`;
 
         const blob = new Blob([template], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
@@ -252,6 +249,7 @@ Tech Solutions,CONS,API Integration,2024-01-17,180,Integrated payment gateway`;
                     <Upload size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
                     <p style={{ marginBottom: '0.5rem', fontWeight: 600 }}>Click to select CSV file</p>
                     <p style={{ fontSize: '0.875rem', opacity: 0.6 }}>CSV format: client_name, work_type_code, project_name, work_date, time_spent, detail</p>
+                    <p style={{ fontSize: '0.75rem', opacity: 0.5, marginTop: '0.25rem' }}>Time can be minutes (90), hours:minutes (1:30), or decimal hours (0.75). Rounds up to nearest 5 minutes.</p>
                 </div>
             )}
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Calendar, Briefcase, FileText, User, Plus, Check, Loader2 } from 'lucide-react';
 import api from '../services/api';
+import { parseTimeToMinutes } from '../utils/timeParser';
 
 const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
     const [clients, setClients] = useState([]);
@@ -68,12 +69,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
     }, [formData.client_id]);
 
     const parseTimeSpent = (value) => {
-        if (!value) return 0;
-        if (value.includes(':')) {
-            const [hours, minutes] = value.split(':').map(Number);
-            return (hours || 0) * 60 + (minutes || 0);
-        }
-        return parseInt(value) || 0;
+        return parseTimeToMinutes(value);
     };
 
     const handleSubmit = async (e, addAnother = false) => {
@@ -328,7 +324,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                             </label>
                             <input
                                 type="text"
-                                placeholder="e.g. 90 or 1:30"
+                                placeholder="e.g. 90, 1:30, or 0.75"
                                 required
                                 value={formData.time_spent}
                                 onChange={e => setFormData({ ...formData, time_spent: e.target.value })}
@@ -346,7 +342,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                                 onFocus={e => e.target.style.borderColor = 'var(--primary)'}
                                 onBlur={e => e.target.style.borderColor = 'var(--border)'}
                             />
-                            <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>Use minutes (90) or hours:minutes (1:30)</span>
+                            <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>Use minutes (90), hours:minutes (1:30), or decimal hours (0.75). Rounds up to nearest 5 minutes.</span>
                         </div>
                     </div>
 
