@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, MoreVertical, Download, Loader2, Trash2 } from 'lucide-react';
+import { Search, Filter, MoreVertical, Download, Loader2, Trash2, Eye } from 'lucide-react';
 import api from '../services/api';
+import InvoicePDFPreview from './InvoicePDFPreview';
+import { downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
 
 const InvoiceList = () => {
     const [invoices, setInvoices] = useState([]);
@@ -9,6 +11,9 @@ const InvoiceList = () => {
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeMenu, setActiveMenu] = useState(null);
+    const [previewInvoice, setPreviewInvoice] = useState(null);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [loadingInvoice, setLoadingInvoice] = useState(false);
 
     useEffect(() => {
         fetchInvoices();
@@ -41,6 +46,40 @@ const InvoiceList = () => {
         String(invoice.invoice_number).includes(searchTerm) ||
         invoice.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const handlePreview = async (invoice) => {
+        try {
+            setLoadingInvoice(true);
+            // Fetch full invoice data with lines
+            const fullInvoice = await api.getInvoice(invoice.id);
+            setPreviewInvoice(fullInvoice);
+            setIsPreviewOpen(true);
+        } catch (err) {
+            console.error('Error fetching invoice:', err);
+            setError('Failed to load invoice for preview');
+        } finally {
+            setLoadingInvoice(false);
+        }
+    };
+
+    const handleDownload = async (invoice) => {
+        try {
+            setLoadingInvoice(true);
+            // Fetch full invoice data with lines for PDF generation
+            const fullInvoice = await api.getInvoice(invoice.id);
+            await downloadInvoiceHTMLAsPDF(fullInvoice);
+        } catch (err) {
+            console.error('Error downloading invoice:', err);
+            setError('Failed to download invoice PDF');
+        } finally {
+            setLoadingInvoice(false);
+        }
+    };
+
+    const handleClosePreview = () => {
+        setIsPreviewOpen(false);
+        setPreviewInvoice(null);
+    };
 
     const handleDeleteInvoice = async (invoiceId) => {
         if (!window.confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
@@ -142,7 +181,22 @@ const InvoiceList = () => {
                                     </td>
                                     <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                                         <div className="flex gap-2 justify-end">
-                                            <button className="btn btn-secondary" style={{ padding: '0.5rem' }}>
+                                            <button
+                                                className="btn btn-secondary"
+                                                style={{ padding: '0.5rem' }}
+                                                onClick={() => handlePreview(invoice)}
+                                                title="Preview PDF"
+                                                disabled={loadingInvoice}
+                                            >
+                                                <Eye size={16} />
+                                            </button>
+                                            <button
+                                                className="btn btn-secondary"
+                                                style={{ padding: '0.5rem' }}
+                                                onClick={() => handleDownload(invoice)}
+                                                title="Download PDF"
+                                                disabled={loadingInvoice}
+                                            >
                                                 <Download size={16} />
                                             </button>
                                             <div style={{ position: 'relative' }}>
@@ -200,6 +254,12 @@ const InvoiceList = () => {
                     </table>
                 </div>
             )}
+
+            <InvoicePDFPreview
+                isOpen={isPreviewOpen}
+                onClose={handleClosePreview}
+                invoice={previewInvoice}
+            />
         </motion.div>
     );
 };
