@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Download, Loader2, Calendar, User, FileText, AlertCircle, Send, FileEdit } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Download, Loader2, Calendar, User, FileText, AlertCircle, Send, FileEdit, Trash2, AlertTriangle } from 'lucide-react';
 import api from '../services/api';
 import InvoicePDFPreview from './InvoicePDFPreview';
 import { downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
@@ -15,6 +15,8 @@ const InvoiceDetail = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [markingAsSent, setMarkingAsSent] = useState(false);
   const [markingAsDraft, setMarkingAsDraft] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchInvoice();
@@ -73,6 +75,30 @@ const InvoiceDetail = () => {
     } finally {
       setMarkingAsDraft(false);
     }
+  };
+
+  const handleDeleteClick = () => {
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!invoice) return;
+
+    try {
+      setDeleting(true);
+      await api.deleteInvoice(invoice.id);
+      navigate('/invoices');
+    } catch (err) {
+      console.error('Error deleting invoice:', err);
+      setError('Failed to delete invoice. Please try again.');
+      setDeleteModalOpen(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModalOpen(false);
   };
 
   const formatCurrency = (cents) => {
@@ -188,7 +214,7 @@ const InvoiceDetail = () => {
               {invoice.client_name}
             </p>
           </div>
-          <div className="flex gap-3 invoice-detail-header-actions" style={{ marginLeft: '2rem' }}>
+          <div className="flex gap-3 invoice-detail-header-actions" style={{ marginLeft: '2rem', alignItems: 'flex-start' }}>
             {invoice.status === 'draft' && (
               <button
                 className="btn"
@@ -240,6 +266,14 @@ const InvoiceDetail = () => {
             >
               <Download size={16} />
               Download PDF
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={handleDeleteClick}
+              style={{ color: '#ef4444' }}
+            >
+              <Trash2 size={16} />
+              Delete
             </button>
           </div>
         </div>
@@ -585,6 +619,93 @@ const InvoiceDetail = () => {
         onClose={() => setIsPreviewOpen(false)}
         invoice={invoice}
       />
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteModalOpen && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '2rem'
+          }} onClick={handleDeleteCancel}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              style={{
+                background: 'var(--background)',
+                width: '100%',
+                maxWidth: '400px',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: 'var(--shadow-lg)',
+                overflow: 'hidden'
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ padding: '2rem' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  marginBottom: '1.5rem'
+                }}>
+                  <div style={{
+                    padding: '0.75rem',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    borderRadius: 'var(--radius-md)',
+                    color: '#ef4444'
+                  }}>
+                    <AlertTriangle size={24} />
+                  </div>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Delete Invoice</h2>
+                </div>
+                <p style={{ marginBottom: '2rem', opacity: 0.8, lineHeight: 1.6 }}>
+                  Are you sure you want to delete invoice <strong>INV-{invoice?.invoice_number}</strong> for <strong>{invoice?.client_name}</strong>? This action cannot be undone.
+                </p>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: '1rem'
+                }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleDeleteCancel}
+                    disabled={deleting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={handleDeleteConfirm}
+                    disabled={deleting}
+                    style={{
+                      background: '#ef4444',
+                      color: 'white'
+                    }}
+                  >
+                    {deleting ? (
+                      <>
+                        <Loader2 className="animate-spin" size={16} />
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete Invoice'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

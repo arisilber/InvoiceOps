@@ -105,8 +105,9 @@ h6 {
   font-family: var(--font-sans);
   gap: 0.5rem;
   line-height: 1.2;
-  height: auto;
+  height: fit-content;
   min-height: auto;
+  align-self: flex-start;
 }
 
 .btn-primary {
