@@ -61,6 +61,31 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// GET distinct project names for a client
+router.get('/project-names', async (req, res, next) => {
+  try {
+    const { client_id } = req.query;
+    
+    if (!client_id) {
+      return res.status(400).json({ error: 'client_id is required' });
+    }
+
+    const result = await query(
+      `SELECT DISTINCT project_name
+       FROM time_entries
+       WHERE client_id = $1
+         AND project_name IS NOT NULL
+         AND project_name != ''
+       ORDER BY project_name`,
+      [client_id]
+    );
+
+    res.json(result.rows.map(row => row.project_name));
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET time entry by ID
 router.get('/:id', async (req, res, next) => {
   try {

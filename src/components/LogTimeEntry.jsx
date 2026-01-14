@@ -8,6 +8,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
     const [clients, setClients] = useState([]);
     const [workTypes, setWorkTypes] = useState([]);
     const [invoices, setInvoices] = useState([]);
+    const [projectNames, setProjectNames] = useState([]);
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
     const [successMessage, setSuccessMessage] = useState('');
@@ -58,6 +59,20 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
         }
     };
 
+    const fetchProjectNames = async (clientId) => {
+        if (!clientId) {
+            setProjectNames([]);
+            return;
+        }
+        try {
+            const data = await api.getProjectNames(clientId);
+            setProjectNames(data);
+        } catch (error) {
+            console.error('Error fetching project names:', error);
+            setProjectNames([]);
+        }
+    };
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -65,6 +80,9 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
     useEffect(() => {
         if (formData.client_id) {
             fetchInvoices(formData.client_id);
+            fetchProjectNames(formData.client_id);
+        } else {
+            setProjectNames([]);
         }
     }, [formData.client_id]);
 
@@ -270,26 +288,42 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                         <label style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <FileText size={16} opacity={0.7} /> Project Name
                         </label>
-                        <input
-                            type="text"
-                            placeholder="e.g. Website Overhaul"
-                            required
-                            value={formData.project_name}
-                            onChange={e => setFormData({ ...formData, project_name: e.target.value })}
-                            style={{
-                                padding: '0.875rem',
-                                borderRadius: 'var(--radius-md)',
-                                border: '1px solid var(--border)',
-                                background: 'var(--card-bg)',
-                                color: 'var(--foreground)',
-                                outline: 'none',
-                                fontSize: '1rem',
-                                transition: 'all 0.2s ease',
-                                boxShadow: 'var(--shadow-sm)'
-                            }}
-                            onFocus={e => e.target.style.borderColor = 'var(--primary)'}
-                            onBlur={e => e.target.style.borderColor = 'var(--border)'}
-                        />
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type="text"
+                                list="project-names-list"
+                                placeholder="e.g. Website Overhaul"
+                                required
+                                value={formData.project_name}
+                                onChange={e => setFormData({ ...formData, project_name: e.target.value })}
+                                style={{
+                                    padding: '0.875rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid var(--border)',
+                                    background: 'var(--card-bg)',
+                                    color: 'var(--foreground)',
+                                    outline: 'none',
+                                    fontSize: '1rem',
+                                    transition: 'all 0.2s ease',
+                                    boxShadow: 'var(--shadow-sm)',
+                                    width: '100%'
+                                }}
+                                onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+                                onBlur={e => e.target.style.borderColor = 'var(--border)'}
+                            />
+                            {projectNames.length > 0 && (
+                                <datalist id="project-names-list">
+                                    {projectNames.map((projectName, index) => (
+                                        <option key={index} value={projectName} />
+                                    ))}
+                                </datalist>
+                            )}
+                        </div>
+                        {projectNames.length > 0 && (
+                            <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>
+                                Select from previous projects or type a new project name
+                            </span>
+                        )}
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>

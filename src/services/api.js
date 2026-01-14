@@ -223,6 +223,9 @@ const api = {
         const params = new URLSearchParams(filters);
         return makeRequest(`${API_BASE_URL}/time-entries?${params.toString()}`);
     },
+    getProjectNames: async (clientId) => {
+        return makeRequest(`${API_BASE_URL}/time-entries/project-names?client_id=${clientId}`);
+    },
     createTimeEntry: async (entryData) => {
         return makeRequest(`${API_BASE_URL}/time-entries`, {
             method: 'POST',
