@@ -135,7 +135,7 @@ if [ "$SKIP_BUILD" = false ]; then
     fi
     
     echo -e "${YELLOW}📦 Installing dependencies...${NC}"
-    if ! npm install; then
+    if ! npm install --include=dev; then
         echo -e "${RED}❌ Failed to install dependencies${NC}"
         exit 1
     fi
