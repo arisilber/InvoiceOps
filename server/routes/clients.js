@@ -121,7 +121,10 @@ router.get('/:id/dashboard', async (req, res, next) => {
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
     
     // 1. Amount uninvoiced (time tracked not in an invoice)
-    // Calculate with discount applied (same as invoice calculation)
+    // Calculate with discount applied (matching invoice service pattern exactly)
+    // Pattern: pre_discount_amount_cents = Math.round((total_minutes / 60) * hourly_rate_cents)
+    //          discount_cents = Math.round((pre_discount_amount_cents * discount_percent) / 100)
+    //          amount_cents = pre_discount_amount_cents - discount_cents
     const uninvoicedResult = await query(
       `SELECT COALESCE(SUM(minutes_spent), 0) as total_minutes
        FROM time_entries
@@ -133,11 +136,12 @@ router.get('/:id/dashboard', async (req, res, next) => {
     const hourlyRateCents = parseInt(client.hourly_rate_cents) || 0;
     const discountPercent = parseFloat(client.discount_percent) || 0;
     
-    // Calculate pre-discount amount
-    const preDiscountAmount = Math.round((uninvoicedTotalMinutes / 60) * hourlyRateCents);
-    // Apply discount
-    const discountAmount = Math.round((preDiscountAmount * discountPercent) / 100);
-    const amountUninvoiced = preDiscountAmount - discountAmount;
+    // Calculate pre-discount amount in cents (matching invoice service pattern)
+    const preDiscountAmountCents = Math.round((uninvoicedTotalMinutes / 60) * hourlyRateCents);
+    // Calculate discount in cents (matching invoice service pattern)
+    const discountAmountCents = Math.round((preDiscountAmountCents * discountPercent) / 100);
+    // Calculate discounted amount in cents (matching invoice service pattern)
+    const amountUninvoiced = preDiscountAmountCents - discountAmountCents;
     
     // 2. Average hours worked per week (last 4 weeks)
     const hoursResult = await query(

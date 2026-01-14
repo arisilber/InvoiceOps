@@ -122,17 +122,22 @@ const Dashboard = ({ onExploreInvoices }) => {
             const uninvoicedHours = uninvoicedMinutes / 60;
 
             // Calculate uninvoiced amount (need to get client hourly rates)
-            let uninvoicedAmount = 0;
+            // Match invoice service logic: work in cents, apply discount per entry, round like invoices
+            let uninvoicedAmountCents = 0;
             for (const entry of uninvoicedEntries) {
                 const client = clients.find(c => c.id === entry.client_id);
                 if (client) {
-                    const hourlyRate = client.hourly_rate_cents / 100;
+                    const hourlyRateCents = client.hourly_rate_cents || 0;
                     const discountPercent = client.discount_percent || 0;
-                    const preDiscountAmount = (entry.minutes_spent / 60) * hourlyRate;
-                    const discountAmount = (preDiscountAmount * discountPercent) / 100;
-                    uninvoicedAmount += preDiscountAmount - discountAmount;
+                    // Calculate pre-discount amount in cents (matching invoice service pattern)
+                    const preDiscountAmountCents = Math.round((entry.minutes_spent / 60) * hourlyRateCents);
+                    // Calculate discount in cents (matching invoice service pattern)
+                    const discountAmountCents = Math.round((preDiscountAmountCents * discountPercent) / 100);
+                    // Add discounted amount (matching invoice service pattern)
+                    uninvoicedAmountCents += preDiscountAmountCents - discountAmountCents;
                 }
             }
+            const uninvoicedAmount = uninvoicedAmountCents / 100;
 
             // Calculate time tracked this month
             const timeThisMonth = timeEntries.filter(te => {
