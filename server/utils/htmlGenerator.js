@@ -147,6 +147,13 @@ export const generateInvoiceHTML = (invoice) => {
     .invoice-meta {
       text-align: right;
     }
+    .invoice-meta-title {
+      font-size: 1.875rem;
+      font-weight: 600;
+      color: #1a1a1a;
+      letter-spacing: -0.01em;
+      margin: 0 0 0.75rem 0;
+    }
     .invoice-meta p {
       margin: 0.25rem 0;
       color: #374151;
@@ -431,9 +438,9 @@ export const generateInvoiceHTML = (invoice) => {
         ${invoice.company_name ? `<div style="font-size: 1.125rem; font-weight: 600; color: #1a1a1a; margin-bottom: 0.5rem;">${escapeHtml(invoice.company_name)}</div>` : ''}
         ${invoice.company_address ? `<div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem; white-space: pre-line;">${escapeHtml(invoice.company_address)}</div>` : ''}
         ${invoice.company_email ? `<div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">${escapeHtml(invoice.company_email)}</div>` : ''}
-        <h1 class="invoice-title" style="margin-top: 0;">INVOICE</h1>
       </div>
       <div class="invoice-meta">
+        <h2 class="invoice-meta-title">INVOICE</h2>
         <p><strong>Invoice #:</strong> INV-${invoice.invoice_number}</p>
         <p><strong>Date:</strong> ${invoiceDate}</p>
         <p><strong>Due Date:</strong> ${dueDate}</p>
