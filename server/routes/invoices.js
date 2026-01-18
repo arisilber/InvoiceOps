@@ -15,6 +15,29 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticateToken);
 
+// Helper function to calculate status based on payment
+const calculateInvoiceStatus = (invoice) => {
+  // If status is draft or voided, keep it
+  if (invoice.status === 'draft' || invoice.status === 'voided') {
+    return invoice.status;
+  }
+
+  const total = invoice.total_cents || 0;
+  const paid = invoice.paid_amount_cents || 0;
+
+  if (total <= 0) {
+    return invoice.status;
+  }
+
+  if (paid >= total) {
+    return 'paid';
+  } else if (paid > 0) {
+    return 'partially_paid';
+  } else {
+    return 'sent';
+  }
+};
+
 // GET all invoices
 router.get('/', async (req, res, next) => {
   try {
@@ -40,16 +63,25 @@ router.get('/', async (req, res, next) => {
       paramCount++;
     }
 
-    if (status) {
-      queryText += ` AND i.status = $${paramCount}`;
-      params.push(status);
-      paramCount++;
-    }
+    // Note: We don't filter by status in the database because we need to
+    // calculate it dynamically. We'll filter on the calculated status instead.
 
     queryText += ' ORDER BY i.invoice_date DESC, i.created_at DESC';
 
     const result = await query(queryText, params);
-    res.json(result.rows);
+    
+    // Calculate actual status for each invoice based on payment
+    let invoices = result.rows.map(invoice => ({
+      ...invoice,
+      status: calculateInvoiceStatus(invoice)
+    }));
+
+    // Filter by status if provided (after calculating actual status)
+    if (status) {
+      invoices = invoices.filter(inv => inv.status === status);
+    }
+
+    res.json(invoices);
   } catch (error) {
     next(error);
   }
@@ -67,11 +99,17 @@ router.get('/next-invoice-number', async (req, res, next) => {
 
 // Helper function to fetch invoice with lines (used by HTML and PDF endpoints)
 const fetchInvoiceWithLines = async (id) => {
-  // Get invoice
+  // Get invoice with payment information
   const invoiceResult = await query(
-    `SELECT i.*, c.name as client_name, c.email as client_email, c.type as client_type
+    `SELECT i.*, c.name as client_name, c.email as client_email, c.type as client_type,
+            COALESCE(pa.total_paid_cents, 0) AS paid_amount_cents
      FROM invoices i
      JOIN clients c ON i.client_id = c.id
+     LEFT JOIN (
+       SELECT invoice_id, SUM(amount_cents)::int AS total_paid_cents
+       FROM payment_applications
+       GROUP BY invoice_id
+     ) pa ON pa.invoice_id = i.id
      WHERE i.id = $1`,
     [id]
   );
@@ -81,6 +119,8 @@ const fetchInvoiceWithLines = async (id) => {
   }
 
   const invoice = invoiceResult.rows[0];
+  // Calculate actual status based on payment
+  invoice.status = calculateInvoiceStatus(invoice);
 
   // Get company settings from system_settings
   try {
@@ -253,11 +293,17 @@ router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Get invoice
+    // Get invoice with payment information
     const invoiceResult = await query(
-      `SELECT i.*, c.name as client_name, c.email as client_email, c.type as client_type
+      `SELECT i.*, c.name as client_name, c.email as client_email, c.type as client_type,
+              COALESCE(pa.total_paid_cents, 0) AS paid_amount_cents
        FROM invoices i
        JOIN clients c ON i.client_id = c.id
+       LEFT JOIN (
+         SELECT invoice_id, SUM(amount_cents)::int AS total_paid_cents
+         FROM payment_applications
+         GROUP BY invoice_id
+       ) pa ON pa.invoice_id = i.id
        WHERE i.id = $1`,
       [id]
     );
@@ -267,6 +313,8 @@ router.get('/:id', async (req, res, next) => {
     }
 
     const invoice = invoiceResult.rows[0];
+    // Calculate actual status based on payment
+    invoice.status = calculateInvoiceStatus(invoice);
 
     // Get invoice lines and calculate discount per line
     const linesResult = await query(
