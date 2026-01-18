@@ -197,26 +197,108 @@ const TimeEntryList = () => {
                     <h2 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>Time Tracking</h2>
                     <p style={{ opacity: 0.7 }}>Review and manage your logged work</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                <div style={{ 
+                    display: 'flex', 
+                    gap: '0.625rem', 
+                    alignItems: 'center',
+                    flexWrap: 'wrap'
+                }}>
                     <button
-                        className="btn btn-secondary"
                         onClick={() => setIsCSVUploadOpen(true)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        style={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            padding: '0.625rem 1rem',
+                            fontSize: '0.9375rem',
+                            fontWeight: 500,
+                            fontFamily: 'var(--font-sans)',
+                            color: 'var(--foreground)',
+                            backgroundColor: 'transparent',
+                            border: '1px solid var(--border)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            minHeight: '44px',
+                            whiteSpace: 'nowrap',
+                            lineHeight: '1.2'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--background)';
+                            e.currentTarget.style.borderColor = 'var(--foreground)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.borderColor = 'var(--border)';
+                        }}
                     >
-                        <Upload size={18} />
-                        Bulk Upload
+                        <Upload size={18} style={{ flexShrink: 0 }} />
+                        <span>Bulk Upload</span>
                     </button>
                     <button
-                        className="btn btn-secondary"
                         onClick={() => setIsInvoiceModalOpen(true)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        style={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            padding: '0.625rem 1rem',
+                            fontSize: '0.9375rem',
+                            fontWeight: 500,
+                            fontFamily: 'var(--font-sans)',
+                            color: 'var(--foreground)',
+                            backgroundColor: 'transparent',
+                            border: '1px solid var(--border)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            minHeight: '44px',
+                            whiteSpace: 'nowrap',
+                            lineHeight: '1.2'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--background)';
+                            e.currentTarget.style.borderColor = 'var(--foreground)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.borderColor = 'var(--border)';
+                        }}
                     >
-                        <FileText size={18} />
-                        Create Invoice
+                        <FileText size={18} style={{ flexShrink: 0 }} />
+                        <span>Create Invoice</span>
                     </button>
-                    <button className="btn btn-primary" onClick={handleAdd}>
-                        <Plus size={20} />
-                        Log Time
+                    <button 
+                        onClick={handleAdd}
+                        style={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            padding: '0.625rem 1.25rem',
+                            fontSize: '0.9375rem',
+                            fontWeight: 600,
+                            fontFamily: 'var(--font-sans)',
+                            color: '#ffffff',
+                            backgroundColor: 'var(--primary)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            minHeight: '44px',
+                            whiteSpace: 'nowrap',
+                            lineHeight: '1.2'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--primary-hover)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'var(--primary)';
+                        }}
+                    >
+                        <Plus size={20} style={{ flexShrink: 0 }} />
+                        <span>Log Time</span>
                     </button>
                 </div>
             </div>
