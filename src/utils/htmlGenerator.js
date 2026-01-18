@@ -48,7 +48,7 @@ export const generateInvoiceHTML = (invoice) => {
         <td style="white-space: pre-wrap; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; letter-spacing: normal;">${shortDescription}</td>
         <td style="text-align: center;">${formatQuantity(line.total_minutes)}</td>
         <td style="text-align: right;">${formatCurrency(line.hourly_rate_cents)}</td>
-        <td style="text-align: right; color: #22c55e;">${discount_percent > 0 ? discount_percent + '%' : '0%'}</td>
+        <td style="text-align: right;">${discount_percent > 0 ? discount_percent + '%' : '0%'}</td>
         <td style="text-align: right;">${formatCurrency(line.amount_cents)}</td>
       </tr>
     `;
