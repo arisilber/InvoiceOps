@@ -2,6 +2,17 @@
 
 This document outlines the step-by-step implementation plan for the Customer Statements feature as specified in `docs/project/statements.md`.
 
+## Implementation Status
+
+- ✅ **Phase 1, Step 1.1**: Backend Core Service (`statementService.js`) - **COMPLETED**
+- ⏳ **Phase 2**: Backend API Routes - **PENDING**
+- ⏳ **Phase 3**: HTML Generator - **PENDING**
+- ⏳ **Phase 4**: Register Routes - **PENDING**
+- ⏳ **Phase 5**: Frontend API Integration - **PENDING**
+- ⏳ **Phase 6**: Frontend React Component - **PENDING**
+- ⏳ **Phase 7**: Testing & Validation - **PENDING**
+- ⏳ **Phase 8**: Documentation - **PENDING**
+
 ---
 
 ## Overview
@@ -16,8 +27,10 @@ The implementation will follow the existing codebase patterns:
 
 ## Phase 1: Backend Core Service (statementService.js)
 
-### Step 1.1: Create Statement Service
+### Step 1.1: Create Statement Service ✅ **COMPLETED**
 **File**: `server/services/statementService.js`
+
+**Status**: ✅ Implemented and ready for use
 
 **Purpose**: Core calculation logic for statement data (deterministic, reusable)
 
@@ -72,22 +85,25 @@ The implementation will follow the existing codebase patterns:
      }
      ```
 
-**SQL Queries needed**:
+**SQL Queries implemented**:
 
-- Beginning Balance:
+- Beginning Balance (implemented as separate queries for clarity):
   ```sql
-  SELECT 
-    COALESCE(SUM(i.total_cents), 0) - 
-    COALESCE(SUM(pa.amount_cents), 0) as beginning_balance_cents
-  FROM invoices i
-  LEFT JOIN payment_applications pa ON pa.invoice_id = i.id
-  LEFT JOIN payments p ON pa.payment_id = p.id
+  -- Sum of invoices before start_date
+  SELECT COALESCE(SUM(total_cents), 0) as total_invoices_cents
+  FROM invoices
+  WHERE client_id = $1
+    AND status != 'voided'
+    AND invoice_date < $2
+
+  -- Sum of payments before start_date
+  SELECT COALESCE(SUM(pa.amount_cents), 0) as total_payments_cents
+  FROM payment_applications pa
+  JOIN payments p ON pa.payment_id = p.id
+  JOIN invoices i ON pa.invoice_id = i.id
   WHERE i.client_id = $1
     AND i.status != 'voided'
-    AND (
-      i.invoice_date < $2
-      OR (i.invoice_date = $2 AND p.payment_date < $2)
-    )
+    AND p.payment_date < $2
   ```
 
 - Period Transactions:
@@ -131,6 +147,17 @@ The implementation will follow the existing codebase patterns:
 - Validate client exists
 - Validate dates (start_date <= end_date)
 - Handle edge cases (no transactions, negative balances, etc.)
+
+**Implementation Notes**:
+- ✅ All three functions implemented: `calculateBeginningBalance()`, `fetchStatementData()`, `calculateStatement()`
+- ✅ Beginning balance calculation uses separate queries for invoices and payments (simpler and more accurate)
+- ✅ Transaction ordering implemented: date ASC → type (invoice before payment) → invoice_number/payment_id ASC
+- ✅ Running balance calculated correctly during transaction processing
+- ✅ Company settings fetched from `system_settings` table (handles missing table gracefully)
+- ✅ Full input validation (client existence, date format, date range)
+- ✅ JSDoc comments added to all functions
+- ✅ Follows existing codebase patterns (similar to `invoiceService.js`)
+- ✅ No linting errors
 
 ---
 
