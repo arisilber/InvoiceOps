@@ -347,16 +347,16 @@ export const generateInvoiceHTML = (invoice) => {
     </div>
 
     <div class="invoice-top-row">
-      <div class="invoice-total-section">
-        <div class="invoice-total-label">TOTAL AMOUNT DUE</div>
-        <div class="invoice-total-amount">${formatCurrency(invoice.total_cents)}</div>
-      </div>
-
       <div class="client-info">
         <div class="client-info-label">Bill To:</div>
         <div class="client-info-row">
           <span class="client-info-name">${escapeHtml(invoice.client_name || 'N/A')}</span>
         </div>
+      </div>
+
+      <div class="invoice-total-section">
+        <div class="invoice-total-label">TOTAL AMOUNT DUE</div>
+        <div class="invoice-total-amount">${formatCurrency(invoice.total_cents)}</div>
       </div>
     </div>
 
