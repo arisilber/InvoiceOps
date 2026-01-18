@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Download, Loader2, Trash2, Eye, AlertTriangle, Send, FileEdit } from 'lucide-react';
+import { Search, Download, Loader2, Trash2, Eye, AlertTriangle, Send, FileEdit, Filter, X } from 'lucide-react';
 import api from '../services/api';
 
 const InvoiceList = () => {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [invoices, setInvoices] = useState([]);
+    const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -16,12 +17,30 @@ const InvoiceList = () => {
     const [deleting, setDeleting] = useState(false);
     const [markingAsSent, setMarkingAsSent] = useState(null);
     const [markingAsDraft, setMarkingAsDraft] = useState(null);
+    
+    // Filter states
+    const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
+    const [clientFilter, setClientFilter] = useState(searchParams.get('client_id') || '');
+    const [overdueFilter, setOverdueFilter] = useState(searchParams.get('overdue') === 'true');
+    const [dateFromFilter, setDateFromFilter] = useState(searchParams.get('date_from') || '');
+    const [dateToFilter, setDateToFilter] = useState(searchParams.get('date_to') || '');
+    const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+    const fetchClients = useCallback(async () => {
+        try {
+            const data = await api.getClients();
+            setClients(data);
+        } catch (err) {
+            console.error('Error fetching clients:', err);
+        }
+    }, []);
 
     const fetchInvoices = useCallback(async () => {
         try {
             setLoading(true);
-            const statusFilter = searchParams.get('status');
-            const filters = statusFilter ? { status: statusFilter } : {};
+            const filters = {};
+            if (statusFilter) filters.status = statusFilter;
+            if (clientFilter) filters.client_id = clientFilter;
             const data = await api.getInvoices(filters);
             setInvoices(data);
             setError(null);
@@ -31,11 +50,27 @@ const InvoiceList = () => {
         } finally {
             setLoading(false);
         }
-    }, [searchParams]);
+    }, [statusFilter, clientFilter]);
+
+    useEffect(() => {
+        fetchClients();
+    }, [fetchClients]);
 
     useEffect(() => {
         fetchInvoices();
     }, [fetchInvoices]);
+
+    // Update URL params when filters change
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (statusFilter) params.set('status', statusFilter);
+        if (clientFilter) params.set('client_id', clientFilter);
+        if (overdueFilter) params.set('overdue', 'true');
+        if (dateFromFilter) params.set('date_from', dateFromFilter);
+        if (dateToFilter) params.set('date_to', dateToFilter);
+        
+        setSearchParams(params, { replace: true });
+    }, [statusFilter, clientFilter, overdueFilter, dateFromFilter, dateToFilter, setSearchParams]);
 
     const filteredInvoices = invoices.filter(invoice => {
         // Search filter
@@ -44,17 +79,41 @@ const InvoiceList = () => {
         
         if (!matchesSearch) return false;
 
-        // Overdue filter from URL params
-        const overdueFilter = searchParams.get('overdue');
-        if (overdueFilter === 'true') {
+        // Overdue filter
+        if (overdueFilter) {
             const now = new Date();
             const dueDate = new Date(invoice.due_date);
             const isOverdue = dueDate < now && (invoice.status === 'sent' || invoice.status === 'partially_paid');
-            return isOverdue;
+            if (!isOverdue) return false;
+        }
+
+        // Date range filters
+        if (dateFromFilter) {
+            const invoiceDate = new Date(invoice.invoice_date);
+            const fromDate = new Date(dateFromFilter);
+            fromDate.setHours(0, 0, 0, 0);
+            if (invoiceDate < fromDate) return false;
+        }
+
+        if (dateToFilter) {
+            const invoiceDate = new Date(invoice.invoice_date);
+            const toDate = new Date(dateToFilter);
+            toDate.setHours(23, 59, 59, 999);
+            if (invoiceDate > toDate) return false;
         }
 
         return true;
     });
+
+    const hasActiveFilters = statusFilter || clientFilter || overdueFilter || dateFromFilter || dateToFilter;
+
+    const clearFilters = () => {
+        setStatusFilter('');
+        setClientFilter('');
+        setOverdueFilter(false);
+        setDateFromFilter('');
+        setDateToFilter('');
+    };
 
     const handlePreview = (invoice) => {
         navigate(`/invoices/${invoice.id}/view`);
@@ -160,6 +219,42 @@ const InvoiceList = () => {
         return dueDate < now;
     };
 
+    // Calculate totals
+    const calculateTotals = () => {
+        const totals = {
+            totalAmount: 0,
+            overdueAmount: 0,
+            overdueCount: 0,
+            byStatus: {
+                draft: { count: 0, amount: 0 },
+                sent: { count: 0, amount: 0 },
+                paid: { count: 0, amount: 0 },
+                partially_paid: { count: 0, amount: 0 },
+                voided: { count: 0, amount: 0 }
+            }
+        };
+
+        filteredInvoices.forEach(invoice => {
+            const amount = invoice.total_cents || 0;
+            totals.totalAmount += amount;
+            
+            const status = invoice.status || 'draft';
+            if (totals.byStatus[status]) {
+                totals.byStatus[status].count += 1;
+                totals.byStatus[status].amount += amount;
+            }
+
+            if (isOverdue(invoice)) {
+                totals.overdueAmount += amount;
+                totals.overdueCount += 1;
+            }
+        });
+
+        return totals;
+    };
+
+    const totals = calculateTotals();
+
     if (loading) {
         return (
             <div className="flex items-center justify-center" style={{ height: '400px' }}>
@@ -234,6 +329,296 @@ const InvoiceList = () => {
                 </div>
             </div>
 
+            {/* Filters */}
+            <div style={{
+                border: '1px solid var(--border)',
+                borderRadius: '0.5rem',
+                backgroundColor: 'var(--card-bg)',
+                marginBottom: '1.5rem',
+                overflow: 'hidden'
+            }}>
+                {/* Filter Toggle Bar */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 1rem'
+                }}>
+                    <button
+                        onClick={() => setFiltersExpanded(!filtersExpanded)}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.5rem 0.75rem',
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            color: 'var(--foreground)',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            borderRadius: '0.375rem',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.15s ease',
+                            fontFamily: 'inherit'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.02)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
+                    >
+                        <Filter size={16} />
+                        Filters
+                        {hasActiveFilters && (
+                            <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                minWidth: '20px',
+                                height: '20px',
+                                padding: '0 6px',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                color: 'white',
+                                backgroundColor: 'var(--primary)',
+                                borderRadius: '10px'
+                            }}>
+                                {[statusFilter, clientFilter, overdueFilter, dateFromFilter, dateToFilter].filter(Boolean).length}
+                            </span>
+                        )}
+                    </button>
+                    {hasActiveFilters && (
+                        <button
+                            onClick={clearFilters}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.375rem',
+                                padding: '0.5rem 0.75rem',
+                                fontSize: '0.875rem',
+                                fontWeight: 500,
+                                color: 'var(--foreground)',
+                                backgroundColor: 'transparent',
+                                border: 'none',
+                                borderRadius: '0.375rem',
+                                cursor: 'pointer',
+                                transition: 'background-color 0.15s ease',
+                                fontFamily: 'inherit',
+                                opacity: 0.7
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.02)';
+                                e.currentTarget.style.opacity = '1';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.opacity = '0.7';
+                            }}
+                        >
+                            <X size={14} />
+                            Clear
+                        </button>
+                    )}
+                </div>
+
+                {/* Expanded Filters */}
+                {filtersExpanded && (
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '1rem',
+                        padding: '1.25rem',
+                        borderTop: '1px solid var(--border)'
+                    }}>
+                        {/* Status Filter */}
+                        <div>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                color: 'var(--foreground)',
+                                opacity: 0.7,
+                                marginBottom: '0.5rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>
+                                Status
+                            </label>
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.5rem 0.75rem',
+                                    fontSize: '0.875rem',
+                                    fontFamily: 'inherit',
+                                    backgroundColor: 'var(--background)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '0.375rem',
+                                    color: 'var(--foreground)',
+                                    outline: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'border-color 0.15s ease'
+                                }}
+                                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                                onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                            >
+                                <option value="">All Statuses</option>
+                                <option value="draft">Draft</option>
+                                <option value="sent">Sent</option>
+                                <option value="partially_paid">Partially Paid</option>
+                                <option value="paid">Paid</option>
+                                <option value="voided">Voided</option>
+                            </select>
+                        </div>
+
+                        {/* Client Filter */}
+                        <div>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                color: 'var(--foreground)',
+                                opacity: 0.7,
+                                marginBottom: '0.5rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>
+                                Client
+                            </label>
+                            <select
+                                value={clientFilter}
+                                onChange={(e) => setClientFilter(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.5rem 0.75rem',
+                                    fontSize: '0.875rem',
+                                    fontFamily: 'inherit',
+                                    backgroundColor: 'var(--background)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '0.375rem',
+                                    color: 'var(--foreground)',
+                                    outline: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'border-color 0.15s ease'
+                                }}
+                                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                                onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                            >
+                                <option value="">All Clients</option>
+                                {clients.map(client => (
+                                    <option key={client.id} value={client.id}>
+                                        {client.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Date From Filter */}
+                        <div>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                color: 'var(--foreground)',
+                                opacity: 0.7,
+                                marginBottom: '0.5rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>
+                                Date From
+                            </label>
+                            <input
+                                type="date"
+                                value={dateFromFilter}
+                                onChange={(e) => setDateFromFilter(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.5rem 0.75rem',
+                                    fontSize: '0.875rem',
+                                    fontFamily: 'inherit',
+                                    backgroundColor: 'var(--background)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '0.375rem',
+                                    color: 'var(--foreground)',
+                                    outline: 'none',
+                                    transition: 'border-color 0.15s ease'
+                                }}
+                                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                                onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                            />
+                        </div>
+
+                        {/* Date To Filter */}
+                        <div>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                color: 'var(--foreground)',
+                                opacity: 0.7,
+                                marginBottom: '0.5rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>
+                                Date To
+                            </label>
+                            <input
+                                type="date"
+                                value={dateToFilter}
+                                onChange={(e) => setDateToFilter(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.5rem 0.75rem',
+                                    fontSize: '0.875rem',
+                                    fontFamily: 'inherit',
+                                    backgroundColor: 'var(--background)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '0.375rem',
+                                    color: 'var(--foreground)',
+                                    outline: 'none',
+                                    transition: 'border-color 0.15s ease'
+                                }}
+                                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                                onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                            />
+                        </div>
+
+                        {/* Overdue Filter */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-end',
+                            paddingBottom: '0.5rem'
+                        }}>
+                            <label style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                fontSize: '0.875rem',
+                                fontWeight: 500,
+                                color: 'var(--foreground)',
+                                cursor: 'pointer',
+                                userSelect: 'none'
+                            }}>
+                                <input
+                                    type="checkbox"
+                                    checked={overdueFilter}
+                                    onChange={(e) => setOverdueFilter(e.target.checked)}
+                                    style={{
+                                        width: '18px',
+                                        height: '18px',
+                                        cursor: 'pointer',
+                                        accentColor: 'var(--primary)'
+                                    }}
+                                />
+                                <span>Show only overdue</span>
+                            </label>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* Error State */}
             {error && (
                 <div style={{
@@ -268,6 +653,158 @@ const InvoiceList = () => {
                     }}>
                         {searchTerm ? 'No invoices match your search.' : 'No invoices found.'}
                     </div>
+                </div>
+            )}
+
+            {/* Totals Summary */}
+            {!error && filteredInvoices.length > 0 && (
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '1rem',
+                    marginBottom: '1.5rem'
+                }}>
+                    {/* Total Amount */}
+                    <div style={{
+                        padding: '1.25rem 1.5rem',
+                        border: '1px solid var(--border)',
+                        borderRadius: '0.5rem',
+                        backgroundColor: 'var(--card-bg)'
+                    }}>
+                        <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                            color: 'var(--foreground)',
+                            opacity: 0.6,
+                            marginBottom: '0.5rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}>
+                            Total Amount
+                        </div>
+                        <div style={{
+                            fontSize: '1.5rem',
+                            fontWeight: 600,
+                            color: 'var(--foreground)',
+                            letterSpacing: '-0.02em'
+                        }}>
+                            {formatCurrency(totals.totalAmount)}
+                        </div>
+                    </div>
+
+                    {/* Overdue Amount */}
+                    {totals.overdueCount > 0 && (
+                        <div style={{
+                            padding: '1.25rem 1.5rem',
+                            border: '1px solid #FEE2E2',
+                            borderRadius: '0.5rem',
+                            backgroundColor: '#FEF2F2'
+                        }}>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                color: '#991B1B',
+                                opacity: 0.8,
+                                marginBottom: '0.5rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>
+                                Overdue
+                            </div>
+                            <div style={{
+                                fontSize: '1.5rem',
+                                fontWeight: 600,
+                                color: '#DC2626',
+                                letterSpacing: '-0.02em'
+                            }}>
+                                {formatCurrency(totals.overdueAmount)}
+                            </div>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                color: '#991B1B',
+                                opacity: 0.7,
+                                marginTop: '0.25rem'
+                            }}>
+                                {totals.overdueCount} {totals.overdueCount === 1 ? 'invoice' : 'invoices'}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Paid Amount */}
+                    {totals.byStatus.paid.count > 0 && (
+                        <div style={{
+                            padding: '1.25rem 1.5rem',
+                            border: '1px solid #DCFCE7',
+                            borderRadius: '0.5rem',
+                            backgroundColor: '#F0FDF4'
+                        }}>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                color: '#166534',
+                                opacity: 0.8,
+                                marginBottom: '0.5rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>
+                                Paid
+                            </div>
+                            <div style={{
+                                fontSize: '1.5rem',
+                                fontWeight: 600,
+                                color: '#166534',
+                                letterSpacing: '-0.02em'
+                            }}>
+                                {formatCurrency(totals.byStatus.paid.amount)}
+                            </div>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                color: '#166534',
+                                opacity: 0.7,
+                                marginTop: '0.25rem'
+                            }}>
+                                {totals.byStatus.paid.count} {totals.byStatus.paid.count === 1 ? 'invoice' : 'invoices'}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Outstanding (Sent + Partially Paid) */}
+                    {(totals.byStatus.sent.count > 0 || totals.byStatus.partially_paid.count > 0) && (
+                        <div style={{
+                            padding: '1.25rem 1.5rem',
+                            border: '1px solid #DBEAFE',
+                            borderRadius: '0.5rem',
+                            backgroundColor: '#EFF6FF'
+                        }}>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                color: '#1E40AF',
+                                opacity: 0.8,
+                                marginBottom: '0.5rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>
+                                Outstanding
+                            </div>
+                            <div style={{
+                                fontSize: '1.5rem',
+                                fontWeight: 600,
+                                color: '#1E40AF',
+                                letterSpacing: '-0.02em'
+                            }}>
+                                {formatCurrency(totals.byStatus.sent.amount + totals.byStatus.partially_paid.amount)}
+                            </div>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                color: '#1E40AF',
+                                opacity: 0.7,
+                                marginTop: '0.25rem'
+                            }}>
+                                {totals.byStatus.sent.count + totals.byStatus.partially_paid.count} {totals.byStatus.sent.count + totals.byStatus.partially_paid.count === 1 ? 'invoice' : 'invoices'}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -367,7 +904,7 @@ const InvoiceList = () => {
                                             gridTemplateColumns: '1.5fr 2fr 1.2fr 1.2fr 1fr 0.8fr',
                                             gap: '1.5rem',
                                             padding: '1rem 1.5rem',
-                                            borderBottom: index !== filteredInvoices.length - 1 ? '1px solid var(--border)' : 'none',
+                                            borderBottom: '1px solid var(--border)',
                                                 cursor: 'pointer',
                                             transition: 'background-color 0.15s ease',
                                             backgroundColor: 'transparent'
@@ -648,6 +1185,44 @@ const InvoiceList = () => {
                                 </div>
                             );
                         })}
+                    </div>
+
+                    {/* Totals Footer */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1.5fr 2fr 1.2fr 1.2fr 1fr 0.8fr',
+                        gap: '1.5rem',
+                        padding: '1rem 1.5rem',
+                        borderTop: '2px solid var(--border)',
+                        backgroundColor: 'var(--background)'
+                    }}>
+                        <div style={{
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            color: 'var(--foreground)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}>
+                            Total
+                        </div>
+                        <div style={{
+                            fontSize: '0.875rem',
+                            color: 'var(--foreground)',
+                            opacity: 0.5
+                        }}>
+                            {filteredInvoices.length} {filteredInvoices.length === 1 ? 'invoice' : 'invoices'}
+                        </div>
+                        <div style={{
+                            textAlign: 'right',
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            color: 'var(--foreground)'
+                        }}>
+                            {formatCurrency(totals.totalAmount)}
+                        </div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
                     </div>
                 </div>
             )}
