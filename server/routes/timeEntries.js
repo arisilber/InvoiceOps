@@ -12,7 +12,8 @@ router.get('/', async (req, res, next) => {
   try {
     const { client_id, work_date_from, work_date_to } = req.query;
     let queryText = `
-      SELECT te.*, c.name as client_name, wt.code as work_type_code, wt.description as work_type_description, 
+      SELECT te.*, c.name as client_name, c.hourly_rate_cents, c.discount_percent,
+             wt.code as work_type_code, wt.description as work_type_description, 
              i.invoice_number, i.invoice_date, i.status as invoice_status, i.total_cents as invoice_total_cents
       FROM time_entries te
       JOIN clients c ON te.client_id = c.id

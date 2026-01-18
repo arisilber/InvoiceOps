@@ -11,6 +11,7 @@ import {
     Edit2,
     Trash2,
     ChevronRight,
+    ChevronDown,
     Download,
     Plus,
     X,
@@ -18,7 +19,9 @@ import {
     AlertCircle,
     FileText,
     Upload,
-    ExternalLink
+    ExternalLink,
+    LayoutGrid,
+    List
 } from 'lucide-react';
 import api from '../services/api';
 import LogTimeEntry from './LogTimeEntry';
@@ -42,6 +45,10 @@ const TimeEntryList = () => {
         work_date_to: '',
         is_invoiced: '' // '' (all), 'true', 'false'
     });
+
+    // View State
+    const [showSummaryView, setShowSummaryView] = useState(false);
+    const [expandedDates, setExpandedDates] = useState(new Set());
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -101,6 +108,43 @@ const TimeEntryList = () => {
         return `${m}m`;
     };
 
+    // Calculate daily summary from filtered entries
+    const getDailySummary = () => {
+        const dailyTotals = {};
+        entries.forEach(entry => {
+            const date = entry.work_date;
+            if (!dailyTotals[date]) {
+                dailyTotals[date] = 0;
+            }
+            dailyTotals[date] += entry.minutes_spent || 0;
+        });
+
+        // Convert to array and sort by date (newest first)
+        return Object.entries(dailyTotals)
+            .map(([date, minutes]) => ({ date, minutes }))
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
+    };
+
+    const dailySummary = getDailySummary();
+    const totalMinutes = entries.reduce((sum, entry) => sum + (entry.minutes_spent || 0), 0);
+    const totalHours = totalMinutes / 60;
+
+    // Calculate total money considering customer discount
+    const totalMoneyCents = entries.reduce((sum, entry) => {
+        const hours = (entry.minutes_spent || 0) / 60;
+        const hourlyRateCents = entry.hourly_rate_cents || 0;
+        const discountPercent = entry.discount_percent || 0;
+        
+        // Calculate pre-discount amount
+        const preDiscountCents = hours * hourlyRateCents;
+        
+        // Apply discount
+        const discountCents = (preDiscountCents * discountPercent) / 100;
+        const amountCents = preDiscountCents - discountCents;
+        
+        return sum + amountCents;
+    }, 0);
+
     const formatDate = (dateString) => {
         return formatDateUtil(dateString);
     };
@@ -134,6 +178,18 @@ const TimeEntryList = () => {
         return statusMap[status] || status || 'Unknown';
     };
 
+    const toggleDateExpansion = (date) => {
+        setExpandedDates(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(date)) {
+                newSet.delete(date);
+            } else {
+                newSet.add(date);
+            }
+            return newSet;
+        });
+    };
+
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -141,7 +197,7 @@ const TimeEntryList = () => {
                     <h2 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>Time Tracking</h2>
                     <p style={{ opacity: 0.7 }}>Review and manage your logged work</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                     <button
                         className="btn btn-secondary"
                         onClick={() => setIsCSVUploadOpen(true)}
@@ -166,7 +222,75 @@ const TimeEntryList = () => {
             </div>
 
             {/* Filter Bar */}
-            <div className="card glass" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+            <div style={{ 
+                background: 'var(--card-bg)', 
+                border: '1px solid var(--border)', 
+                borderRadius: '8px',
+                padding: '1.5rem', 
+                marginBottom: '2rem'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h3 style={{ 
+                        fontSize: '0.9375rem', 
+                        fontWeight: 600,
+                        letterSpacing: '-0.01em',
+                        color: 'var(--foreground)'
+                    }}>
+                        Filters
+                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.8125rem', color: 'var(--foreground)', opacity: 0.6 }}>View:</span>
+                        <div style={{ 
+                            display: 'flex', 
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            overflow: 'hidden',
+                            background: 'var(--background)'
+                        }}>
+                            <button
+                                onClick={() => setShowSummaryView(false)}
+                                style={{
+                                    padding: '0.5rem 0.75rem',
+                                    border: 'none',
+                                    background: showSummaryView ? 'transparent' : 'var(--foreground)',
+                                    color: showSummaryView ? 'var(--foreground)' : 'var(--background)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.375rem',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 500,
+                                    transition: 'background-color 0.15s ease',
+                                    fontFamily: 'var(--font-sans)'
+                                }}
+                            >
+                                <List size={14} />
+                                Table
+                            </button>
+                            <button
+                                onClick={() => setShowSummaryView(true)}
+                                style={{
+                                    padding: '0.5rem 0.75rem',
+                                    border: 'none',
+                                    borderLeft: '1px solid var(--border)',
+                                    background: showSummaryView ? 'var(--foreground)' : 'transparent',
+                                    color: showSummaryView ? 'var(--background)' : 'var(--foreground)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.375rem',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 500,
+                                    transition: 'background-color 0.15s ease',
+                                    fontFamily: 'var(--font-sans)'
+                                }}
+                            >
+                                <LayoutGrid size={14} />
+                                Summary
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', alignItems: 'end' }}>
                     <div className="flex flex-col gap-2">
                         <label style={{ fontSize: '0.85rem', fontWeight: 600, opacity: 0.8 }}>Client</label>
@@ -250,7 +374,7 @@ const TimeEntryList = () => {
                 </div>
             </div>
 
-            {/* Entries List */}
+            {/* Content Area - Summary or Table */}
             {loading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem' }}>
                     <Loader2 className="animate-spin" size={40} color="var(--primary)" />
@@ -271,201 +395,847 @@ const TimeEntryList = () => {
                         Log Your First Entry
                     </button>
                 </div>
-            ) : (
-                <div className="card glass" style={{ padding: 0, overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead style={{ background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid var(--border)' }}>
-                            <tr>
-                                <th style={{ padding: '1.25rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7 }}>Date</th>
-                                <th style={{ padding: '1.25rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7 }}>Client & Project</th>
-                                <th style={{ padding: '1.25rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7 }}>Work Type</th>
-                                <th style={{ padding: '1.25rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7 }}>Duration</th>
-                                <th style={{ padding: '1.25rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7 }}>Status</th>
-                                <th style={{ padding: '1.25rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, opacity: 0.7 }}>Details</th>
-                                <th style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}></th>
+            ) : showSummaryView ? (
+                /* Daily Summary Table View */
+                <div style={{ 
+                    background: 'var(--card-bg)', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: '8px',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{ 
+                        padding: '1rem 1.5rem', 
+                        borderBottom: '1px solid var(--border)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: 'var(--background)'
+                    }}>
+                        <h3 style={{ 
+                            fontSize: '0.9375rem', 
+                            fontWeight: 600, 
+                            letterSpacing: '-0.01em',
+                            color: 'var(--foreground)'
+                        }}>
+                            Daily Summary
+                        </h3>
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'baseline', 
+                            gap: '1.5rem',
+                            fontSize: '0.875rem',
+                            color: 'var(--foreground)',
+                            opacity: 0.7
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                                <span>Total Time:</span>
+                                <span style={{ 
+                                    fontWeight: 600, 
+                                    fontSize: '0.9375rem',
+                                    opacity: 1,
+                                    fontVariantNumeric: 'tabular-nums'
+                                }}>
+                                    {formatMinutes(totalMinutes)}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                                <span>Total Amount:</span>
+                                <span style={{ 
+                                    fontWeight: 600, 
+                                    fontSize: '0.9375rem',
+                                    opacity: 1,
+                                    fontVariantNumeric: 'tabular-nums'
+                                }}>
+                                    {formatCurrency(Math.round(totalMoneyCents))}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <table style={{ 
+                        width: '100%', 
+                        borderCollapse: 'collapse',
+                        fontSize: '0.875rem'
+                    }}>
+                        <thead>
+                            <tr style={{ 
+                                background: 'var(--background)',
+                                borderBottom: '1px solid var(--border)'
+                            }}>
+                                <th style={{ 
+                                    padding: '0.875rem 1.5rem', 
+                                    textAlign: 'left',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    opacity: 0.6,
+                                    letterSpacing: '0.01em',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    Date
+                                </th>
+                                <th style={{ 
+                                    padding: '0.875rem 1.5rem', 
+                                    textAlign: 'right',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    opacity: 0.6,
+                                    letterSpacing: '0.01em',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    Entries
+                                </th>
+                                <th style={{ 
+                                    padding: '0.875rem 1.5rem', 
+                                    textAlign: 'right',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    opacity: 0.6,
+                                    letterSpacing: '0.01em',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    Total Time
+                                </th>
+                                <th style={{ 
+                                    padding: '0.875rem 1.5rem', 
+                                    textAlign: 'right',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    opacity: 0.6,
+                                    letterSpacing: '0.01em',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    Total Amount
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
-                            <AnimatePresence>
-                                {entries.map((entry) => (
-                                    <motion.tr
-                                        key={entry.id}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}
-                                        className="table-row-hover"
-                                    >
-                                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                                            <div style={{ fontWeight: 500 }}>{formatDate(entry.work_date)}</div>
-                                        </td>
-                                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                                            <div style={{ fontWeight: 600 }}>{entry.client_name}</div>
-                                            <div style={{ fontSize: '0.85rem', opacity: 0.6 }}>{entry.project_name}</div>
-                                        </td>
-                                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                                            <span style={{
-                                                fontSize: '0.8rem',
-                                                padding: '0.25rem 0.6rem',
-                                                borderRadius: '2rem',
-                                                background: 'var(--ring)',
-                                                color: 'var(--primary)',
-                                                fontWeight: 600
+                            {dailySummary.map(({ date, minutes }, index) => {
+                                const dayEntries = entries.filter(e => e.work_date === date);
+                                const dayEntriesCount = dayEntries.length;
+                                const isExpanded = expandedDates.has(date);
+                                
+                                // Calculate total money for this day
+                                const dayMoneyCents = dayEntries.reduce((sum, entry) => {
+                                    const hours = (entry.minutes_spent || 0) / 60;
+                                    const hourlyRateCents = entry.hourly_rate_cents || 0;
+                                    const discountPercent = entry.discount_percent || 0;
+                                    
+                                    // Calculate pre-discount amount
+                                    const preDiscountCents = hours * hourlyRateCents;
+                                    
+                                    // Apply discount
+                                    const discountCents = (preDiscountCents * discountPercent) / 100;
+                                    const amountCents = preDiscountCents - discountCents;
+                                    
+                                    return sum + amountCents;
+                                }, 0);
+                                
+                                return (
+                                    <React.Fragment key={date}>
+                                        <tr
+                                            style={{ 
+                                                borderBottom: isExpanded ? 'none' : (index < dailySummary.length - 1 ? '1px solid var(--border)' : 'none'),
+                                                transition: 'background-color 0.15s ease',
+                                                cursor: 'pointer'
+                                            }}
+                                            onClick={() => toggleDateExpansion(date)}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.backgroundColor = 'var(--background)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.backgroundColor = 'transparent';
+                                            }}
+                                        >
+                                            <td style={{ 
+                                                padding: '1rem 1.5rem',
+                                                fontWeight: 500,
+                                                color: 'var(--foreground)',
+                                                fontVariantNumeric: 'tabular-nums',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem'
                                             }}>
-                                                {entry.work_type_code}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
-                                                <Clock size={14} opacity={0.5} />
-                                                {formatMinutes(entry.minutes_spent)}
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                                            {entry.invoice_id ? (
+                                                {isExpanded ? (
+                                                    <ChevronDown size={16} style={{ opacity: 0.6 }} />
+                                                ) : (
+                                                    <ChevronRight size={16} style={{ opacity: 0.6 }} />
+                                                )}
+                                                {formatDate(date)}
+                                            </td>
+                                            <td style={{ 
+                                                padding: '1rem 1.5rem',
+                                                textAlign: 'right',
+                                                color: 'var(--foreground)',
+                                                opacity: 0.7,
+                                                fontVariantNumeric: 'tabular-nums'
+                                            }}>
+                                                {dayEntriesCount}
+                                            </td>
+                                            <td style={{ 
+                                                padding: '1rem 1.5rem',
+                                                textAlign: 'right',
+                                                fontWeight: 600,
+                                                color: 'var(--foreground)',
+                                                fontVariantNumeric: 'tabular-nums',
+                                                letterSpacing: '0.01em'
+                                            }}>
+                                                {formatMinutes(minutes)}
+                                            </td>
+                                            <td style={{ 
+                                                padding: '1rem 1.5rem',
+                                                textAlign: 'right',
+                                                fontWeight: 600,
+                                                color: 'var(--foreground)',
+                                                fontSize: '0.9375rem',
+                                                fontVariantNumeric: 'tabular-nums'
+                                            }}>
+                                                {formatCurrency(Math.round(dayMoneyCents))}
+                                            </td>
+                                        </tr>
+                                        {isExpanded && (
+                                            <tr>
+                                                <td colSpan="4" style={{ 
+                                                    padding: 0,
+                                                    background: 'var(--background)',
+                                                    borderBottom: index < dailySummary.length - 1 ? '1px solid var(--border)' : 'none'
+                                                }}>
+                                                    <div style={{ padding: '1rem 1.5rem' }}>
+                                                        <table style={{ 
+                                                            width: '100%',
+                                                            borderCollapse: 'collapse',
+                                                            fontSize: '0.875rem'
+                                                        }}>
+                                                            <thead>
+                                                                <tr style={{ 
+                                                                    borderBottom: '1px solid var(--border)'
+                                                                }}>
+                                                                    <th style={{ 
+                                                                        padding: '0.75rem 1rem', 
+                                                                        textAlign: 'left',
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: 600,
+                                                                        color: 'var(--foreground)',
+                                                                        opacity: 0.6,
+                                                                        textTransform: 'uppercase'
+                                                                    }}>
+                                                                        Client & Project
+                                                                    </th>
+                                                                    <th style={{ 
+                                                                        padding: '0.75rem 1rem', 
+                                                                        textAlign: 'left',
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: 600,
+                                                                        color: 'var(--foreground)',
+                                                                        opacity: 0.6,
+                                                                        textTransform: 'uppercase'
+                                                                    }}>
+                                                                        Work Type
+                                                                    </th>
+                                                                    <th style={{ 
+                                                                        padding: '0.75rem 1rem', 
+                                                                        textAlign: 'right',
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: 600,
+                                                                        color: 'var(--foreground)',
+                                                                        opacity: 0.6,
+                                                                        textTransform: 'uppercase'
+                                                                    }}>
+                                                                        Duration
+                                                                    </th>
+                                                                    <th style={{ 
+                                                                        padding: '0.75rem 1rem', 
+                                                                        textAlign: 'left',
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: 600,
+                                                                        color: 'var(--foreground)',
+                                                                        opacity: 0.6,
+                                                                        textTransform: 'uppercase'
+                                                                    }}>
+                                                                        Status
+                                                                    </th>
+                                                                    <th style={{ 
+                                                                        padding: '0.75rem 1rem', 
+                                                                        textAlign: 'left',
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: 600,
+                                                                        color: 'var(--foreground)',
+                                                                        opacity: 0.6,
+                                                                        textTransform: 'uppercase'
+                                                                    }}>
+                                                                        Details
+                                                                    </th>
+                                                                    <th style={{ 
+                                                                        padding: '0.75rem 1rem', 
+                                                                        textAlign: 'right',
+                                                                        width: '100px'
+                                                                    }}></th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {dayEntries.map((entry, entryIndex) => (
+                                                                    <tr
+                                                                        key={entry.id}
+                                                                        style={{ 
+                                                                            borderBottom: entryIndex < dayEntries.length - 1 ? '1px solid var(--border)' : 'none',
+                                                                            transition: 'background-color 0.15s ease'
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.currentTarget.style.backgroundColor = 'var(--card-bg)';
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                                                        }}
+                                                                    >
+                                                                        <td style={{ padding: '0.75rem 1rem' }}>
+                                                                            <div style={{ fontWeight: 600, color: 'var(--foreground)', marginBottom: '0.25rem' }}>
+                                                                                {entry.client_name}
+                                                                            </div>
+                                                                            <div style={{ fontSize: '0.8125rem', color: 'var(--foreground)', opacity: 0.6 }}>
+                                                                                {entry.project_name || '—'}
+                                                                            </div>
+                                                                        </td>
+                                                                        <td style={{ padding: '0.75rem 1rem' }}>
+                                                                            <span style={{
+                                                                                fontSize: '0.8125rem',
+                                                                                padding: '0.25rem 0.5rem',
+                                                                                borderRadius: '4px',
+                                                                                background: 'var(--card-bg)',
+                                                                                border: '1px solid var(--border)',
+                                                                                color: 'var(--foreground)',
+                                                                                fontWeight: 500,
+                                                                                fontFamily: 'monospace',
+                                                                                letterSpacing: '0.05em'
+                                                                            }}>
+                                                                                {entry.work_type_code}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td style={{ 
+                                                                            padding: '0.75rem 1rem',
+                                                                            textAlign: 'right',
+                                                                            fontWeight: 600,
+                                                                            color: 'var(--foreground)',
+                                                                            fontVariantNumeric: 'tabular-nums',
+                                                                            letterSpacing: '0.01em'
+                                                                        }}>
+                                                                            {formatMinutes(entry.minutes_spent)}
+                                                                        </td>
+                                                                        <td style={{ padding: '0.75rem 1rem' }}>
+                                                                            {entry.invoice_id ? (
+                                                                                <div style={{
+                                                                                    display: 'flex',
+                                                                                    flexDirection: 'column',
+                                                                                    gap: '0.5rem'
+                                                                                }}>
+                                                                                    <button
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            navigate(`/invoices/${entry.invoice_id}`);
+                                                                                        }}
+                                                                                        style={{
+                                                                                            fontSize: '0.8125rem',
+                                                                                            fontWeight: 600,
+                                                                                            background: 'none',
+                                                                                            border: 'none',
+                                                                                            color: 'var(--foreground)',
+                                                                                            cursor: 'pointer',
+                                                                                            padding: 0,
+                                                                                            textAlign: 'left',
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            gap: '0.375rem',
+                                                                                            fontFamily: 'monospace',
+                                                                                            letterSpacing: '0.025em',
+                                                                                            transition: 'color 0.15s ease'
+                                                                                        }}
+                                                                                        onMouseEnter={(e) => {
+                                                                                            e.target.style.color = 'var(--primary)';
+                                                                                        }}
+                                                                                        onMouseLeave={(e) => {
+                                                                                            e.target.style.color = 'var(--foreground)';
+                                                                                        }}
+                                                                                    >
+                                                                                        INV-{entry.invoice_number}
+                                                                                        <ExternalLink size={12} style={{ opacity: 0.5 }} />
+                                                                                    </button>
+                                                                                    <div style={{
+                                                                                        display: 'flex',
+                                                                                        flexDirection: 'column',
+                                                                                        gap: '0.25rem',
+                                                                                        fontSize: '0.75rem',
+                                                                                        color: 'var(--foreground)',
+                                                                                        opacity: 0.6
+                                                                                    }}>
+                                                                                        <div>
+                                                                                            {entry.invoice_date ? formatInvoiceDate(entry.invoice_date) : '—'}
+                                                                                        </div>
+                                                                                        <div style={{ textTransform: 'capitalize' }}>
+                                                                                            {entry.invoice_status ? getInvoiceStatusLabel(entry.invoice_status) : '—'}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <span style={{
+                                                                                    fontSize: '0.8125rem',
+                                                                                    color: 'var(--foreground)',
+                                                                                    opacity: 0.5
+                                                                                }}>
+                                                                                    Uninvoiced
+                                                                                </span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td style={{ 
+                                                                            padding: '0.75rem 1rem', 
+                                                                            maxWidth: '300px',
+                                                                            color: 'var(--foreground)',
+                                                                            opacity: 0.8
+                                                                        }}>
+                                                                            <div style={{ 
+                                                                                fontSize: '0.8125rem', 
+                                                                                whiteSpace: 'nowrap', 
+                                                                                overflow: 'hidden', 
+                                                                                textOverflow: 'ellipsis' 
+                                                                            }}>
+                                                                                {entry.detail || <span style={{ opacity: 0.4 }}>—</span>}
+                                                                            </div>
+                                                                        </td>
+                                                                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                                                                            <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end' }}>
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleEdit(entry);
+                                                                                    }}
+                                                                                    style={{ 
+                                                                                        padding: '0.5rem', 
+                                                                                        borderRadius: '4px', 
+                                                                                        border: '1px solid var(--border)', 
+                                                                                        background: 'transparent', 
+                                                                                        color: 'var(--foreground)', 
+                                                                                        cursor: 'pointer',
+                                                                                        transition: 'background-color 0.15s ease',
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center'
+                                                                                    }}
+                                                                                    onMouseEnter={(e) => {
+                                                                                        e.currentTarget.style.backgroundColor = 'var(--card-bg)';
+                                                                                    }}
+                                                                                    onMouseLeave={(e) => {
+                                                                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                                                                    }}
+                                                                                >
+                                                                                    <Edit2 size={14} />
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleDelete(entry.id);
+                                                                                    }}
+                                                                                    style={{ 
+                                                                                        padding: '0.5rem', 
+                                                                                        borderRadius: '4px', 
+                                                                                        border: '1px solid var(--border)', 
+                                                                                        background: 'transparent', 
+                                                                                        color: '#ef4444', 
+                                                                                        cursor: 'pointer',
+                                                                                        transition: 'background-color 0.15s ease',
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center'
+                                                                                    }}
+                                                                                    onMouseEnter={(e) => {
+                                                                                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                                                                                    }}
+                                                                                    onMouseLeave={(e) => {
+                                                                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                                                                    }}
+                                                                                >
+                                                                                    <Trash2 size={14} />
+                                                                                </button>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
+                        </tbody>
+                        <tfoot>
+                            <tr style={{ 
+                                borderTop: '2px solid var(--border)',
+                                background: 'var(--background)'
+                            }}>
+                                <td style={{ 
+                                    padding: '1rem 1.5rem',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    fontSize: '0.9375rem'
+                                }}>
+                                    Total
+                                </td>
+                                <td style={{ 
+                                    padding: '1rem 1.5rem',
+                                    textAlign: 'right',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    opacity: 0.7,
+                                    fontSize: '0.9375rem',
+                                    fontVariantNumeric: 'tabular-nums'
+                                }}>
+                                    {entries.length}
+                                </td>
+                                <td style={{ 
+                                    padding: '1rem 1.5rem',
+                                    textAlign: 'right',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    fontSize: '0.9375rem',
+                                    fontVariantNumeric: 'tabular-nums',
+                                    letterSpacing: '0.01em'
+                                }}>
+                                    {formatMinutes(totalMinutes)}
+                                </td>
+                                <td style={{ 
+                                    padding: '1rem 1.5rem',
+                                    textAlign: 'right',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    fontSize: '0.9375rem',
+                                    fontVariantNumeric: 'tabular-nums'
+                                }}>
+                                    {formatCurrency(Math.round(totalMoneyCents))}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            ) : (
+                /* Table View */
+                <div style={{ 
+                    background: 'var(--card-bg)', 
+                    border: '1px solid var(--border)', 
+                    borderRadius: '8px',
+                    overflow: 'hidden'
+                }}>
+                    <table style={{ 
+                        width: '100%', 
+                        borderCollapse: 'collapse',
+                        fontSize: '0.875rem'
+                    }}>
+                        <thead>
+                            <tr style={{ 
+                                background: 'var(--background)',
+                                borderBottom: '1px solid var(--border)'
+                            }}>
+                                <th style={{ 
+                                    padding: '0.875rem 1.5rem', 
+                                    textAlign: 'left',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    opacity: 0.6,
+                                    letterSpacing: '0.01em',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    Date
+                                </th>
+                                <th style={{ 
+                                    padding: '0.875rem 1.5rem', 
+                                    textAlign: 'left',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    opacity: 0.6,
+                                    letterSpacing: '0.01em',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    Client & Project
+                                </th>
+                                <th style={{ 
+                                    padding: '0.875rem 1.5rem', 
+                                    textAlign: 'left',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    opacity: 0.6,
+                                    letterSpacing: '0.01em',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    Work Type
+                                </th>
+                                <th style={{ 
+                                    padding: '0.875rem 1.5rem', 
+                                    textAlign: 'right',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    opacity: 0.6,
+                                    letterSpacing: '0.01em',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    Duration
+                                </th>
+                                <th style={{ 
+                                    padding: '0.875rem 1.5rem', 
+                                    textAlign: 'left',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    opacity: 0.6,
+                                    letterSpacing: '0.01em',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    Status
+                                </th>
+                                <th style={{ 
+                                    padding: '0.875rem 1.5rem', 
+                                    textAlign: 'left',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    opacity: 0.6,
+                                    letterSpacing: '0.01em',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    Details
+                                </th>
+                                <th style={{ 
+                                    padding: '0.875rem 1.5rem', 
+                                    textAlign: 'right',
+                                    width: '100px'
+                                }}></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {entries.map((entry, index) => (
+                                <tr
+                                    key={entry.id}
+                                    style={{ 
+                                        borderBottom: index < entries.length - 1 ? '1px solid var(--border)' : 'none',
+                                        transition: 'background-color 0.15s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'var(--background)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                    }}
+                                >
+                                    <td style={{ 
+                                        padding: '1rem 1.5rem',
+                                        fontWeight: 500,
+                                        color: 'var(--foreground)',
+                                        fontVariantNumeric: 'tabular-nums'
+                                    }}>
+                                        {formatDate(entry.work_date)}
+                                    </td>
+                                    <td style={{ padding: '1rem 1.5rem' }}>
+                                        <div style={{ fontWeight: 600, color: 'var(--foreground)', marginBottom: '0.25rem' }}>
+                                            {entry.client_name}
+                                        </div>
+                                        <div style={{ fontSize: '0.8125rem', color: 'var(--foreground)', opacity: 0.6 }}>
+                                            {entry.project_name || '—'}
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '1rem 1.5rem' }}>
+                                        <span style={{
+                                            fontSize: '0.8125rem',
+                                            padding: '0.25rem 0.5rem',
+                                            borderRadius: '4px',
+                                            background: 'var(--background)',
+                                            border: '1px solid var(--border)',
+                                            color: 'var(--foreground)',
+                                            fontWeight: 500,
+                                            fontFamily: 'monospace',
+                                            letterSpacing: '0.05em'
+                                        }}>
+                                            {entry.work_type_code}
+                                        </span>
+                                    </td>
+                                    <td style={{ 
+                                        padding: '1rem 1.5rem',
+                                        textAlign: 'right',
+                                        fontWeight: 600,
+                                        color: 'var(--foreground)',
+                                        fontVariantNumeric: 'tabular-nums',
+                                        letterSpacing: '0.01em'
+                                    }}>
+                                        {formatMinutes(entry.minutes_spent)}
+                                    </td>
+                                    <td style={{ padding: '1rem 1.5rem' }}>
+                                        {entry.invoice_id ? (
+                                            <div style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '0.5rem'
+                                            }}>
+                                                <button
+                                                    onClick={() => navigate(`/invoices/${entry.invoice_id}`)}
+                                                    style={{
+                                                        fontSize: '0.8125rem',
+                                                        fontWeight: 600,
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: 'var(--foreground)',
+                                                        cursor: 'pointer',
+                                                        padding: 0,
+                                                        textAlign: 'left',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.375rem',
+                                                        fontFamily: 'monospace',
+                                                        letterSpacing: '0.025em',
+                                                        transition: 'color 0.15s ease'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.color = 'var(--primary)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.color = 'var(--foreground)';
+                                                    }}
+                                                >
+                                                    INV-{entry.invoice_number}
+                                                    <ExternalLink size={12} style={{ opacity: 0.5 }} />
+                                                </button>
                                                 <div style={{
                                                     display: 'flex',
                                                     flexDirection: 'column',
-                                                    gap: '0.5rem',
-                                                    minWidth: '200px'
-                                                }}>
-                                                    {/* Invoice Reference */}
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '0.5rem',
-                                                        paddingBottom: '0.5rem',
-                                                        borderBottom: '1px solid var(--border)'
-                                                    }}>
-                                                        <FileText size={14} style={{ opacity: 0.6, flexShrink: 0 }} />
-                                                        <button
-                                                            onClick={() => navigate(`/invoices/${entry.invoice_id}`)}
-                                                            style={{
-                                                                fontSize: '0.875rem',
-                                                                fontWeight: 600,
-                                                                background: 'none',
-                                                                border: 'none',
-                                                                color: 'var(--foreground)',
-                                                                cursor: 'pointer',
-                                                                padding: 0,
-                                                                textAlign: 'left',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '0.375rem',
-                                                                fontFamily: 'monospace',
-                                                                letterSpacing: '0.025em'
-                                                            }}
-                                                            onMouseEnter={(e) => {
-                                                                e.target.style.color = 'var(--primary)';
-                                                                e.target.querySelector('svg').style.opacity = '1';
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.target.style.color = 'var(--foreground)';
-                                                                e.target.querySelector('svg').style.opacity = '0.5';
-                                                            }}
-                                                        >
-                                                            INV-{entry.invoice_number}
-                                                            <ExternalLink size={12} style={{ opacity: 0.5, transition: 'opacity 0.2s' }} />
-                                                        </button>
-                                                    </div>
-                                                    
-                                                    {/* Invoice Details Grid */}
-                                                    <div style={{
-                                                        display: 'grid',
-                                                        gridTemplateColumns: 'auto 1fr',
-                                                        gap: '0.375rem 0.75rem',
-                                                        fontSize: '0.8125rem',
-                                                        lineHeight: '1.5'
-                                                    }}>
-                                                        <span style={{ 
-                                                            color: 'var(--foreground)', 
-                                                            opacity: 0.6,
-                                                            fontWeight: 500
-                                                        }}>Date:</span>
-                                                        <span style={{ 
-                                                            color: 'var(--foreground)', 
-                                                            opacity: 0.85,
-                                                            fontFamily: 'monospace'
-                                                        }}>
-                                                            {entry.invoice_date ? formatInvoiceDate(entry.invoice_date) : '—'}
-                                                        </span>
-                                                        
-                                                        <span style={{ 
-                                                            color: 'var(--foreground)', 
-                                                            opacity: 0.6,
-                                                            fontWeight: 500
-                                                        }}>Status:</span>
-                                                        <span style={{ 
-                                                            color: 'var(--foreground)', 
-                                                            opacity: 0.85,
-                                                            textTransform: 'capitalize',
-                                                            fontWeight: 500
-                                                        }}>
-                                                            {entry.invoice_status ? getInvoiceStatusLabel(entry.invoice_status) : '—'}
-                                                        </span>
-                                                        
-                                                        <span style={{ 
-                                                            color: 'var(--foreground)', 
-                                                            opacity: 0.6,
-                                                            fontWeight: 500
-                                                        }}>Amount:</span>
-                                                        <span style={{ 
-                                                            color: 'var(--foreground)', 
-                                                            opacity: 0.95,
-                                                            fontWeight: 600,
-                                                            fontFamily: 'monospace',
-                                                            letterSpacing: '0.025em'
-                                                        }}>
-                                                            {entry.invoice_total_cents ? formatCurrency(entry.invoice_total_cents) : '—'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div style={{
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5rem',
-                                                    fontSize: '0.8125rem',
+                                                    gap: '0.25rem',
+                                                    fontSize: '0.75rem',
                                                     color: 'var(--foreground)',
-                                                    opacity: 0.5,
-                                                    fontWeight: 500
+                                                    opacity: 0.6
                                                 }}>
-                                                    <span style={{
-                                                        width: '6px',
-                                                        height: '6px',
-                                                        borderRadius: '50%',
-                                                        background: 'currentColor',
-                                                        opacity: 0.4
-                                                    }}></span>
-                                                    Uninvoiced
+                                                    <div>
+                                                        {entry.invoice_date ? formatInvoiceDate(entry.invoice_date) : '—'}
+                                                    </div>
+                                                    <div style={{ textTransform: 'capitalize' }}>
+                                                        {entry.invoice_status ? getInvoiceStatusLabel(entry.invoice_status) : '—'}
+                                                    </div>
                                                 </div>
-                                            )}
-                                        </td>
-                                        <td style={{ padding: '1.25rem 1.5rem', maxWidth: '300px' }}>
-                                            <div style={{ fontSize: '0.9rem', opacity: 0.8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                {entry.detail || <span style={{ opacity: 0.3 }}>No details</span>}
                                             </div>
-                                        </td>
-                                        <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                                <button
-                                                    onClick={() => handleEdit(entry)}
-                                                    style={{ padding: '0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', cursor: 'pointer' }}
-                                                >
-                                                    <Edit2 size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(entry.id)}
-                                                    style={{ padding: '0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'transparent', color: '#ef4444', cursor: 'pointer' }}
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </motion.tr>
-                                ))}
-                            </AnimatePresence>
+                                        ) : (
+                                            <span style={{
+                                                fontSize: '0.8125rem',
+                                                color: 'var(--foreground)',
+                                                opacity: 0.5
+                                            }}>
+                                                Uninvoiced
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td style={{ 
+                                        padding: '1rem 1.5rem', 
+                                        maxWidth: '300px',
+                                        color: 'var(--foreground)',
+                                        opacity: 0.8
+                                    }}>
+                                        <div style={{ 
+                                            fontSize: '0.8125rem', 
+                                            whiteSpace: 'nowrap', 
+                                            overflow: 'hidden', 
+                                            textOverflow: 'ellipsis' 
+                                        }}>
+                                            {entry.detail || <span style={{ opacity: 0.4 }}>—</span>}
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
+                                        <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end' }}>
+                                            <button
+                                                onClick={() => handleEdit(entry)}
+                                                style={{ 
+                                                    padding: '0.5rem', 
+                                                    borderRadius: '4px', 
+                                                    border: '1px solid var(--border)', 
+                                                    background: 'transparent', 
+                                                    color: 'var(--foreground)', 
+                                                    cursor: 'pointer',
+                                                    transition: 'background-color 0.15s ease',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.backgroundColor = 'var(--background)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                                }}
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(entry.id)}
+                                                style={{ 
+                                                    padding: '0.5rem', 
+                                                    borderRadius: '4px', 
+                                                    border: '1px solid var(--border)', 
+                                                    background: 'transparent', 
+                                                    color: '#ef4444', 
+                                                    cursor: 'pointer',
+                                                    transition: 'background-color 0.15s ease',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                                }}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
+                        <tfoot>
+                            <tr style={{ 
+                                borderTop: '2px solid var(--border)',
+                                background: 'var(--background)'
+                            }}>
+                                <td colSpan="3" style={{ 
+                                    padding: '1rem 1.5rem',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    fontSize: '0.9375rem'
+                                }}>
+                                    Total
+                                </td>
+                                <td style={{ 
+                                    padding: '1rem 1.5rem',
+                                    textAlign: 'right',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    fontSize: '0.9375rem',
+                                    fontVariantNumeric: 'tabular-nums',
+                                    letterSpacing: '0.01em'
+                                }}>
+                                    {formatMinutes(totalMinutes)}
+                                </td>
+                                <td colSpan="3" style={{ 
+                                    padding: '1rem 1.5rem',
+                                    textAlign: 'right',
+                                    fontWeight: 600,
+                                    color: 'var(--foreground)',
+                                    fontSize: '0.9375rem',
+                                    fontVariantNumeric: 'tabular-nums'
+                                }}>
+                                    {formatCurrency(Math.round(totalMoneyCents))}
+                                </td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             )}
@@ -620,16 +1390,6 @@ const TimeEntryList = () => {
                 )}
             </AnimatePresence>
 
-            <style>{`
-                .table-row-hover:hover {
-                    background: rgba(255,255,255,0.03);
-                }
-                @media (prefers-color-scheme: dark) {
-                    .table-row-hover:hover {
-                        background: rgba(255,255,255,0.05);
-                    }
-                }
-            `}</style>
         </div>
     );
 };
