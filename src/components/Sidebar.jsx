@@ -16,92 +16,211 @@ const Sidebar = ({ onNewInvoice }) => {
     { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
   ];
 
+  const isActive = (path) => {
+    if (path === '/') {
+      return location.pathname === '/' || location.pathname === '/dashboard';
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
-    <aside className="glass" style={{
-      width: '260px',
-      height: 'calc(100vh - 2rem)',
-      margin: '1rem',
-      borderRadius: 'var(--radius-lg)',
-      padding: '2rem 1rem',
+    <aside style={{
+      width: '240px',
+      height: '100vh',
+      backgroundColor: '#ffffff',
+      borderRight: '1px solid var(--border)',
       display: 'flex',
       flexDirection: 'column',
       position: 'fixed',
       left: 0,
-    }}>
-      <div style={{ padding: '0 1rem 2rem' }}>
-        <h1 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      top: 0,
+      zIndex: 1000,
+    }}
+    className="sidebar-container"
+    >
+      {/* Header */}
+      <div style={{
+        padding: '24px 20px',
+        borderBottom: '1px solid var(--border)',
+        minHeight: '72px',
+        display: 'flex',
+        alignItems: 'center',
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+        }}>
           <div style={{
-            width: '32px',
-            height: '32px',
-            background: 'var(--primary)',
-            borderRadius: '8px',
+            width: '28px',
+            height: '28px',
+            background: 'var(--foreground)',
+            borderRadius: '6px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'white'
+            color: 'var(--background)',
+            flexShrink: 0,
           }}>
-            <FileText size={20} />
+            <FileText size={16} />
           </div>
-          InvoiceOps
-        </h1>
+          <h1 style={{
+            fontSize: '17px',
+            fontWeight: 600,
+            color: 'var(--foreground)',
+            letterSpacing: '-0.01em',
+            margin: 0,
+            fontFamily: 'var(--font-sans)',
+          }}>
+            InvoiceOps
+          </h1>
+        </div>
       </div>
 
-      <nav style={{ flex: 1 }}>
+      {/* Navigation */}
+      <nav style={{
+        flex: 1,
+        padding: '12px 8px',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+      }}>
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path || (item.path === '/' && location.pathname === '/dashboard');
+          const active = isActive(item.path);
           return (
             <Link
               key={item.id}
               to={item.path}
-              className="btn"
               style={{
-                width: '100%',
-                justifyContent: 'flex-start',
-                background: isActive ? 'var(--primary)' : 'transparent',
-                color: isActive ? 'white' : 'var(--foreground)',
-                marginBottom: '0.5rem',
-                opacity: isActive ? 1 : 0.7,
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                textDecoration: 'none',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.75rem'
+                gap: '10px',
+                padding: '8px 12px',
+                marginBottom: '2px',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                color: 'var(--foreground)',
+                opacity: active ? 1 : 0.65,
+                backgroundColor: active ? 'var(--border)' : 'transparent',
+                fontWeight: active ? 500 : 400,
+                fontSize: '14px',
+                lineHeight: '20px',
+                transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                position: 'relative',
+                fontFamily: 'var(--font-sans)',
+              }}
+              onMouseEnter={(e) => {
+                if (!active) {
+                  e.currentTarget.style.backgroundColor = 'var(--border)';
+                  e.currentTarget.style.opacity = '0.85';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!active) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.opacity = '0.65';
+                }
               }}
             >
-              <Icon size={20} />
-              {item.label}
+              {active && (
+                <div style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '3px',
+                  height: '20px',
+                  backgroundColor: 'var(--foreground)',
+                  borderRadius: '0 2px 2px 0',
+                }} />
+              )}
+              <Icon size={18} style={{ flexShrink: 0 }} />
+              <span>{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <button className="btn btn-primary" style={{ width: '100%' }} onClick={onNewInvoice}>
-          <PlusCircle size={20} />
+      {/* Footer Actions */}
+      <div style={{
+        padding: '12px 8px',
+        borderTop: '1px solid var(--border)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+      }}>
+        <button
+          onClick={onNewInvoice}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '10px 16px',
+            backgroundColor: 'var(--foreground)',
+            color: 'var(--background)',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: 500,
+            fontFamily: 'var(--font-sans)',
+            cursor: 'pointer',
+            transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = '0.9';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = '1';
+          }}
+        >
+          <PlusCircle size={18} />
           New Invoice
         </button>
 
         {user && (
           <div style={{
-            padding: '0.75rem 1rem',
-            borderTop: '1px solid var(--border)',
-            marginTop: '1rem',
-            paddingTop: '1rem',
+            padding: '12px 8px 8px',
           }}>
             <div style={{
-              fontSize: '0.875rem',
-              opacity: 0.7,
-              marginBottom: '0.5rem',
+              fontSize: '13px',
+              color: 'var(--foreground)',
+              opacity: 0.5,
+              fontWeight: 500,
+              marginBottom: '8px',
+              paddingLeft: '4px',
+              fontFamily: 'var(--font-sans)',
             }}>
               {user.name}
             </div>
             <button
               onClick={logout}
-              className="btn btn-secondary"
               style={{
                 width: '100%',
-                fontSize: '0.875rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                gap: '8px',
+                padding: '8px 12px',
+                backgroundColor: 'transparent',
+                color: 'var(--foreground)',
+                opacity: 0.65,
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 400,
+                fontFamily: 'var(--font-sans)',
+                cursor: 'pointer',
+                transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--border)';
+                e.currentTarget.style.opacity = '0.85';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.opacity = '0.65';
               }}
             >
               <LogOut size={16} />

@@ -168,9 +168,29 @@ h6 {
   text-transform: uppercase;
 }
 
+.badge-draft {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.badge-sent {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
 .badge-paid {
   background: #dcfce7;
   color: #166534;
+}
+
+.badge-partially_paid {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-voided {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .badge-pending {
@@ -184,9 +204,29 @@ h6 {
 }
 
 @media (prefers-color-scheme: dark) {
+  .badge-draft {
+    background: #374151;
+    color: #d1d5db;
+  }
+
+  .badge-sent {
+    background: #1e3a8a;
+    color: #93c5fd;
+  }
+
   .badge-paid {
     background: #064e3b;
     color: #34d399;
+  }
+
+  .badge-partially_paid {
+    background: #78350f;
+    color: #fcd34d;
+  }
+
+  .badge-voided {
+    background: #7f1d1d;
+    color: #f87171;
   }
 
   .badge-pending {
@@ -197,6 +237,10 @@ h6 {
   .badge-overdue {
     background: #7f1d1d;
     color: #f87171;
+  }
+
+  .sidebar-container {
+    background-color: #0f172a !important;
   }
 }
 

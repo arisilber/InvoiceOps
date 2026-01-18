@@ -107,8 +107,8 @@ function App() {
       />
 
       <main style={{
-        marginLeft: '280px',
-        width: 'calc(100% - 280px)',
+        marginLeft: '240px',
+        width: 'calc(100% - 240px)',
         minHeight: '100vh',
         paddingTop: '2rem'
       }}>

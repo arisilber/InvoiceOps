@@ -250,12 +250,30 @@ const InvoiceDetail = () => {
               {invoice.client_name}
             </p>
           </div>
-          <div className="flex gap-2 invoice-detail-header-actions" style={{ marginLeft: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div className="flex invoice-detail-header-actions" style={{ marginLeft: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
             {invoice.status === 'draft' && (
               <button
-                className="btn"
                 onClick={handleMarkAsSent}
                 disabled={markingAsSent}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  borderRadius: '0.375rem',
+                  border: 'none',
+                  background: 'var(--foreground)',
+                  color: 'var(--background)',
+                  cursor: markingAsSent ? 'not-allowed' : 'pointer',
+                  opacity: markingAsSent ? 0.6 : 1,
+                  transition: 'opacity 0.15s ease',
+                  fontFamily: 'var(--font-sans)',
+                  gap: '0.5rem',
+                  lineHeight: 1.2,
+                  minHeight: '36px'
+                }}
               >
                 {markingAsSent ? (
                   <>
@@ -272,9 +290,29 @@ const InvoiceDetail = () => {
             )}
             {(invoice.status === 'sent' || invoice.status === 'partially_paid') && (
               <button
-                className="btn btn-secondary"
                 onClick={handleMarkAsDraft}
                 disabled={markingAsDraft}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  borderRadius: '0.375rem',
+                  border: '1px solid var(--border)',
+                  background: 'transparent',
+                  color: 'var(--foreground)',
+                  cursor: markingAsDraft ? 'not-allowed' : 'pointer',
+                  opacity: markingAsDraft ? 0.6 : 1,
+                  transition: 'background-color 0.15s ease',
+                  fontFamily: 'var(--font-sans)',
+                  gap: '0.5rem',
+                  lineHeight: 1.2,
+                  minHeight: '36px'
+                }}
+                onMouseEnter={(e) => !markingAsDraft && (e.currentTarget.style.backgroundColor = 'var(--border)')}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 {markingAsDraft ? (
                   <>
@@ -290,23 +328,83 @@ const InvoiceDetail = () => {
               </button>
             )}
             <button
-              className="btn btn-secondary"
               onClick={() => navigate(`/invoices/${invoice.id}/view`)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                borderRadius: '0.375rem',
+                border: '1px solid var(--border)',
+                background: 'transparent',
+                color: 'var(--foreground)',
+                cursor: 'pointer',
+                transition: 'background-color 0.15s ease',
+                fontFamily: 'var(--font-sans)',
+                gap: '0.5rem',
+                lineHeight: 1.2,
+                minHeight: '36px'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--border)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
               <FileText size={16} />
               Preview
             </button>
             <button
-              className="btn"
               onClick={handleDownload}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                borderRadius: '0.375rem',
+                border: 'none',
+                background: 'var(--foreground)',
+                color: 'var(--background)',
+                cursor: 'pointer',
+                transition: 'opacity 0.15s ease',
+                fontFamily: 'var(--font-sans)',
+                gap: '0.5rem',
+                lineHeight: 1.2,
+                minHeight: '36px'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
             >
               <Download size={16} />
               Download PDF
             </button>
             <button
-              className="btn btn-secondary"
               onClick={handleDeleteClick}
-              style={{ color: '#ef4444' }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                borderRadius: '0.375rem',
+                border: '1px solid #ef4444',
+                background: 'transparent',
+                color: '#ef4444',
+                cursor: 'pointer',
+                transition: 'background-color 0.15s ease',
+                fontFamily: 'var(--font-sans)',
+                gap: '0.5rem',
+                lineHeight: 1.2,
+                minHeight: '36px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
             >
               <Trash2 size={16} />
               Delete
@@ -452,7 +550,7 @@ const InvoiceDetail = () => {
                 </div>
                 <div>
                   <span className={`badge badge-${invoice.status}`}>
-                    {invoice.status}
+                    {invoice.status.replace('_', ' ')}
                   </span>
                 </div>
               </div>
@@ -611,8 +709,26 @@ const InvoiceDetail = () => {
                                     <button
                                       onClick={handleCancelEdit}
                                       disabled={savingDescription}
-                                      className="btn btn-secondary"
-                                      style={{ padding: '0.375rem 0.875rem', fontSize: '0.8125rem' }}
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '0.375rem 0.875rem',
+                                        fontSize: '0.8125rem',
+                                        fontWeight: 500,
+                                        borderRadius: '0.375rem',
+                                        border: '1px solid var(--border)',
+                                        background: 'transparent',
+                                        color: 'var(--foreground)',
+                                        cursor: savingDescription ? 'not-allowed' : 'pointer',
+                                        opacity: savingDescription ? 0.6 : 1,
+                                        transition: 'background-color 0.15s ease',
+                                        fontFamily: 'var(--font-sans)',
+                                        gap: '0.375rem',
+                                        lineHeight: 1.2
+                                      }}
+                                      onMouseEnter={(e) => !savingDescription && (e.currentTarget.style.backgroundColor = 'var(--border)')}
+                                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                     >
                                       <X size={13} />
                                       Cancel
@@ -620,8 +736,26 @@ const InvoiceDetail = () => {
                                     <button
                                       onClick={() => handleSaveDescription(line.id)}
                                       disabled={savingDescription}
-                                      className="btn btn-primary"
-                                      style={{ padding: '0.375rem 0.875rem', fontSize: '0.8125rem' }}
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '0.375rem 0.875rem',
+                                        fontSize: '0.8125rem',
+                                        fontWeight: 500,
+                                        borderRadius: '0.375rem',
+                                        border: 'none',
+                                        background: 'var(--foreground)',
+                                        color: 'var(--background)',
+                                        cursor: savingDescription ? 'not-allowed' : 'pointer',
+                                        opacity: savingDescription ? 0.6 : 1,
+                                        transition: 'opacity 0.15s ease',
+                                        fontFamily: 'var(--font-sans)',
+                                        gap: '0.375rem',
+                                        lineHeight: 1.2
+                                      }}
+                                      onMouseEnter={(e) => !savingDescription && (e.currentTarget.style.opacity = '0.85')}
+                                      onMouseLeave={(e) => e.currentTarget.style.opacity = savingDescription ? '0.6' : '1'}
                                     >
                                       {savingDescription ? (
                                         <>
@@ -822,11 +956,11 @@ const InvoiceDetail = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               style={{
-                background: 'var(--background)',
+                background: 'var(--card-bg)',
                 width: '100%',
                 maxWidth: '400px',
-                borderRadius: 'var(--radius-lg)',
-                boxShadow: 'var(--shadow-lg)',
+                borderRadius: '0.5rem',
+                border: '1px solid var(--border)',
                 overflow: 'hidden'
               }}
               onClick={e => e.stopPropagation()}
@@ -854,25 +988,60 @@ const InvoiceDetail = () => {
                 <div style={{
                   display: 'flex',
                   justifyContent: 'flex-end',
-                  gap: '1rem'
+                  gap: '0.75rem'
                 }}>
                   <button
                     type="button"
-                    className="btn btn-secondary"
                     onClick={handleDeleteCancel}
                     disabled={deleting}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0.5rem 1rem',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      borderRadius: '0.375rem',
+                      border: '1px solid var(--border)',
+                      background: 'transparent',
+                      color: 'var(--foreground)',
+                      cursor: deleting ? 'not-allowed' : 'pointer',
+                      opacity: deleting ? 0.6 : 1,
+                      transition: 'background-color 0.15s ease',
+                      fontFamily: 'var(--font-sans)',
+                      lineHeight: 1.2,
+                      minHeight: '36px'
+                    }}
+                    onMouseEnter={(e) => !deleting && (e.currentTarget.style.backgroundColor = 'var(--border)')}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
-                    className="btn"
                     onClick={handleDeleteConfirm}
                     disabled={deleting}
                     style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0.5rem 1rem',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      borderRadius: '0.375rem',
+                      border: 'none',
                       background: '#ef4444',
-                      color: 'white'
+                      color: 'white',
+                      cursor: deleting ? 'not-allowed' : 'pointer',
+                      opacity: deleting ? 0.6 : 1,
+                      transition: 'opacity 0.15s ease',
+                      fontFamily: 'var(--font-sans)',
+                      gap: '0.5rem',
+                      lineHeight: 1.2,
+                      minHeight: '36px'
                     }}
+                    onMouseEnter={(e) => !deleting && (e.currentTarget.style.opacity = '0.85')}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = deleting ? '0.6' : '1'}
                   >
                     {deleting ? (
                       <>
