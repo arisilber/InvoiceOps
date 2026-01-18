@@ -278,24 +278,25 @@ const Dashboard = ({ onExploreInvoices }) => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'flex-start',
-                paddingBottom: '1rem',
+                marginBottom: '32px',
+                paddingBottom: '16px',
                 borderBottom: '1px solid var(--border)'
             }}>
                 <div>
                     <h1 style={{
-                        fontSize: '1.75rem',
-                        fontWeight: 600,
-                        color: 'var(--foreground)',
-                        marginBottom: '0.25rem',
-                        letterSpacing: '-0.02em'
+                        fontSize: '28px',
+                        fontWeight: '600',
+                        letterSpacing: '-0.02em',
+                        marginBottom: '4px',
+                        color: 'var(--foreground)'
                     }}>
                         Dashboard
                     </h1>
                     <p style={{
-                        fontSize: '0.875rem',
+                        fontSize: '15px',
                         color: 'var(--foreground)',
                         opacity: 0.6,
-                        marginTop: '0.25rem'
+                        fontWeight: '400'
                     }}>
                         Financial overview and activity summary
                     </p>
@@ -303,14 +304,15 @@ const Dashboard = ({ onExploreInvoices }) => {
                 <button
                     onClick={fetchStats}
                     style={{
-                        display: 'flex',
+                        display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.875rem',
-                        fontWeight: 500,
-                        color: 'var(--foreground)',
+                        gap: '8px',
+                        padding: '10px 20px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        fontFamily: 'inherit',
                         backgroundColor: 'transparent',
+                        color: 'var(--foreground)',
                         border: '1px solid var(--border)',
                         borderRadius: '6px',
                         cursor: 'pointer',

@@ -192,10 +192,28 @@ const TimeEntryList = () => {
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'flex-start', 
+                marginBottom: '32px',
+                paddingBottom: '16px',
+                borderBottom: '1px solid var(--border)'
+            }}>
                 <div>
-                    <h2 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>Time Tracking</h2>
-                    <p style={{ opacity: 0.7 }}>Review and manage your logged work</p>
+                    <h1 style={{ 
+                        fontSize: '28px', 
+                        fontWeight: '600',
+                        letterSpacing: '-0.02em',
+                        marginBottom: '4px',
+                        color: 'var(--foreground)'
+                    }}>Time Tracking</h1>
+                    <p style={{ 
+                        fontSize: '15px',
+                        color: 'var(--foreground)',
+                        opacity: 0.6,
+                        fontWeight: '400'
+                    }}>Review and manage your logged work</p>
                 </div>
                 <div style={{ 
                     display: 'flex', 
@@ -209,20 +227,18 @@ const TimeEntryList = () => {
                             display: 'inline-flex', 
                             alignItems: 'center', 
                             justifyContent: 'center',
-                            gap: '0.5rem',
-                            padding: '0.625rem 1rem',
-                            fontSize: '0.9375rem',
-                            fontWeight: 500,
-                            fontFamily: 'var(--font-sans)',
+                            gap: '8px',
+                            padding: '10px 20px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            fontFamily: 'inherit',
                             color: 'var(--foreground)',
                             backgroundColor: 'transparent',
                             border: '1px solid var(--border)',
-                            borderRadius: '8px',
+                            borderRadius: '6px',
                             cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            minHeight: '44px',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2'
+                            transition: 'background-color 0.15s ease',
+                            whiteSpace: 'nowrap'
                         }}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = 'var(--background)';
@@ -242,20 +258,18 @@ const TimeEntryList = () => {
                             display: 'inline-flex', 
                             alignItems: 'center', 
                             justifyContent: 'center',
-                            gap: '0.5rem',
-                            padding: '0.625rem 1rem',
-                            fontSize: '0.9375rem',
-                            fontWeight: 500,
-                            fontFamily: 'var(--font-sans)',
+                            gap: '8px',
+                            padding: '10px 20px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            fontFamily: 'inherit',
                             color: 'var(--foreground)',
                             backgroundColor: 'transparent',
                             border: '1px solid var(--border)',
-                            borderRadius: '8px',
+                            borderRadius: '6px',
                             cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            minHeight: '44px',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2'
+                            transition: 'background-color 0.15s ease',
+                            whiteSpace: 'nowrap'
                         }}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = 'var(--background)';
@@ -275,20 +289,18 @@ const TimeEntryList = () => {
                             display: 'inline-flex', 
                             alignItems: 'center', 
                             justifyContent: 'center',
-                            gap: '0.5rem',
-                            padding: '0.625rem 1.25rem',
-                            fontSize: '0.9375rem',
-                            fontWeight: 600,
-                            fontFamily: 'var(--font-sans)',
-                            color: '#ffffff',
+                            gap: '8px',
+                            padding: '10px 20px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            fontFamily: 'inherit',
+                            color: 'white',
                             backgroundColor: 'var(--primary)',
                             border: 'none',
-                            borderRadius: '8px',
+                            borderRadius: '6px',
                             cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            minHeight: '44px',
-                            whiteSpace: 'nowrap',
-                            lineHeight: '1.2'
+                            transition: 'background-color 0.15s ease',
+                            whiteSpace: 'nowrap'
                         }}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = 'var(--primary-hover)';

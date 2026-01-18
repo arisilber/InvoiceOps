@@ -136,11 +136,12 @@ const InvoiceView = () => {
           borderBottom: '1px solid var(--border)',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           background: 'var(--card-bg)',
           position: 'sticky',
           top: 0,
-          zIndex: 100
+          zIndex: 100,
+          marginBottom: '32px'
         }}
       >
         <div>
@@ -157,20 +158,46 @@ const InvoiceView = () => {
             <ArrowLeft size={16} />
             Back
           </button>
-          <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>
+          <h1 style={{
+            fontSize: '28px',
+            fontWeight: '600',
+            letterSpacing: '-0.02em',
+            marginBottom: '4px',
+            color: 'var(--foreground)'
+          }}>
             Invoice Preview
           </h1>
-          <p style={{ opacity: 0.7, fontSize: '0.875rem' }}>
+          <p style={{
+            fontSize: '15px',
+            color: 'var(--foreground)',
+            opacity: 0.6,
+            fontWeight: '400'
+          }}>
             INV-{invoice.invoice_number} - {invoice.client_name}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button
-            className="btn btn-primary"
             onClick={handleDownload}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 20px',
+              fontSize: '14px',
+              fontWeight: '500',
+              fontFamily: 'inherit',
+              backgroundColor: 'var(--primary)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'background-color 0.15s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--primary-hover)'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--primary)'}
           >
-            <Download size={18} />
+            <Download size={16} />
             Download PDF
           </button>
         </div>

@@ -218,7 +218,8 @@ const InvoiceDetail = () => {
         <div 
           className="flex justify-between items-start invoice-detail-header"
           style={{
-            paddingBottom: '1rem',
+            marginBottom: '32px',
+            paddingBottom: '16px',
             borderBottom: '1px solid var(--border)'
           }}
         >
@@ -233,19 +234,20 @@ const InvoiceDetail = () => {
               <ArrowLeft size={16} />
               Back to Invoices
             </button>
-            <h2 style={{ 
-              fontSize: '1.875rem', 
-              marginBottom: '0.375rem',
-              fontWeight: 600,
-              letterSpacing: '-0.01em',
+            <h1 style={{ 
+              fontSize: '28px',
+              fontWeight: '600',
+              letterSpacing: '-0.02em',
+              marginBottom: '4px',
               color: 'var(--foreground)'
             }}>
               Invoice INV-{invoice.invoice_number}
-            </h2>
+            </h1>
             <p style={{ 
-              opacity: 0.65,
-              fontSize: '0.9375rem',
-              marginTop: 0
+              fontSize: '15px',
+              color: 'var(--foreground)',
+              opacity: 0.6,
+              fontWeight: '400'
             }}>
               {invoice.client_name}
             </p>
@@ -258,21 +260,18 @@ const InvoiceDetail = () => {
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0.5rem 1rem',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  borderRadius: '0.375rem',
+                  gap: '8px',
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  fontFamily: 'inherit',
+                  borderRadius: '6px',
                   border: 'none',
                   background: 'var(--foreground)',
                   color: 'var(--background)',
                   cursor: markingAsSent ? 'not-allowed' : 'pointer',
                   opacity: markingAsSent ? 0.6 : 1,
-                  transition: 'opacity 0.15s ease',
-                  fontFamily: 'var(--font-sans)',
-                  gap: '0.5rem',
-                  lineHeight: 1.2,
-                  minHeight: '36px'
+                  transition: 'opacity 0.15s ease'
                 }}
               >
                 {markingAsSent ? (
@@ -295,21 +294,18 @@ const InvoiceDetail = () => {
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0.5rem 1rem',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  borderRadius: '0.375rem',
+                  gap: '8px',
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  fontFamily: 'inherit',
+                  borderRadius: '6px',
                   border: '1px solid var(--border)',
                   background: 'transparent',
                   color: 'var(--foreground)',
                   cursor: markingAsDraft ? 'not-allowed' : 'pointer',
                   opacity: markingAsDraft ? 0.6 : 1,
-                  transition: 'background-color 0.15s ease',
-                  fontFamily: 'var(--font-sans)',
-                  gap: '0.5rem',
-                  lineHeight: 1.2,
-                  minHeight: '36px'
+                  transition: 'background-color 0.15s ease'
                 }}
                 onMouseEnter={(e) => !markingAsDraft && (e.currentTarget.style.backgroundColor = 'var(--border)')}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -332,20 +328,17 @@ const InvoiceDetail = () => {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                padding: '0.5rem 1rem',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                borderRadius: '0.375rem',
+                gap: '8px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: '500',
+                fontFamily: 'inherit',
+                borderRadius: '6px',
                 border: '1px solid var(--border)',
                 background: 'transparent',
                 color: 'var(--foreground)',
                 cursor: 'pointer',
-                transition: 'background-color 0.15s ease',
-                fontFamily: 'var(--font-sans)',
-                gap: '0.5rem',
-                lineHeight: 1.2,
-                minHeight: '36px'
+                transition: 'background-color 0.15s ease'
               }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--border)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -358,20 +351,17 @@ const InvoiceDetail = () => {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                padding: '0.5rem 1rem',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                borderRadius: '0.375rem',
+                gap: '8px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: '500',
+                fontFamily: 'inherit',
+                borderRadius: '6px',
                 border: 'none',
                 background: 'var(--foreground)',
                 color: 'var(--background)',
                 cursor: 'pointer',
-                transition: 'opacity 0.15s ease',
-                fontFamily: 'var(--font-sans)',
-                gap: '0.5rem',
-                lineHeight: 1.2,
-                minHeight: '36px'
+                transition: 'opacity 0.15s ease'
               }}
               onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
               onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
@@ -384,20 +374,17 @@ const InvoiceDetail = () => {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                padding: '0.5rem 1rem',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                borderRadius: '0.375rem',
+                gap: '8px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: '500',
+                fontFamily: 'inherit',
+                borderRadius: '6px',
                 border: '1px solid #ef4444',
                 background: 'transparent',
                 color: '#ef4444',
                 cursor: 'pointer',
-                transition: 'background-color 0.15s ease',
-                fontFamily: 'var(--font-sans)',
-                gap: '0.5rem',
-                lineHeight: 1.2,
-                minHeight: '36px'
+                transition: 'background-color 0.15s ease'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';

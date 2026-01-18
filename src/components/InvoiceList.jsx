@@ -175,24 +175,25 @@ const InvoiceList = () => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'flex-start',
-                paddingBottom: '1.5rem',
+                marginBottom: '32px',
+                paddingBottom: '16px',
                 borderBottom: '1px solid var(--border)'
             }}>
                 <div>
                     <h1 style={{
-                        fontSize: '1.75rem',
-                        fontWeight: 600,
-                        color: 'var(--foreground)',
-                        marginBottom: '0.375rem',
-                        letterSpacing: '-0.02em'
+                        fontSize: '28px',
+                        fontWeight: '600',
+                        letterSpacing: '-0.02em',
+                        marginBottom: '4px',
+                        color: 'var(--foreground)'
                     }}>
                         Invoices
                     </h1>
                     <p style={{
-                        fontSize: '0.875rem',
+                        fontSize: '15px',
                         color: 'var(--foreground)',
                         opacity: 0.6,
-                        marginTop: 0
+                        fontWeight: '400'
                     }}>
                         {filteredInvoices.length} {filteredInvoices.length === 1 ? 'invoice' : 'invoices'}
                     </p>

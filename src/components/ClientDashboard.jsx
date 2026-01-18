@@ -109,7 +109,14 @@ const ClientDashboard = () => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <header className="flex items-center gap-4">
+            <header style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '16px',
+                marginBottom: '32px',
+                paddingBottom: '16px',
+                borderBottom: '1px solid var(--border)'
+            }}>
                 <button
                     className="btn btn-secondary"
                     style={{ padding: '0.5rem' }}
@@ -118,8 +125,19 @@ const ClientDashboard = () => {
                     <ArrowLeft size={18} />
                 </button>
                 <div>
-                    <h2 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>{client.name} Dashboard</h2>
-                    <p style={{ opacity: 0.7 }}>Client performance and billing overview</p>
+                    <h1 style={{
+                        fontSize: '28px',
+                        fontWeight: '600',
+                        letterSpacing: '-0.02em',
+                        marginBottom: '4px',
+                        color: 'var(--foreground)'
+                    }}>{client.name} Dashboard</h1>
+                    <p style={{
+                        fontSize: '15px',
+                        color: 'var(--foreground)',
+                        opacity: 0.6,
+                        fontWeight: '400'
+                    }}>Client performance and billing overview</p>
                 </div>
             </header>
 

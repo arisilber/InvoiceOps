@@ -134,10 +134,28 @@ const PaymentList = () => {
             animate={{ opacity: 1 }}
             className="flex flex-col gap-6"
         >
-            <header className="flex justify-between items-center">
+            <header style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '32px',
+                paddingBottom: '16px',
+                borderBottom: '1px solid var(--border)'
+            }}>
                 <div>
-                    <h2 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Payments</h2>
-                    <p style={{ opacity: 0.7 }}>Track and manage all client payments.</p>
+                    <h1 style={{
+                        fontSize: '28px',
+                        fontWeight: '600',
+                        letterSpacing: '-0.02em',
+                        marginBottom: '4px',
+                        color: 'var(--foreground)'
+                    }}>Payments</h1>
+                    <p style={{
+                        fontSize: '15px',
+                        color: 'var(--foreground)',
+                        opacity: 0.6,
+                        fontWeight: '400'
+                    }}>Track and manage all client payments.</p>
                 </div>
                 <div className="flex gap-2">
                     <div className="glass flex items-center gap-2" style={{ padding: '0 1rem', borderRadius: 'var(--radius-md)' }}>
@@ -251,10 +269,26 @@ const PaymentList = () => {
                         </AnimatePresence>
                     </div>
                     <button
-                        className="btn btn-primary"
                         onClick={() => setIsNewPaymentModalOpen(true)}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 20px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            fontFamily: 'inherit',
+                            backgroundColor: 'var(--primary)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--primary-hover)'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--primary)'}
                     >
-                        <PlusCircle size={18} />
+                        <PlusCircle size={16} />
                         New Payment
                     </button>
                 </div>
