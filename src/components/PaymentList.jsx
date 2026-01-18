@@ -231,7 +231,6 @@ const PaymentList = () => {
                                         background: 'var(--card-bg)',
                                         border: '1px solid var(--border)',
                                         borderRadius: 'var(--radius-md)',
-                                        border: '1px solid var(--border)',
                                         zIndex: 10,
                                         minWidth: '200px',
                                         overflow: 'hidden'

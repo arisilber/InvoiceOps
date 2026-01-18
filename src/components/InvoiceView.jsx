@@ -238,7 +238,6 @@ const InvoiceView = () => {
               maxWidth: '900px',
               height: '100%',
               minHeight: '600px',
-              border: 'none',
               borderRadius: 'var(--radius-md)',
               background: 'white',
               border: '1px solid var(--border)'

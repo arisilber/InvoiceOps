@@ -1,6 +1,4 @@
--- Rollback: Remove system_settings table
--- This rollback removes the system_settings table added in migration 0004
+-- Rollback: Remove company_name column from users table
+-- This rollback removes the company_name column added in migration 0004
 
-DROP TRIGGER IF EXISTS update_system_settings_updated_at ON system_settings;
-DROP INDEX IF EXISTS idx_system_settings_key;
-DROP TABLE IF EXISTS system_settings;
+ALTER TABLE users DROP COLUMN IF EXISTS company_name;
