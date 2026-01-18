@@ -195,6 +195,69 @@ const api = {
             body: JSON.stringify({ description }),
         });
     },
+    downloadInvoicePDF: async (id) => {
+        const headers = {};
+
+        // Add auth token if available
+        if (getAuthHeaders) {
+            const authHeaders = await getAuthHeaders();
+            if (authHeaders) {
+                Object.assign(headers, authHeaders);
+            }
+        }
+
+        let response = await fetch(`${API_BASE_URL}/invoices/${id}/pdf`, {
+            method: 'GET',
+            headers,
+        });
+
+        // Handle token refresh if needed
+        if ((response.status === 401 || response.status === 403) && refreshAccessToken) {
+            try {
+                const newToken = await refreshAccessToken();
+                if (newToken) {
+                    headers['Authorization'] = `Bearer ${newToken}`;
+                    response = await fetch(`${API_BASE_URL}/invoices/${id}/pdf`, {
+                        method: 'GET',
+                        headers,
+                    });
+                }
+            } catch (error) {
+                if (logout) {
+                    logout();
+                }
+                throw new Error('Session expired. Please log in again.');
+            }
+        }
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Request failed' }));
+            throw new Error(error.error || `Request failed with status ${response.status}`);
+        }
+
+        // Get the PDF blob
+        const blob = await response.blob();
+        
+        // Get filename from Content-Disposition header or use default
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `Invoice-${id}.pdf`;
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+            if (filenameMatch) {
+                filename = filenameMatch[1];
+            }
+        }
+
+        // Create download link and trigger download
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    },
 
     // Work Types
     getWorkTypes: async () => {

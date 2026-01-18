@@ -7,6 +7,8 @@ import {
   generateLineDescription
 } from '../services/invoiceService.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { generateInvoiceHTML } from '../utils/htmlGenerator.js';
+import puppeteer from 'puppeteer';
 
 const router = express.Router();
 
@@ -54,6 +56,152 @@ router.get('/next-invoice-number', async (req, res, next) => {
     res.json({ next_invoice_number: nextNumber });
   } catch (error) {
     next(error);
+  }
+});
+
+// Helper function to fetch invoice with lines (used by HTML and PDF endpoints)
+const fetchInvoiceWithLines = async (id) => {
+  // Get invoice
+  const invoiceResult = await query(
+    `SELECT i.*, c.name as client_name, c.email as client_email, c.type as client_type
+     FROM invoices i
+     JOIN clients c ON i.client_id = c.id
+     WHERE i.id = $1`,
+    [id]
+  );
+
+  if (invoiceResult.rows.length === 0) {
+    return null;
+  }
+
+  const invoice = invoiceResult.rows[0];
+
+  // Get invoice lines and calculate discount per line
+  const linesResult = await query(
+    `SELECT il.*, wt.code as work_type_code, wt.description as work_type_description
+     FROM invoice_lines il
+     JOIN work_types wt ON il.work_type_id = wt.id
+     WHERE il.invoice_id = $1
+     ORDER BY il.id`,
+    [id]
+  );
+
+  // Get client discount_percent to calculate discount per line
+  const clientResult = await query(
+    'SELECT discount_percent FROM clients WHERE id = $1',
+    [invoice.client_id]
+  );
+  const discount_percent = clientResult.rows[0]?.discount_percent || 0;
+
+  // Calculate discount_cents for each line
+  invoice.lines = linesResult.rows.map(line => {
+    if (discount_percent > 0 && discount_percent < 100) {
+      const pre_discount_amount = line.amount_cents / (1 - discount_percent / 100);
+      const discount_cents = Math.round(pre_discount_amount - line.amount_cents);
+      return { ...line, discount_cents };
+    } else if (discount_percent >= 100) {
+      const estimated_pre_discount = Math.round((line.total_minutes / 60) * line.hourly_rate_cents);
+      const discount_cents = estimated_pre_discount;
+      return { ...line, discount_cents };
+    }
+    return { ...line, discount_cents: 0 };
+  });
+
+  return invoice;
+};
+
+// GET invoice HTML webpage (must come before /:id route)
+router.get('/:id/html', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const invoice = await fetchInvoiceWithLines(id);
+
+    if (!invoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    const html = generateInvoiceHTML(invoice);
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET invoice PDF (must come before /:id route)
+router.get('/:id/pdf', async (req, res, next) => {
+  let browser = null;
+  try {
+    const { id } = req.params;
+    const invoice = await fetchInvoiceWithLines(id);
+
+    if (!invoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    // Generate HTML directly
+    const html = generateInvoiceHTML(invoice);
+
+    // Launch Puppeteer browser with font support
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--disable-gpu'
+      ]
+    });
+
+    const page = await browser.newPage();
+    
+    // Set viewport to match the invoice width for consistent rendering
+    await page.setViewport({
+      width: 1200,
+      height: 1600,
+      deviceScaleFactor: 2
+    });
+    
+    // Set the HTML content directly
+    await page.setContent(html, {
+      waitUntil: ['networkidle0', 'domcontentloaded'],
+      timeout: 30000
+    });
+
+    // Wait for fonts to load - this is crucial for proper text spacing
+    await page.evaluateHandle(() => document.fonts.ready);
+    
+    // Additional wait to ensure all rendering is complete
+    // Using Promise-based delay instead of deprecated waitForTimeout
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Generate PDF with better settings for text rendering
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      preferCSSPageSize: false,
+      margin: {
+        top: '20mm',
+        right: '20mm',
+        bottom: '20mm',
+        left: '20mm'
+      },
+      displayHeaderFooter: false
+    });
+
+    // Set response headers
+    const filename = `Invoice-${invoice.invoice_number}-${invoice.client_name?.replace(/\s+/g, '-') || 'invoice'}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    next(error);
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
 });
 

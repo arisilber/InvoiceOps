@@ -3,8 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Download, Loader2, Calendar, User, FileText, AlertCircle, Send, FileEdit, Trash2, AlertTriangle, Edit2, Check, X } from 'lucide-react';
 import api from '../services/api';
-import InvoicePDFPreview from './InvoicePDFPreview';
-import { downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
 
 const InvoiceDetail = () => {
   const { id } = useParams();
@@ -12,7 +10,6 @@ const InvoiceDetail = () => {
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [markingAsSent, setMarkingAsSent] = useState(false);
   const [markingAsDraft, setMarkingAsDraft] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -42,7 +39,7 @@ const InvoiceDetail = () => {
   const handleDownload = async () => {
     if (invoice) {
       try {
-        await downloadInvoiceHTMLAsPDF(invoice);
+        await api.downloadInvoicePDF(invoice.id);
       } catch (err) {
         console.error('Error downloading invoice:', err);
         setError('Failed to download invoice PDF');
@@ -293,7 +290,7 @@ const InvoiceDetail = () => {
             )}
             <button
               className="btn btn-secondary"
-              onClick={() => setIsPreviewOpen(true)}
+              onClick={() => navigate(`/invoices/${invoice.id}/view`)}
             >
               <FileText size={16} />
               Preview
@@ -745,13 +742,6 @@ const InvoiceDetail = () => {
         </div>
       </div>
       </div>
-
-      {/* Preview Modal */}
-      <InvoicePDFPreview
-        isOpen={isPreviewOpen}
-        onClose={() => setIsPreviewOpen(false)}
-        invoice={invoice}
-      />
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>

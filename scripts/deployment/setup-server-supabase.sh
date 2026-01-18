@@ -36,6 +36,26 @@ npm install -g pm2
 echo "📦 Installing Git..."
 apt-get install -y git
 
+# Install Puppeteer dependencies (required for PDF generation)
+echo "📦 Installing Puppeteer dependencies..."
+apt-get install -y \
+  libatk-bridge2.0-0 \
+  libatk1.0-0 \
+  libcups2 \
+  libdrm2 \
+  libgbm1 \
+  libgtk-3-0 \
+  libnspr4 \
+  libnss3 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxfixes3 \
+  libxkbcommon0 \
+  libxrandr2 \
+  xdg-utils \
+  fonts-liberation \
+  libasound2
+
 # Create application user
 echo "👤 Creating application user..."
 if ! id -u invoiceops &>/dev/null; then

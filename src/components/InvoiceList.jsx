@@ -3,8 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, Download, Loader2, Trash2, Eye, AlertTriangle, Send, FileEdit } from 'lucide-react';
 import api from '../services/api';
-import InvoicePDFPreview from './InvoicePDFPreview';
-import { downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
 
 const InvoiceList = () => {
     const navigate = useNavigate();
@@ -13,8 +11,6 @@ const InvoiceList = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [previewInvoice, setPreviewInvoice] = useState(null);
-    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [loadingInvoice, setLoadingInvoice] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [invoiceToDelete, setInvoiceToDelete] = useState(null);
@@ -61,38 +57,20 @@ const InvoiceList = () => {
         return true;
     });
 
-    const handlePreview = async (invoice) => {
-        try {
-            setLoadingInvoice(true);
-            // Fetch full invoice data with lines
-            const fullInvoice = await api.getInvoice(invoice.id);
-            setPreviewInvoice(fullInvoice);
-            setIsPreviewOpen(true);
-        } catch (err) {
-            console.error('Error fetching invoice:', err);
-            setError('Failed to load invoice for preview');
-        } finally {
-            setLoadingInvoice(false);
-        }
+    const handlePreview = (invoice) => {
+        navigate(`/invoices/${invoice.id}/view`);
     };
 
     const handleDownload = async (invoice) => {
         try {
             setLoadingInvoice(true);
-            // Fetch full invoice data with lines for PDF generation
-            const fullInvoice = await api.getInvoice(invoice.id);
-            await downloadInvoiceHTMLAsPDF(fullInvoice);
+            await api.downloadInvoicePDF(invoice.id);
         } catch (err) {
             console.error('Error downloading invoice:', err);
             setError('Failed to download invoice PDF');
         } finally {
             setLoadingInvoice(false);
         }
-    };
-
-    const handleClosePreview = () => {
-        setIsPreviewOpen(false);
-        setPreviewInvoice(null);
     };
 
     const handleDeleteClick = (invoice) => {
@@ -321,12 +299,6 @@ const InvoiceList = () => {
                     </table>
                 </div>
             )}
-
-            <InvoicePDFPreview
-                isOpen={isPreviewOpen}
-                onClose={handleClosePreview}
-                invoice={previewInvoice}
-            />
 
             {/* Delete Confirmation Modal */}
             <AnimatePresence>

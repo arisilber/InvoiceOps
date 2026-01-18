@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Loader2 } from 'lucide-react';
-import { getInvoiceHTMLBlobURL, downloadInvoiceHTMLAsPDF } from '../utils/htmlGenerator';
+import { getInvoiceHTMLBlobURL } from '../utils/htmlGenerator';
+import api from '../services/api';
 
 const InvoicePDFPreview = ({ isOpen, onClose, invoice }) => {
   const [htmlUrl, setHtmlUrl] = useState(null);
@@ -35,7 +36,7 @@ const InvoicePDFPreview = ({ isOpen, onClose, invoice }) => {
   const handleDownload = async () => {
     if (invoice) {
       try {
-        await downloadInvoiceHTMLAsPDF(invoice);
+        await api.downloadInvoicePDF(invoice.id);
       } catch (err) {
         console.error('Error downloading PDF:', err);
         setError('Failed to download PDF');

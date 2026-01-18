@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import InvoiceList from './components/InvoiceList';
 import InvoiceDetail from './components/InvoiceDetail';
+import InvoiceView from './components/InvoiceView';
 import ClientList from './components/ClientList';
 import ClientDashboard from './components/ClientDashboard';
 import NewInvoiceModal from './components/NewInvoiceModal';
@@ -122,6 +123,7 @@ function App() {
           />
           <Route path="/dashboard" element={<Dashboard key={invoiceRefreshKey} onExploreInvoices={() => navigate('/invoices')} />} />
           <Route path="/invoices" element={<InvoiceList key={invoiceRefreshKey} />} />
+          <Route path="/invoices/:id/view" element={<InvoiceView />} />
           <Route path="/invoices/:id" element={<InvoiceDetail />} />
           <Route
             path="/clients"
