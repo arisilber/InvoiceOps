@@ -9,7 +9,7 @@ This document outlines the step-by-step implementation plan for the Customer Sta
 - ✅ **Phase 3**: HTML Generator (`server/utils/statementHtmlGenerator.js`) - **COMPLETED**
 - ✅ **Phase 4**: Register Routes (`server/index.js`) - **COMPLETED**
 - ✅ **Phase 5**: Frontend API Integration (`src/services/api.js`) - **COMPLETED**
-- ⏳ **Phase 6**: Frontend React Component - **PENDING**
+- ✅ **Phase 6**: Frontend React Component - **COMPLETED**
 - ⏳ **Phase 7**: Testing & Validation - **PENDING**
 - ⏳ **Phase 8**: Documentation - **PENDING**
 
@@ -322,68 +322,36 @@ downloadStatementPDF: async (clientId, startDate, endDate) => {
 
 ## Phase 6: Frontend React Component
 
-### Step 6.1: Create Statement View Component
+### Step 6.1: Create Statement View Component ✅ **COMPLETED**
 **File**: `src/components/StatementView.jsx`
 
-**Features**:
-- Date range selector (start_date, end_date)
-- Client selector (dropdown or passed via route params)
-- Generate Statement button
-- Display statement data:
-  - Header with client info and period
-  - Beginning balance
-  - Transaction table
-  - Summary totals
-- Download PDF button
-- Print button (print current page)
-- Loading states
-- Error handling
+**Status**: ✅ Implemented and ready for use
 
-**Component Structure**:
-```jsx
-const StatementView = () => {
-  const { clientId } = useParams(); // Optional: from route
-  const [statement, setStatement] = useState(null);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  
-  // Date defaults: current month
-  useEffect(() => {
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    setStartDate(formatDate(firstDay));
-    setEndDate(formatDate(lastDay));
-  }, []);
-  
-  const handleGenerate = async () => {
-    // Fetch statement data
-  };
-  
-  const handleDownloadPDF = async () => {
-    // Download PDF
-  };
-  
-  return (
-    // UI with form, table, buttons
-  );
-};
-```
+**Features implemented**:
+- Client selector with optional route param prefill
+- Date range defaults to current month
+- Generate Statement action with loading state
+- Statement display:
+  - Client and period header
+  - Beginning balance row
+  - Transactions table with running balances
+  - Summary totals table
+- Download PDF and Print buttons (HTML print view)
+- Empty states and error handling
 
-**UI Requirements**:
-- Clean, ledger-style display
-- Responsive table (scrollable on mobile)
-- Clear visual separation of sections
-- Match existing design system (colors, fonts, spacing)
+**Implementation Notes**:
+- ✅ Uses `api.getStatement()` to fetch JSON statement data
+- ✅ Uses `api.getStatementHTML()` for print view (opens new window)
+- ✅ Uses `api.downloadStatementPDF()` for PDF downloads
+- ✅ Provides independent loading states for generate vs actions
+- ✅ Matches existing UI patterns (cards, buttons, spacing)
 
-### Step 6.2: Add Route to App
+### Step 6.2: Add Route to App ✅ **COMPLETED**
 **File**: `src/App.jsx`
 
-**Changes**:
-- Import: `import StatementView from './components/StatementView';`
-- Add route: `<Route path="/statements/:clientId?" element={<StatementView />} />`
+**Changes applied**:
+- ✅ Import: `import StatementView from './components/StatementView';`
+- ✅ Added route: `<Route path="/statements/:clientId?" element={<StatementView />} />`
 
 **Optional Enhancement**:
 - Add link in ClientDashboard to generate statement

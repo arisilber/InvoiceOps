@@ -17,6 +17,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import PaymentList from './components/PaymentList';
 import Settings from './components/Settings';
+import StatementView from './components/StatementView';
 
 function App() {
   const { user, loading, getAuthHeaders, refreshAccessToken, logout } = useAuth();
@@ -138,6 +139,7 @@ function App() {
           />
           <Route path="/clients/:id/dashboard" element={<ClientDashboard />} />
           <Route path="/payments" element={<PaymentList />} />
+          <Route path="/statements/:clientId?" element={<StatementView />} />
           <Route path="/time-entry" element={<TimeEntryList />} />
           <Route path="/work-types" element={<WorkTypeList />} />
           <Route path="/settings" element={<Settings />} />
