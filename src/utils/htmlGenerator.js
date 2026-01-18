@@ -268,53 +268,79 @@ export const generateInvoiceHTML = (invoice) => {
       text-align: center;
     }
     .totals {
-      margin-top: 1.5rem;
+      margin-top: 2rem;
       display: flex;
       justify-content: flex-end;
     }
     .totals-table {
-      width: 320px;
-      border: 1px solid #d1d5db;
-    }
-    .totals-table td {
-      padding: 0.625rem 1rem;
+      width: 280px;
       border: none;
-      border-bottom: 1px solid #e5e7eb;
-      font-size: 0.9375rem;
-    }
-    .totals-table tr:last-child td {
-      border-bottom: none;
+      border-collapse: collapse;
     }
     .totals-table tr {
       background: transparent;
       border: none;
     }
+    .totals-table td {
+      padding: 0.5rem 0;
+      border: none;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
     .totals-table td:first-child {
       text-align: right;
       font-weight: 400;
-      color: #374151;
+      color: #4b5563;
       padding-right: 1.5rem;
+      font-size: 0.875rem;
+      letter-spacing: 0;
     }
     .totals-table td:last-child {
       text-align: right;
       font-weight: 500;
       color: #1a1a1a;
       font-variant-numeric: tabular-nums;
-      font-size: 0.9375rem;
+      font-size: 0.875rem;
+      min-width: 100px;
     }
-    .total-row td {
-      font-size: 1rem;
-      padding-top: 0.875rem;
-      padding-bottom: 0.875rem;
+    .totals-table .subtotal-row td {
+      padding-bottom: 0.625rem;
+    }
+    .totals-table .discount-row td {
+      padding-top: 0.375rem;
+      padding-bottom: 0.625rem;
+      color: #6b7280;
+    }
+    .totals-table .discount-row td:last-child {
+      color: #4b5563;
+    }
+    .totals-table .divider-row {
+      height: 1px;
+      padding: 0;
+    }
+    .totals-table .divider-row td {
+      padding: 0;
+      height: 1px;
       border-top: 1px solid #1a1a1a;
-      font-weight: 600;
     }
-    .total-row td:first-child {
-      font-size: 0.8125rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+    .totals-table .total-row td {
+      padding-top: 0.75rem;
+      padding-bottom: 0;
+      font-size: 1rem;
+      font-weight: 600;
       color: #1a1a1a;
+    }
+    .totals-table .total-row td:first-child {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #1a1a1a;
+      padding-right: 1.5rem;
+    }
+    .totals-table .total-row td:last-child {
+      font-size: 1rem;
+      font-weight: 600;
     }
     @media print {
       body {
@@ -377,18 +403,21 @@ export const generateInvoiceHTML = (invoice) => {
 
     <div class="totals">
       <table class="totals-table">
-        <tr>
-          <td>Subtotal:</td>
+        <tr class="subtotal-row">
+          <td>Subtotal</td>
           <td>${formatCurrency(invoice.subtotal_cents || invoice.total_cents)}</td>
         </tr>
         ${invoice.discount_cents > 0 ? `
-        <tr>
-          <td>Discount (${invoice.discount_percent || 0}%):</td>
-          <td style="color: #dc2626;">-${formatCurrency(invoice.discount_cents)}</td>
+        <tr class="discount-row">
+          <td>Discount (${invoice.discount_percent || 0}%)</td>
+          <td>-${formatCurrency(invoice.discount_cents)}</td>
         </tr>
         ` : ''}
+        <tr class="divider-row">
+          <td colspan="2"></td>
+        </tr>
         <tr class="total-row">
-          <td>Total:</td>
+          <td>TOTAL</td>
           <td>${formatCurrency(invoice.total_cents)}</td>
         </tr>
       </table>

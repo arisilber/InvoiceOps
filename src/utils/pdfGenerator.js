@@ -112,14 +112,50 @@ export const generateInvoicePDF = (invoice) => {
 
   // Get the final Y position after the table
   // autoTable attaches lastAutoTable to the doc object
-  yPosition = (doc.lastAutoTable?.finalY || doc.internal.pageSize.height - 50) + 15;
+  yPosition = (doc.lastAutoTable?.finalY || doc.internal.pageSize.height - 50) + 20;
 
-  // Totals
-  const totalsX = pageWidth - margin - 80;
+  // Enterprise-grade totals section
+  const totalsTableWidth = 120;
+  const totalsTableX = pageWidth - margin - totalsTableWidth;
+  const lineHeight = 8;
+  const totalsStartY = yPosition;
+
+  // Calculate values
+  const subtotal_cents = invoice.subtotal_cents || invoice.total_cents;
+  const discount_cents = invoice.discount_cents || 0;
+  const discount_percent = invoice.discount_percent || 0;
+  const total_cents = invoice.total_cents;
+
+  // Subtotal row
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text('Subtotal', totalsTableX, yPosition, { align: 'right' });
+  doc.text(formatCurrency(subtotal_cents), pageWidth - margin, yPosition, { align: 'right' });
+  yPosition += lineHeight + 2;
+
+  // Discount row (only if discount exists)
+  if (discount_cents > 0) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100); // Gray for discount label
+    doc.text(`Discount (${discount_percent}%)`, totalsTableX, yPosition, { align: 'right' });
+    doc.setTextColor(0, 0, 0); // Black for amount
+    doc.text(`-${formatCurrency(discount_cents)}`, pageWidth - margin, yPosition, { align: 'right' });
+    yPosition += lineHeight + 2;
+  }
+
+  // Divider line before total
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.5);
+  doc.line(totalsTableX, yPosition, pageWidth - margin, yPosition);
+  yPosition += 6;
+
+  // Total row - emphasized
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('Total:', totalsX, yPosition, { align: 'right' });
-  doc.text(formatCurrency(invoice.total_cents), pageWidth - margin, yPosition);
+  doc.setFontSize(11);
+  doc.text('TOTAL', totalsTableX, yPosition, { align: 'right' });
+  doc.setFontSize(11);
+  doc.text(formatCurrency(total_cents), pageWidth - margin, yPosition, { align: 'right' });
   yPosition += 10;
 
   // Footer
