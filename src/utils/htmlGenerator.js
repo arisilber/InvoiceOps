@@ -21,35 +21,46 @@ const formatQuantity = (minutes) => {
 export const generateInvoiceHTML = (invoice) => {
   const invoiceDate = new Date(invoice.invoice_date).toLocaleDateString();
   const dueDate = new Date(invoice.due_date).toLocaleDateString();
+  const serviceStartDate = invoice.earliest_work_date ? new Date(invoice.earliest_work_date).toLocaleDateString() : null;
+  const serviceEndDate = invoice.latest_work_date ? new Date(invoice.latest_work_date).toLocaleDateString() : null;
   
   const tableRows = invoice.lines?.map(line => {
-    // Use AI-generated description if available, otherwise fallback to constructed description
-    let description;
+    // Short description for the first column (work type and project only)
+    const header = line.work_type_description || line.work_type_code || 'Work';
+    const projectPart = line.project_name ? ` - ${escapeHtml(line.project_name)}` : '';
+    const shortDescription = `${escapeHtml(header)}${projectPart}`;
+    
+    // Long description for the full-width row underneath
+    let longDescription = '';
     if (line.description) {
-      // Format with work type and project as header, AI description as body
-      const header = line.work_type_description || line.work_type_code || 'Work';
-      const projectPart = line.project_name ? ` - ${line.project_name}` : '';
-      // Preserve spaces in the description text
-      const preservedDescription = preserveSpaces(line.description);
-      description = `<strong>${escapeHtml(header + projectPart)}</strong><br/><em style="font-size: 0.9em; color: #6b7280;">${escapeHtml(preservedDescription)}</em>`;
-    } else {
-      // Fallback to constructed description
-      description = line.project_name 
-        ? `${escapeHtml(line.work_type_description || line.work_type_code || 'Work')} - ${escapeHtml(line.project_name)}`
-        : escapeHtml(line.work_type_description || line.work_type_code || 'Work');
+      // Trim leading/trailing whitespace, then preserve spaces within the text
+      // Trim again after preserveSpaces to ensure no leading/trailing spaces
+      const trimmedDescription = String(line.description).trim();
+      const preservedDescription = preserveSpaces(trimmedDescription);
+      longDescription = escapeHtml(preservedDescription.trim());
     }
     
     const discount_percent = invoice.discount_percent || 0;
     
-    return `
+    // Main row with item details
+    const mainRow = `
       <tr>
-        <td style="white-space: pre-wrap; word-wrap: break-word;">${description}</td>
+        <td style="white-space: pre-wrap; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; letter-spacing: normal;">${shortDescription}</td>
         <td style="text-align: center;">${formatQuantity(line.total_minutes)}</td>
         <td style="text-align: right;">${formatCurrency(line.hourly_rate_cents)}</td>
         <td style="text-align: right; color: #22c55e;">${discount_percent > 0 ? discount_percent + '%' : '0%'}</td>
         <td style="text-align: right;">${formatCurrency(line.amount_cents)}</td>
       </tr>
     `;
+    
+    // Description row (only if there's a long description)
+    const descriptionRow = longDescription ? `
+      <tr style="background: #f9fafb;">
+        <td colspan="5" style="padding: 0.75rem 1rem; color: #6b7280; font-size: 0.9em; white-space: pre-wrap; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; letter-spacing: normal; border-top: none;"><em>${longDescription}</em></td>
+      </tr>
+    ` : '';
+    
+    return mainRow + descriptionRow;
   }).join('') || '';
 
   const html = `
@@ -59,6 +70,9 @@ export const generateInvoiceHTML = (invoice) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Invoice INV-${invoice.invoice_number}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -66,71 +80,114 @@ export const generateInvoiceHTML = (invoice) => {
       box-sizing: border-box;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      background: #f5f5f5;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.5;
+      color: #1a1a1a;
+      background: #ffffff;
       padding: 2rem;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
     }
     .invoice-container {
       max-width: 900px;
       margin: 0 auto;
       background: white;
       padding: 3rem;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
+      border: 1px solid #e5e7eb;
     }
     .invoice-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 2rem;
+      margin-bottom: 2.5rem;
       padding-bottom: 1.5rem;
-      border-bottom: 2px solid #000000;
+      border-bottom: 2px solid #1a1a1a;
     }
     .invoice-title {
-      font-size: 2.5rem;
-      font-weight: bold;
-      color: #1f2937;
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: -0.02em;
     }
     .invoice-meta {
       text-align: right;
     }
     .invoice-meta p {
       margin: 0.25rem 0;
-      color: #6b7280;
-      font-size: 0.9rem;
+      color: #4b5563;
+      font-size: 0.875rem;
+      line-height: 1.5;
     }
     .invoice-meta strong {
-      color: #1f2937;
+      color: #1a1a1a;
+      font-weight: 600;
+    }
+    .invoice-total-section {
+      background: #f9fafb;
+      border: 2px solid #1a1a1a;
+      padding: 1.5rem 2rem;
+      margin-bottom: 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .invoice-total-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #4b5563;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .invoice-total-amount {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
     }
     .client-info {
       margin-bottom: 2rem;
     }
     .client-info h3 {
-      font-size: 1.1rem;
-      margin-bottom: 0.5rem;
-      color: #1f2937;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: #4b5563;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
     .client-info p {
-      color: #6b7280;
+      color: #1a1a1a;
       margin: 0.25rem 0;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+    .client-info strong {
+      font-weight: 600;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 1.5rem;
+      margin-bottom: 2rem;
+      border: 1px solid #e5e7eb;
     }
     thead {
-      background: #000000;
-      color: white;
+      background: #1a1a1a;
+      color: #ffffff;
     }
     th {
-      padding: 1rem;
+      padding: 0.875rem 1rem;
       text-align: left;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.75rem;
       vertical-align: top;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-right: 1px solid #374151;
+    }
+    th:last-child {
+      border-right: none;
     }
     th:nth-child(2) {
       text-align: center;
@@ -143,18 +200,43 @@ export const generateInvoiceHTML = (invoice) => {
     tbody tr {
       border-bottom: 1px solid #e5e7eb;
     }
+    tbody tr:last-child {
+      border-bottom: none;
+    }
     tbody tr:nth-child(even) {
       background: #f9fafb;
     }
-    tbody tr:hover {
-      background: #f3f4f6;
-    }
     td {
       padding: 1rem;
-      color: #374151;
+      color: #1a1a1a;
       white-space: pre-wrap;
       word-wrap: break-word;
+      letter-spacing: normal;
+      font-kerning: normal;
       vertical-align: top;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      border-right: 1px solid #f3f4f6;
+    }
+    td:last-child {
+      border-right: none;
+    }
+    td:first-child {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      font-weight: 500;
+    }
+    td:nth-child(3),
+    td:nth-child(4),
+    td:nth-child(5) {
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    td:nth-child(2) {
+      font-variant-numeric: tabular-nums;
+      text-align: center;
     }
     .totals {
       margin-top: 1.5rem;
@@ -162,44 +244,48 @@ export const generateInvoiceHTML = (invoice) => {
       justify-content: flex-end;
     }
     .totals-table {
-      width: 300px;
+      width: 320px;
+      border: 1px solid #e5e7eb;
     }
     .totals-table td {
-      padding: 0.5rem 1rem;
+      padding: 0.75rem 1rem;
       border: none;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.9375rem;
+    }
+    .totals-table tr:last-child td {
+      border-bottom: none;
     }
     .totals-table tr {
       background: transparent;
       border: none;
     }
-    .totals-table tr:hover {
-      background: transparent;
-    }
     .totals-table td:first-child {
       text-align: right;
-      font-weight: normal;
-      color: #6b7280;
+      font-weight: 500;
+      color: #4b5563;
+      padding-right: 1.5rem;
     }
     .totals-table td:last-child {
       text-align: right;
       font-weight: 600;
-      color: #1f2937;
+      color: #1a1a1a;
+      font-variant-numeric: tabular-nums;
+      font-size: 0.9375rem;
     }
     .total-row td {
-      font-size: 1.2rem;
+      font-size: 1.125rem;
       padding-top: 1rem;
-      border-top: 2px solid #000000;
+      padding-bottom: 1rem;
+      border-top: 2px solid #1a1a1a;
+      font-weight: 700;
     }
-    .status {
-      margin-top: 2rem;
-      padding-top: 1rem;
-      border-top: 1px solid #e5e7eb;
-      color: #6b7280;
-      font-size: 0.9rem;
-    }
-    .status strong {
-      color: #1f2937;
+    .total-row td:first-child {
+      font-size: 0.875rem;
+      font-weight: 600;
       text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #1a1a1a;
     }
     @media print {
       body {
@@ -221,7 +307,13 @@ export const generateInvoiceHTML = (invoice) => {
         <p><strong>Invoice #:</strong> INV-${invoice.invoice_number}</p>
         <p><strong>Date:</strong> ${invoiceDate}</p>
         <p><strong>Due Date:</strong> ${dueDate}</p>
+        ${serviceStartDate && serviceEndDate ? `<p><strong>Service Period:</strong> ${serviceStartDate} - ${serviceEndDate}</p>` : ''}
       </div>
+    </div>
+
+    <div class="invoice-total-section">
+      <div class="invoice-total-label">Total Amount Due</div>
+      <div class="invoice-total-amount">${formatCurrency(invoice.total_cents)}</div>
     </div>
 
     <div class="client-info">
@@ -247,6 +339,16 @@ export const generateInvoiceHTML = (invoice) => {
 
     <div class="totals">
       <table class="totals-table">
+        <tr>
+          <td>Subtotal:</td>
+          <td>${formatCurrency(invoice.subtotal_cents || invoice.total_cents)}</td>
+        </tr>
+        ${invoice.discount_cents > 0 ? `
+        <tr>
+          <td>Discount (${invoice.discount_percent || 0}%):</td>
+          <td style="color: #dc2626;">-${formatCurrency(invoice.discount_cents)}</td>
+        </tr>
+        ` : ''}
         <tr class="total-row">
           <td>Total:</td>
           <td>${formatCurrency(invoice.total_cents)}</td>
@@ -254,11 +356,6 @@ export const generateInvoiceHTML = (invoice) => {
       </table>
     </div>
 
-    ${invoice.status ? `
-      <div class="status">
-        <strong>Status:</strong> ${invoice.status.toUpperCase()}
-      </div>
-    ` : ''}
   </div>
 </body>
 </html>

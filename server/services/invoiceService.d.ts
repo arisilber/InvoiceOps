@@ -59,6 +59,8 @@ export interface Invoice {
     client_name?: string;
     client_email?: string;
     client_type?: 'individual' | 'company';
+    earliest_work_date?: string;
+    latest_work_date?: string;
     lines?: InvoiceLine[];
 }
 
