@@ -5,9 +5,9 @@ This document outlines the step-by-step implementation plan for the Customer Sta
 ## Implementation Status
 
 - ✅ **Phase 1, Step 1.1**: Backend Core Service (`statementService.js`) - **COMPLETED**
-- ⏳ **Phase 2**: Backend API Routes - **PENDING**
-- ⏳ **Phase 3**: HTML Generator - **PENDING**
-- ⏳ **Phase 4**: Register Routes - **PENDING**
+- ✅ **Phase 2**: Backend API Routes (`server/routes/statements.js`) - **COMPLETED**
+- ✅ **Phase 3**: HTML Generator (`server/utils/statementHtmlGenerator.js`) - **COMPLETED**
+- ✅ **Phase 4**: Register Routes (`server/index.js`) - **COMPLETED**
 - ⏳ **Phase 5**: Frontend API Integration - **PENDING**
 - ⏳ **Phase 6**: Frontend React Component - **PENDING**
 - ⏳ **Phase 7**: Testing & Validation - **PENDING**
@@ -163,10 +163,12 @@ The implementation will follow the existing codebase patterns:
 
 ## Phase 2: Backend API Routes (statements.js)
 
-### Step 2.1: Create Statement Routes
+### Step 2.1: Create Statement Routes ✅ **COMPLETED**
 **File**: `server/routes/statements.js`
 
-**Endpoints to implement**:
+**Status**: ✅ Implemented and ready for use
+
+**Endpoints implemented**:
 
 1. **`GET /api/statements/:clientId`** (JSON)
    - Query params: `start_date` (required), `end_date` (required)
@@ -198,8 +200,10 @@ The implementation will follow the existing codebase patterns:
 
 ## Phase 3: HTML Generator (statementHtmlGenerator.js)
 
-### Step 3.1: Create Statement HTML Generator
+### Step 3.1: Create Statement HTML Generator ✅ **COMPLETED**
 **File**: `server/utils/statementHtmlGenerator.js`
+
+**Status**: ✅ Implemented and ready for use
 
 **Function**: `generateStatementHTML(statement)`
 
@@ -235,18 +239,30 @@ The implementation will follow the existing codebase patterns:
 - Running balance updates correctly
 - Print-friendly CSS
 
+**Implementation Notes**:
+- ✅ Ledger-style layout with transaction table
+- ✅ Beginning balance row highlighted
+- ✅ Invoice rows vs payment rows with distinct styling (payments in green)
+- ✅ Account summary section with beginning balance, invoices, payments, ending balance
+- ✅ Company header from system_settings
+- ✅ Client information section
+- ✅ Responsive print-friendly CSS with proper page break handling
+- ✅ Follows same design patterns as invoice HTML generator
+
 ---
 
 ## Phase 4: Register Routes
 
-### Step 4.1: Add Routes to Server
+### Step 4.1: Add Routes to Server ✅ **COMPLETED**
 **File**: `server/index.js`
 
-**Changes**:
+**Status**: ✅ Implemented and ready for use
+
+**Changes made**:
 - Import: `import statementsRoutes from './routes/statements.js';`
 - Register: `app.use('/api/statements', statementsRoutes);`
 
-**Placement**: After other route registrations (line ~36)
+**Placement**: After settings routes registration
 
 ---
 
