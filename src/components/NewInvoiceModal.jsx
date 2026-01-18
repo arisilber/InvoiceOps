@@ -142,8 +142,8 @@ const NewInvoiceModal = ({ isOpen, onClose, onInvoiceCreated }) => {
                         width: '100%',
                         maxWidth: '800px',
                         maxHeight: '90vh',
-                        borderRadius: 'var(--radius-lg)',
-                        boxShadow: 'var(--shadow-lg)',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border)',
                         overflow: 'hidden',
                         display: 'flex',
                         flexDirection: 'column'

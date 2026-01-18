@@ -213,7 +213,7 @@ const PaymentList = () => {
                                         background: 'var(--card-bg)',
                                         border: '1px solid var(--border)',
                                         borderRadius: 'var(--radius-md)',
-                                        boxShadow: 'var(--shadow-lg)',
+                                        border: '1px solid var(--border)',
                                         zIndex: 10,
                                         minWidth: '200px',
                                         overflow: 'hidden'
@@ -435,8 +435,8 @@ const PaymentList = () => {
                                 background: 'var(--background)',
                                 width: '100%',
                                 maxWidth: '600px',
-                                borderRadius: 'var(--radius-lg)',
-                                boxShadow: 'var(--shadow-lg)',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid var(--border)',
                                 overflow: 'hidden'
                             }}
                             onClick={e => e.stopPropagation()}
@@ -550,8 +550,8 @@ const PaymentList = () => {
                                 background: 'var(--background)',
                                 width: '100%',
                                 maxWidth: '400px',
-                                borderRadius: 'var(--radius-lg)',
-                                boxShadow: 'var(--shadow-lg)',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid var(--border)',
                                 overflow: 'hidden'
                             }}
                             onClick={e => e.stopPropagation()}

@@ -214,7 +214,7 @@ const InvoiceView = () => {
               border: 'none',
               borderRadius: 'var(--radius-md)',
               background: 'white',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+              border: '1px solid var(--border)'
             }}
             title="HTML Invoice Preview"
           />

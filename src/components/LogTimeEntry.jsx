@@ -169,12 +169,11 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                             width: '48px',
                             height: '48px',
                             background: 'var(--primary)',
-                            borderRadius: '12px',
+                            borderRadius: '8px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: 'white',
-                            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
+                            color: 'white'
                         }}>
                             <Clock size={24} />
                         </div>
@@ -242,8 +241,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                                     color: 'var(--foreground)',
                                     outline: 'none',
                                     fontSize: '1rem',
-                                    transition: 'all 0.2s ease',
-                                    boxShadow: 'var(--shadow-sm)'
+                                    transition: 'border-color 0.15s ease'
                                 }}
                                 onFocus={e => e.target.style.borderColor = 'var(--primary)'}
                                 onBlur={e => e.target.style.borderColor = 'var(--border)'}
@@ -271,8 +269,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                                     color: 'var(--foreground)',
                                     outline: 'none',
                                     fontSize: '1rem',
-                                    transition: 'all 0.2s ease',
-                                    boxShadow: 'var(--shadow-sm)'
+                                    transition: 'border-color 0.15s ease'
                                 }}
                                 onFocus={e => e.target.style.borderColor = 'var(--primary)'}
                                 onBlur={e => e.target.style.borderColor = 'var(--border)'}
@@ -304,8 +301,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                                     color: 'var(--foreground)',
                                     outline: 'none',
                                     fontSize: '1rem',
-                                    transition: 'all 0.2s ease',
-                                    boxShadow: 'var(--shadow-sm)',
+                                    transition: 'border-color 0.15s ease',
                                     width: '100%'
                                 }}
                                 onFocus={e => e.target.style.borderColor = 'var(--primary)'}
@@ -344,8 +340,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                                     color: 'var(--foreground)',
                                     outline: 'none',
                                     fontSize: '1rem',
-                                    transition: 'all 0.2s ease',
-                                    boxShadow: 'var(--shadow-sm)'
+                                    transition: 'border-color 0.15s ease'
                                 }}
                                 onFocus={e => e.target.style.borderColor = 'var(--primary)'}
                                 onBlur={e => e.target.style.borderColor = 'var(--border)'}
@@ -370,8 +365,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                                     color: 'var(--foreground)',
                                     outline: 'none',
                                     fontSize: '1rem',
-                                    transition: 'all 0.2s ease',
-                                    boxShadow: 'var(--shadow-sm)'
+                                    transition: 'border-color 0.15s ease'
                                 }}
                                 onFocus={e => e.target.style.borderColor = 'var(--primary)'}
                                 onBlur={e => e.target.style.borderColor = 'var(--border)'}
@@ -395,8 +389,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                                 color: 'var(--foreground)',
                                 outline: 'none',
                                 fontSize: '1rem',
-                                transition: 'all 0.2s ease',
-                                boxShadow: 'var(--shadow-sm)'
+                                transition: 'border-color 0.15s ease'
                             }}
                             onFocus={e => e.target.style.borderColor = 'var(--primary)'}
                             onBlur={e => e.target.style.borderColor = 'var(--border)'}
@@ -428,8 +421,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                                 outline: 'none',
                                 fontSize: '1rem',
                                 resize: 'vertical',
-                                transition: 'all 0.2s ease',
-                                boxShadow: 'var(--shadow-sm)'
+                                transition: 'border-color 0.15s ease'
                             }}
                             onFocus={e => e.target.style.borderColor = 'var(--primary)'}
                             onBlur={e => e.target.style.borderColor = 'var(--border)'}

@@ -273,7 +273,7 @@ Tech Solutions,DEV,,2024-01-18,90,Fixed bug in authentication`;
                     }}
                     onMouseEnter={(e) => {
                         e.currentTarget.style.borderColor = 'var(--primary)';
-                        e.currentTarget.style.background = 'rgba(99, 102, 241, 0.05)';
+                        e.currentTarget.style.background = 'rgba(0, 122, 255, 0.05)';
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.borderColor = 'var(--border)';

@@ -151,8 +151,8 @@ const NewPaymentModal = ({ isOpen, onClose, onPaymentCreated }) => {
                         width: '100%',
                         maxWidth: '700px',
                         maxHeight: '90vh',
-                        borderRadius: 'var(--radius-lg)',
-                        boxShadow: 'var(--shadow-lg)',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border)',
                         overflow: 'hidden',
                         display: 'flex',
                         flexDirection: 'column'
