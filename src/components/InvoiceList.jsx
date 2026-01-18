@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Download, Loader2, Trash2, Eye, AlertTriangle, Send, FileEdit } from 'lucide-react';
+import { Search, Download, Loader2, Trash2, Eye, AlertTriangle, Send, FileEdit } from 'lucide-react';
 import api from '../services/api';
 
 const InvoiceList = () => {
@@ -134,196 +133,543 @@ const InvoiceList = () => {
         }
     };
 
+    const formatCurrency = (cents) => {
+        return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    const getStatusColor = (status) => {
+        const colors = {
+            draft: { bg: '#F5F5F5', text: '#525252', border: '#E5E5E5' },
+            sent: { bg: '#EFF6FF', text: '#1E40AF', border: '#DBEAFE' },
+            paid: { bg: '#F0FDF4', text: '#166534', border: '#DCFCE7' },
+            partially_paid: { bg: '#FFFBEB', text: '#92400E', border: '#FEF3C7' },
+            voided: { bg: '#FEF2F2', text: '#991B1B', border: '#FEE2E2' }
+        };
+        return colors[status] || colors.draft;
+    };
+
+    const isOverdue = (invoice) => {
+        if (invoice.status !== 'sent' && invoice.status !== 'partially_paid') return false;
+        const now = new Date();
+        const dueDate = new Date(invoice.due_date);
+        return dueDate < now;
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center" style={{ height: '400px' }}>
-                <Loader2 className="animate-spin" size={48} style={{ opacity: 0.5 }} />
+                <Loader2 className="animate-spin" size={32} style={{ opacity: 0.4 }} />
             </div>
         );
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col gap-6"
-        >
-            <header className="flex justify-between items-center">
+        <div className="flex flex-col" style={{ gap: '2rem', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+            {/* Header */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                paddingBottom: '1.5rem',
+                borderBottom: '1px solid var(--border)'
+            }}>
                 <div>
-                    <h2 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Invoices</h2>
-                    <p style={{ opacity: 0.7 }}>Manage and track all your client invoices.</p>
+                    <h1 style={{
+                        fontSize: '1.75rem',
+                        fontWeight: 600,
+                        color: 'var(--foreground)',
+                        marginBottom: '0.375rem',
+                        letterSpacing: '-0.02em'
+                    }}>
+                        Invoices
+                    </h1>
+                    <p style={{
+                        fontSize: '0.875rem',
+                        color: 'var(--foreground)',
+                        opacity: 0.6,
+                        marginTop: 0
+                    }}>
+                        {filteredInvoices.length} {filteredInvoices.length === 1 ? 'invoice' : 'invoices'}
+                    </p>
                 </div>
-                <div className="flex gap-2">
-                    <div className="glass flex items-center gap-2" style={{ padding: '0 1rem', borderRadius: 'var(--radius-md)' }}>
-                        <Search size={18} style={{ opacity: 0.5 }} />
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 0.75rem',
+                        border: '1px solid var(--border)',
+                        borderRadius: '0.5rem',
+                        backgroundColor: 'var(--card-bg)',
+                        width: '280px'
+                    }}>
+                        <Search size={16} style={{ opacity: 0.5, flexShrink: 0 }} />
                         <input
                             type="text"
-                            placeholder="Search invoices..."
+                            placeholder="Search by number or client..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             style={{
                                 background: 'none',
                                 border: 'none',
                                 color: 'inherit',
-                                padding: '0.625rem 0',
+                                padding: 0,
                                 outline: 'none',
-                                width: '200px'
+                                width: '100%',
+                                fontSize: '0.875rem',
+                                fontFamily: 'inherit'
                             }}
                         />
                     </div>
-                    <button className="btn btn-secondary">
-                        <Filter size={18} />
-                        Filter
-                    </button>
                 </div>
-            </header>
+            </div>
 
+            {/* Error State */}
             {error && (
-                <div className="card" style={{ borderColor: 'var(--error)', color: 'var(--error-text)' }}>
+                <div style={{
+                    padding: '1rem 1.25rem',
+                    border: '1px solid #FEE2E2',
+                    borderRadius: '0.5rem',
+                    backgroundColor: '#FEF2F2',
+                    color: '#991B1B',
+                    fontSize: '0.875rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                }}>
+                    <AlertTriangle size={16} />
                     {error}
                 </div>
             )}
 
+            {/* Empty State */}
             {!error && filteredInvoices.length === 0 && (
-                <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-                    <div style={{ opacity: 0.5 }}>No invoices found.</div>
+                <div style={{
+                    textAlign: 'center',
+                    padding: '4rem 2rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: '0.5rem',
+                    backgroundColor: 'var(--card-bg)'
+                }}>
+                    <div style={{
+                        fontSize: '0.875rem',
+                        color: 'var(--foreground)',
+                        opacity: 0.5
+                    }}>
+                        {searchTerm ? 'No invoices match your search.' : 'No invoices found.'}
+                    </div>
                 </div>
             )}
 
+            {/* Invoice List */}
             {!error && filteredInvoices.length > 0 && (
-                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead>
-                            <tr style={{ background: 'var(--glass-bg)', borderBottom: '1px solid var(--border)' }}>
-                                <th style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>Invoice ID</th>
-                                <th style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>Client</th>
-                                <th style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>Amount</th>
-                                <th style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>Date</th>
-                                <th style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>Status</th>
-                                <th style={{ padding: '1rem 1.5rem', fontWeight: 600 }}></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredInvoices.map((invoice, index) => (
-                                <tr key={invoice.id} style={{
-                                    borderBottom: index !== filteredInvoices.length - 1 ? '1px solid var(--border)' : 'none',
-                                    transition: 'background 0.2s ease'
-                                }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--glass-bg)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                                    <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>
-                                        <button
+                <div style={{
+                    border: '1px solid var(--border)',
+                    borderRadius: '0.5rem',
+                    backgroundColor: 'var(--card-bg)',
+                    overflow: 'hidden'
+                }}>
+                    {/* Table Header */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1.5fr 2fr 1.2fr 1.2fr 1fr 0.8fr',
+                        gap: '1.5rem',
+                        padding: '0.875rem 1.5rem',
+                        borderBottom: '1px solid var(--border)',
+                        backgroundColor: 'var(--background)'
+                    }}>
+                        <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: 'var(--foreground)',
+                            opacity: 0.6,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}>
+                            Invoice
+                        </div>
+                        <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: 'var(--foreground)',
+                            opacity: 0.6,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}>
+                            Client
+                        </div>
+                        <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: 'var(--foreground)',
+                            opacity: 0.6,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            textAlign: 'right'
+                        }}>
+                            Amount
+                        </div>
+                        <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: 'var(--foreground)',
+                            opacity: 0.6,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}>
+                            Due Date
+                        </div>
+                        <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: 'var(--foreground)',
+                            opacity: 0.6,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}>
+                            Status
+                        </div>
+                        <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: 'var(--foreground)',
+                            opacity: 0.6,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            textAlign: 'right'
+                        }}>
+                            Actions
+                        </div>
+                    </div>
+
+                    {/* Invoice Rows */}
+                    <div>
+                        {filteredInvoices.map((invoice, index) => {
+                            const statusColor = getStatusColor(invoice.status);
+                            const overdue = isOverdue(invoice);
+                            
+                            return (
+                                <div key={invoice.id}>
+                                    <div
                                             onClick={() => navigate(`/invoices/${invoice.id}`)}
                                             style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                color: 'inherit',
+                                            display: 'grid',
+                                            gridTemplateColumns: '1.5fr 2fr 1.2fr 1.2fr 1fr 0.8fr',
+                                            gap: '1.5rem',
+                                            padding: '1rem 1.5rem',
+                                            borderBottom: index !== filteredInvoices.length - 1 ? '1px solid var(--border)' : 'none',
                                                 cursor: 'pointer',
-                                                textDecoration: 'underline',
+                                            transition: 'background-color 0.15s ease',
+                                            backgroundColor: 'transparent'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.02)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                        }}
+                                    >
+                                        {/* Invoice Number */}
+                                        <div>
+                                            <div style={{
+                                                fontSize: '0.875rem',
+                                                fontWeight: 600,
+                                                color: 'var(--foreground)',
+                                                marginBottom: '0.25rem'
+                                            }}>
+                                                INV-{invoice.invoice_number}
+                                            </div>
+                                            <div style={{
+                                                fontSize: '0.75rem',
+                                                color: 'var(--foreground)',
+                                                opacity: 0.5
+                                            }}>
+                                                {formatDate(invoice.invoice_date)}
+                                            </div>
+                                        </div>
+
+                                        {/* Client */}
+                                        <div>
+                                            <div style={{
+                                                fontSize: '0.875rem',
                                                 fontWeight: 500,
-                                                padding: 0
-                                            }}
+                                                color: 'var(--foreground)',
+                                                marginBottom: '0.25rem'
+                                            }}>
+                                                {invoice.client_name}
+                                            </div>
+                                            {invoice.client_email && (
+                                                <div style={{
+                                                    fontSize: '0.75rem',
+                                                    color: 'var(--foreground)',
+                                                    opacity: 0.5
+                                                }}>
+                                                    {invoice.client_email}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Amount */}
+                                        <div style={{
+                                            textAlign: 'right',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'flex-end',
+                                            justifyContent: 'center'
+                                        }}>
+                                            <div style={{
+                                                fontSize: '0.875rem',
+                                                fontWeight: 600,
+                                                color: 'var(--foreground)'
+                                            }}>
+                                                {formatCurrency(invoice.total_cents)}
+                                            </div>
+                                            {overdue && (
+                                                <div style={{
+                                                    fontSize: '0.75rem',
+                                                    color: '#DC2626',
+                                                    marginTop: '0.25rem',
+                                                    fontWeight: 500
+                                                }}>
+                                                    Overdue
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Due Date */}
+                                        <div style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            justifyContent: 'center'
+                                        }}>
+                                            <div style={{
+                                                fontSize: '0.875rem',
+                                                color: overdue ? '#DC2626' : 'var(--foreground)',
+                                                fontWeight: overdue ? 600 : 400
+                                            }}>
+                                                {formatDate(invoice.due_date)}
+                                            </div>
+                                        </div>
+
+                                        {/* Status */}
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center'
+                                        }}>
+                                            <span style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                padding: '0.25rem 0.625rem',
+                                                borderRadius: '0.375rem',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 500,
+                                                backgroundColor: statusColor.bg,
+                                                color: statusColor.text,
+                                                border: `1px solid ${statusColor.border}`,
+                                                textTransform: 'capitalize'
+                                            }}>
+                                                {invoice.status.replace('_', ' ')}
+                                            </span>
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'flex-end',
+                                            gap: '0.5rem'
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
                                         >
-                                            INV-{invoice.invoice_number}
-                                        </button>
-                                    </td>
-                                    <td style={{ padding: '1rem 1.5rem' }}>{invoice.client_name}</td>
-                                    <td style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>${(invoice.total_cents / 100).toFixed(2)}</td>
-                                    <td style={{ padding: '1rem 1.5rem', opacity: 0.7 }}>{new Date(invoice.invoice_date).toLocaleDateString()}</td>
-                                    <td style={{ padding: '1rem 1.5rem' }}>
-                                        <span className={`badge badge-${invoice.status}`}>{invoice.status}</span>
-                                    </td>
-                                    <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                                        <div className="flex gap-2 justify-end">
                                             {invoice.status === 'draft' && (
                                                 <button
-                                                    className="btn"
-                                                    style={{ padding: '0.5rem' }}
                                                     onClick={() => handleMarkAsSent(invoice)}
-                                                    title="Mark as Sent"
                                                     disabled={loadingInvoice || markingAsSent === invoice.id}
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        padding: '0.375rem',
+                                                        borderRadius: '0.375rem',
+                                                        border: '1px solid var(--border)',
+                                                        background: 'transparent',
+                                                        color: 'var(--foreground)',
+                                                        cursor: (loadingInvoice || markingAsSent === invoice.id) ? 'not-allowed' : 'pointer',
+                                                        opacity: (loadingInvoice || markingAsSent === invoice.id) ? 0.5 : 1,
+                                                        transition: 'background-color 0.15s ease'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        if (!loadingInvoice && markingAsSent !== invoice.id) {
+                                                            e.currentTarget.style.backgroundColor = 'var(--border)';
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                                    }}
+                                                    title="Mark as Sent"
                                                 >
                                                     {markingAsSent === invoice.id ? (
-                                                        <Loader2 className="animate-spin" size={16} />
+                                                        <Loader2 className="animate-spin" size={14} />
                                                     ) : (
-                                                        <Send size={16} />
+                                                        <Send size={14} />
                                                     )}
                                                 </button>
                                             )}
                                             {(invoice.status === 'sent' || invoice.status === 'partially_paid') && (
                                                 <button
-                                                    className="btn btn-secondary"
-                                                    style={{ padding: '0.5rem' }}
                                                     onClick={() => handleMarkAsDraft(invoice)}
-                                                    title="Mark as Draft"
                                                     disabled={loadingInvoice || markingAsDraft === invoice.id}
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        padding: '0.375rem',
+                                                        borderRadius: '0.375rem',
+                                                        border: '1px solid var(--border)',
+                                                        background: 'transparent',
+                                                        color: 'var(--foreground)',
+                                                        cursor: (loadingInvoice || markingAsDraft === invoice.id) ? 'not-allowed' : 'pointer',
+                                                        opacity: (loadingInvoice || markingAsDraft === invoice.id) ? 0.5 : 1,
+                                                        transition: 'background-color 0.15s ease'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        if (!loadingInvoice && markingAsDraft !== invoice.id) {
+                                                            e.currentTarget.style.backgroundColor = 'var(--border)';
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                                    }}
+                                                    title="Mark as Draft"
                                                 >
                                                     {markingAsDraft === invoice.id ? (
-                                                        <Loader2 className="animate-spin" size={16} />
+                                                        <Loader2 className="animate-spin" size={14} />
                                                     ) : (
-                                                        <FileEdit size={16} />
+                                                        <FileEdit size={14} />
                                                     )}
                                                 </button>
                                             )}
                                             <button
-                                                className="btn btn-secondary"
-                                                style={{ padding: '0.5rem' }}
                                                 onClick={() => handlePreview(invoice)}
-                                                title="Preview PDF"
                                                 disabled={loadingInvoice}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: '0.375rem',
+                                                    borderRadius: '0.375rem',
+                                                    border: '1px solid var(--border)',
+                                                    background: 'transparent',
+                                                    color: 'var(--foreground)',
+                                                    cursor: loadingInvoice ? 'not-allowed' : 'pointer',
+                                                    opacity: loadingInvoice ? 0.5 : 1,
+                                                    transition: 'background-color 0.15s ease'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    if (!loadingInvoice) {
+                                                        e.currentTarget.style.backgroundColor = 'var(--border)';
+                                                    }
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                                }}
+                                                title="Preview"
                                             >
-                                                <Eye size={16} />
+                                                <Eye size={14} />
                                             </button>
                                             <button
-                                                className="btn btn-secondary"
-                                                style={{ padding: '0.5rem' }}
                                                 onClick={() => handleDownload(invoice)}
-                                                title="Download PDF"
                                                 disabled={loadingInvoice}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: '0.375rem',
+                                                    borderRadius: '0.375rem',
+                                                    border: '1px solid var(--border)',
+                                                    background: 'transparent',
+                                                    color: 'var(--foreground)',
+                                                    cursor: loadingInvoice ? 'not-allowed' : 'pointer',
+                                                    opacity: loadingInvoice ? 0.5 : 1,
+                                                    transition: 'background-color 0.15s ease'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    if (!loadingInvoice) {
+                                                        e.currentTarget.style.backgroundColor = 'var(--border)';
+                                                    }
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                                }}
+                                                title="Download PDF"
                                             >
-                                                <Download size={16} />
+                                                <Download size={14} />
                                             </button>
                                             <button
-                                                className="btn btn-secondary"
-                                                style={{ padding: '0.5rem', color: '#ef4444' }}
                                                 onClick={() => handleDeleteClick(invoice)}
-                                                title="Delete Invoice"
                                                 disabled={loadingInvoice || deleting}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: '0.375rem',
+                                                    borderRadius: '0.375rem',
+                                                    border: '1px solid #FEE2E2',
+                                                    background: 'transparent',
+                                                    color: '#DC2626',
+                                                    cursor: (loadingInvoice || deleting) ? 'not-allowed' : 'pointer',
+                                                    opacity: (loadingInvoice || deleting) ? 0.5 : 1,
+                                                    transition: 'background-color 0.15s ease'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    if (!loadingInvoice && !deleting) {
+                                                        e.currentTarget.style.backgroundColor = '#FEE2E2';
+                                                    }
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                                }}
+                                                title="Delete"
                                             >
-                                                <Trash2 size={16} />
+                                                <Trash2 size={14} />
                                             </button>
                                         </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
 
             {/* Delete Confirmation Modal */}
-            <AnimatePresence>
                 {deleteModalOpen && (
                     <div style={{
                         position: 'fixed',
                         inset: 0,
-                        background: 'rgba(0,0,0,0.5)',
-                        backdropFilter: 'blur(4px)',
+                    background: 'rgba(0, 0, 0, 0.4)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         zIndex: 1000,
                         padding: '2rem'
                     }} onClick={handleDeleteCancel}>
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    <div
                             style={{
-                                background: 'var(--background)',
+                            background: 'var(--card-bg)',
                                 width: '100%',
-                                maxWidth: '400px',
-                                borderRadius: 'var(--radius-lg)',
-                                boxShadow: 'var(--shadow-lg)',
+                            maxWidth: '420px',
+                            borderRadius: '0.75rem',
+                            border: '1px solid var(--border)',
                                 overflow: 'hidden'
                             }}
                             onClick={e => e.stopPropagation()}
@@ -331,49 +677,111 @@ const InvoiceList = () => {
                             <div style={{ padding: '2rem' }}>
                                 <div style={{
                                     display: 'flex',
-                                    alignItems: 'center',
+                                alignItems: 'flex-start',
                                     gap: '1rem',
                                     marginBottom: '1.5rem'
                                 }}>
                                     <div style={{
-                                        padding: '0.75rem',
-                                        background: 'rgba(239, 68, 68, 0.1)',
-                                        borderRadius: 'var(--radius-md)',
-                                        color: '#ef4444'
-                                    }}>
-                                        <AlertTriangle size={24} />
-                                    </div>
-                                    <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Delete Invoice</h2>
+                                    padding: '0.625rem',
+                                    background: '#FEE2E2',
+                                    borderRadius: '0.5rem',
+                                    color: '#DC2626',
+                                    flexShrink: 0
+                                }}>
+                                    <AlertTriangle size={20} />
                                 </div>
-                                <p style={{ marginBottom: '2rem', opacity: 0.8, lineHeight: 1.6 }}>
-                                    Are you sure you want to delete invoice <strong>INV-{invoiceToDelete?.invoice_number}</strong> for <strong>{invoiceToDelete?.client_name}</strong>? This action cannot be undone.
-                                </p>
+                                <div style={{ flex: 1 }}>
+                                    <h2 style={{
+                                        fontSize: '1.25rem',
+                                        fontWeight: 600,
+                                        color: 'var(--foreground)',
+                                        marginBottom: '0.5rem',
+                                        letterSpacing: '-0.01em'
+                                    }}>
+                                        Delete Invoice
+                                    </h2>
+                                    <p style={{
+                                        fontSize: '0.875rem',
+                                        color: 'var(--foreground)',
+                                        opacity: 0.7,
+                                        lineHeight: 1.5,
+                                        margin: 0
+                                    }}>
+                                        Are you sure you want to delete invoice <strong>INV-{invoiceToDelete?.invoice_number}</strong> for <strong>{invoiceToDelete?.client_name}</strong>? This action cannot be undone.
+                                    </p>
+                                </div>
+                            </div>
                                 <div style={{
                                     display: 'flex',
                                     justifyContent: 'flex-end',
-                                    gap: '1rem'
+                                gap: '0.75rem'
                                 }}>
                                     <button
                                         type="button"
-                                        className="btn btn-secondary"
                                         onClick={handleDeleteCancel}
                                         disabled={deleting}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '0.5rem 1rem',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 500,
+                                        borderRadius: '0.5rem',
+                                        border: '1px solid var(--border)',
+                                        background: 'transparent',
+                                        color: 'var(--foreground)',
+                                        cursor: deleting ? 'not-allowed' : 'pointer',
+                                        opacity: deleting ? 0.5 : 1,
+                                        transition: 'background-color 0.15s ease',
+                                        fontFamily: 'var(--font-sans)',
+                                        lineHeight: 1.2
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!deleting) {
+                                            e.currentTarget.style.backgroundColor = 'var(--border)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                    }}
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="button"
-                                        className="btn"
                                         onClick={handleDeleteConfirm}
                                         disabled={deleting}
                                         style={{
-                                            background: '#ef4444',
-                                            color: 'white'
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '0.5rem 1rem',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 500,
+                                        borderRadius: '0.5rem',
+                                        border: 'none',
+                                        background: '#DC2626',
+                                        color: 'white',
+                                        cursor: deleting ? 'not-allowed' : 'pointer',
+                                        opacity: deleting ? 0.6 : 1,
+                                        transition: 'opacity 0.15s ease',
+                                        fontFamily: 'var(--font-sans)',
+                                        gap: '0.5rem',
+                                        lineHeight: 1.2
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!deleting) {
+                                            e.currentTarget.style.opacity = '0.9';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.opacity = deleting ? '0.6' : '1';
                                         }}
                                     >
                                         {deleting ? (
                                             <>
-                                                <Loader2 className="animate-spin" size={18} style={{ marginRight: '0.5rem' }} />
+                                            <Loader2 className="animate-spin" size={16} />
                                                 Deleting...
                                             </>
                                         ) : (
@@ -382,11 +790,10 @@ const InvoiceList = () => {
                                     </button>
                                 </div>
                             </div>
-                        </motion.div>
+                    </div>
                     </div>
                 )}
-            </AnimatePresence>
-        </motion.div>
+        </div>
     );
 };
 
