@@ -94,97 +94,107 @@ export const generateInvoiceHTML = (invoice) => {
       margin: 0 auto;
       background: white;
       padding: 3rem;
-      border: 1px solid #e5e7eb;
+      border: 1px solid #d1d5db;
     }
     .invoice-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 2.5rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 2px solid #1a1a1a;
+      margin-bottom: 2rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid #d1d5db;
     }
     .invoice-title {
-      font-size: 2.25rem;
-      font-weight: 700;
+      font-size: 1.875rem;
+      font-weight: 600;
       color: #1a1a1a;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.01em;
     }
     .invoice-meta {
       text-align: right;
     }
     .invoice-meta p {
       margin: 0.25rem 0;
-      color: #4b5563;
+      color: #374151;
       font-size: 0.875rem;
-      line-height: 1.5;
+      line-height: 1.6;
     }
     .invoice-meta strong {
       color: #1a1a1a;
-      font-weight: 600;
+      font-weight: 500;
     }
     .invoice-total-section {
-      background: #f9fafb;
-      border: 2px solid #1a1a1a;
-      padding: 1.5rem 2rem;
-      margin-bottom: 2.5rem;
+      background: #ffffff;
+      border: 1px solid #1a1a1a;
+      padding: 1.25rem 1.75rem;
+      margin-bottom: 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .invoice-total-label {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #4b5563;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: #374151;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
     .invoice-total-amount {
-      font-size: 2.5rem;
-      font-weight: 700;
+      font-size: 2rem;
+      font-weight: 600;
       color: #1a1a1a;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.01em;
       font-variant-numeric: tabular-nums;
     }
     .client-info {
       margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #e5e7eb;
     }
-    .client-info h3 {
-      font-size: 0.875rem;
-      font-weight: 600;
-      margin-bottom: 0.75rem;
-      color: #4b5563;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .client-info p {
-      color: #1a1a1a;
-      margin: 0.25rem 0;
+    .client-info-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       font-size: 0.9375rem;
+      color: #1a1a1a;
       line-height: 1.6;
     }
-    .client-info strong {
-      font-weight: 600;
+    .client-info-label {
+      font-weight: 500;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.8125rem;
+    }
+    .client-info-name {
+      font-weight: 500;
+      color: #1a1a1a;
+    }
+    .client-info-email {
+      color: #6b7280;
+      margin-left: 0.5rem;
     }
     table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 2rem;
-      border: 1px solid #e5e7eb;
+      border: 1px solid #d1d5db;
     }
     thead {
-      background: #1a1a1a;
-      color: #ffffff;
+      background: #f9fafb;
+      color: #1a1a1a;
+      border-bottom: 2px solid #1a1a1a;
     }
     th {
-      padding: 0.875rem 1rem;
+      padding: 0.75rem 1rem;
       text-align: left;
-      font-weight: 600;
+      font-weight: 500;
       font-size: 0.75rem;
       vertical-align: top;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      border-right: 1px solid #374151;
+      border-right: 1px solid #e5e7eb;
+      color: #374151;
     }
     th:last-child {
       border-right: none;
@@ -207,7 +217,7 @@ export const generateInvoiceHTML = (invoice) => {
       background: #f9fafb;
     }
     td {
-      padding: 1rem;
+      padding: 0.875rem 1rem;
       color: #1a1a1a;
       white-space: pre-wrap;
       word-wrap: break-word;
@@ -216,7 +226,7 @@ export const generateInvoiceHTML = (invoice) => {
       vertical-align: top;
       font-size: 0.9375rem;
       line-height: 1.5;
-      border-right: 1px solid #f3f4f6;
+      border-right: 1px solid #e5e7eb;
     }
     td:last-child {
       border-right: none;
@@ -226,7 +236,7 @@ export const generateInvoiceHTML = (invoice) => {
       word-wrap: break-word;
       word-break: break-word;
       overflow-wrap: break-word;
-      font-weight: 500;
+      font-weight: 400;
     }
     td:nth-child(3),
     td:nth-child(4),
@@ -245,10 +255,10 @@ export const generateInvoiceHTML = (invoice) => {
     }
     .totals-table {
       width: 320px;
-      border: 1px solid #e5e7eb;
+      border: 1px solid #d1d5db;
     }
     .totals-table td {
-      padding: 0.75rem 1rem;
+      padding: 0.625rem 1rem;
       border: none;
       border-bottom: 1px solid #e5e7eb;
       font-size: 0.9375rem;
@@ -262,27 +272,27 @@ export const generateInvoiceHTML = (invoice) => {
     }
     .totals-table td:first-child {
       text-align: right;
-      font-weight: 500;
-      color: #4b5563;
+      font-weight: 400;
+      color: #374151;
       padding-right: 1.5rem;
     }
     .totals-table td:last-child {
       text-align: right;
-      font-weight: 600;
+      font-weight: 500;
       color: #1a1a1a;
       font-variant-numeric: tabular-nums;
       font-size: 0.9375rem;
     }
     .total-row td {
-      font-size: 1.125rem;
-      padding-top: 1rem;
-      padding-bottom: 1rem;
-      border-top: 2px solid #1a1a1a;
-      font-weight: 700;
+      font-size: 1rem;
+      padding-top: 0.875rem;
+      padding-bottom: 0.875rem;
+      border-top: 1px solid #1a1a1a;
+      font-weight: 600;
     }
     .total-row td:first-child {
-      font-size: 0.875rem;
-      font-weight: 600;
+      font-size: 0.8125rem;
+      font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: #1a1a1a;
@@ -317,9 +327,11 @@ export const generateInvoiceHTML = (invoice) => {
     </div>
 
     <div class="client-info">
-      <h3>Bill To:</h3>
-      <p><strong>${escapeHtml(invoice.client_name || 'N/A')}</strong></p>
-      ${invoice.client_email ? `<p>${escapeHtml(invoice.client_email)}</p>` : ''}
+      <div class="client-info-row">
+        <span class="client-info-label">Bill To:</span>
+        <span class="client-info-name">${escapeHtml(invoice.client_name || 'N/A')}</span>
+        ${invoice.client_email ? `<span class="client-info-email">(${escapeHtml(invoice.client_email)})</span>` : ''}
+      </div>
     </div>
 
     <table>
