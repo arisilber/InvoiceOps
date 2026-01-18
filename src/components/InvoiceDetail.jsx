@@ -387,6 +387,30 @@ const InvoiceDetail = () => {
                   {new Date(invoice.due_date).toLocaleDateString()}
                 </div>
               </div>
+              {invoice.earliest_work_date && invoice.latest_work_date && (
+                <div>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.375rem', 
+                    marginBottom: '0.375rem',
+                    opacity: 0.65,
+                    fontSize: '0.8125rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontWeight: 500
+                  }}>
+                    <Calendar size={14} />
+                    Period of Service
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>
+                    {invoice.earliest_work_date === invoice.latest_work_date
+                      ? new Date(invoice.earliest_work_date).toLocaleDateString()
+                      : `${new Date(invoice.earliest_work_date).toLocaleDateString()} - ${new Date(invoice.latest_work_date).toLocaleDateString()}`
+                    }
+                  </div>
+                </div>
+              )}
               <div>
                 <div style={{ 
                   display: 'flex', 

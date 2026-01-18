@@ -86,6 +86,19 @@ const fetchInvoiceWithLines = async (id) => {
     [id]
   );
 
+  // Get work date range from time entries linked to this invoice
+  const workDatesResult = await query(
+    `SELECT MIN(work_date) as earliest_work_date, MAX(work_date) as latest_work_date
+     FROM time_entries
+     WHERE invoice_id = $1`,
+    [id]
+  );
+
+  if (workDatesResult.rows[0]?.earliest_work_date) {
+    invoice.earliest_work_date = workDatesResult.rows[0].earliest_work_date;
+    invoice.latest_work_date = workDatesResult.rows[0].latest_work_date;
+  }
+
   // Get client discount_percent to calculate discount per line
   const clientResult = await query(
     'SELECT discount_percent FROM clients WHERE id = $1',
@@ -237,6 +250,19 @@ router.get('/:id', async (req, res, next) => {
        ORDER BY il.id`,
       [id]
     );
+
+    // Get work date range from time entries linked to this invoice
+    const workDatesResult = await query(
+      `SELECT MIN(work_date) as earliest_work_date, MAX(work_date) as latest_work_date
+       FROM time_entries
+       WHERE invoice_id = $1`,
+      [id]
+    );
+
+    if (workDatesResult.rows[0]?.earliest_work_date) {
+      invoice.earliest_work_date = workDatesResult.rows[0].earliest_work_date;
+      invoice.latest_work_date = workDatesResult.rows[0].latest_work_date;
+    }
 
     // Get client discount_percent to calculate discount per line
     const clientResult = await query(
