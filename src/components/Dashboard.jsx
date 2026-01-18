@@ -62,6 +62,7 @@ const Dashboard = ({ onExploreInvoices }) => {
         pendingAmount: 0,
         paidThisMonth: 0,
         overdueAmount: 0,
+        draftAmount: 0,
         totalClients: 0,
         uninvoicedHours: 0,
         uninvoicedAmount: 0,
@@ -109,9 +110,11 @@ const Dashboard = ({ onExploreInvoices }) => {
                     if (new Date(inv.due_date) < now) {
                         acc.overdueAmount += amount;
                     }
+                } else if (inv.status === 'draft') {
+                    acc.draftAmount += amount;
                 }
                 return acc;
-            }, { totalRevenue: 0, pendingAmount: 0, paidThisMonth: 0, overdueAmount: 0 });
+            }, { totalRevenue: 0, pendingAmount: 0, paidThisMonth: 0, overdueAmount: 0, draftAmount: 0 });
 
             // Calculate invoice status breakdown
             const statusBreakdown = invoices.reduce((acc, inv) => {
@@ -119,9 +122,10 @@ const Dashboard = ({ onExploreInvoices }) => {
                 return acc;
             }, {});
 
-            // Calculate average invoice value
-            const averageInvoiceValue = invoices.length > 0
-                ? invoices.reduce((sum, inv) => sum + (inv.total_cents / 100), 0) / invoices.length
+            // Calculate average invoice value (excluding drafts)
+            const nonDraftInvoices = invoices.filter(inv => inv.status !== 'draft');
+            const averageInvoiceValue = nonDraftInvoices.length > 0
+                ? nonDraftInvoices.reduce((sum, inv) => sum + (inv.total_cents / 100), 0) / nonDraftInvoices.length
                 : 0;
 
             // Calculate uninvoiced time entries
@@ -180,7 +184,8 @@ const Dashboard = ({ onExploreInvoices }) => {
             let invoicedLast90Days = 0;
             let invoicedAllTime = 0;
 
-            invoices.forEach(inv => {
+            // Only count non-draft invoices for invoiced amounts
+            invoices.filter(inv => inv.status !== 'draft').forEach(inv => {
                 const invDate = new Date(inv.invoice_date);
                 const amount = inv.total_cents / 100;
                 invoicedAllTime += amount;
@@ -196,9 +201,9 @@ const Dashboard = ({ onExploreInvoices }) => {
                 }
             });
 
-            // Calculate top clients by revenue
+            // Calculate top clients by revenue (excluding drafts)
             const clientRevenue = {};
-            invoices.forEach(inv => {
+            invoices.filter(inv => inv.status !== 'draft').forEach(inv => {
                 if (!clientRevenue[inv.client_id]) {
                     clientRevenue[inv.client_id] = {
                         client_id: inv.client_id,
@@ -358,6 +363,11 @@ const Dashboard = ({ onExploreInvoices }) => {
                         title="Overdue"
                         value={formatCurrency(stats.overdueAmount)}
                         onClick={() => navigate('/invoices?overdue=true')}
+                    />
+                    <StatCard
+                        title="Draft Invoices"
+                        value={formatCurrency(stats.draftAmount)}
+                        onClick={() => navigate('/invoices?status=draft')}
                     />
                     <StatCard
                         title="Total Clients"
