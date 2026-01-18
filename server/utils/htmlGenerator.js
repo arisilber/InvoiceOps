@@ -346,7 +346,7 @@ export const generateInvoiceHTML = (invoice) => {
     /* Page break handling for multi-page invoices */
     @page {
       size: A4;
-      margin: 20mm;
+      margin: 5mm;
     }
     @media print {
       body {
@@ -356,9 +356,10 @@ export const generateInvoiceHTML = (invoice) => {
       }
       .invoice-container {
         box-shadow: none;
-        padding: 0;
+        padding: 3rem;
         margin: 0;
         max-width: 100%;
+        border: none;
       }
       /* Prevent breaking inside header section */
       .invoice-header {

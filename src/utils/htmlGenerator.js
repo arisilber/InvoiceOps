@@ -316,7 +316,8 @@ export const generateInvoiceHTML = (invoice) => {
       }
       .invoice-container {
         box-shadow: none;
-        padding: 2rem;
+        padding: 3rem;
+        border: none;
       }
     }
   </style>
