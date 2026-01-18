@@ -165,7 +165,6 @@ export const generateInvoiceHTML = (invoice) => {
     }
     .invoice-total-section {
       background: #ffffff;
-      border: 1px solid #1a1a1a;
       padding: 1.25rem 1.75rem;
       flex: 1;
       display: flex;
@@ -192,7 +191,6 @@ export const generateInvoiceHTML = (invoice) => {
       flex: 1;
       padding: 1.25rem 1.75rem;
       background: #ffffff;
-      border: 1px solid #1a1a1a;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
