@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, MoreVertical, Loader2, X, Tag, FileText, Trash2, Edit2 } from 'lucide-react';
+import { Search, Plus, Loader2, X, Trash2, Edit2, AlertCircle } from 'lucide-react';
 import api from '../services/api';
 
 const WorkTypeList = () => {
@@ -8,7 +7,6 @@ const WorkTypeList = () => {
     const [workTypes, setWorkTypes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [activeMenu, setActiveMenu] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingWorkType, setEditingWorkType] = useState(null);
     const [modalLoading, setModalLoading] = useState(false);
@@ -24,12 +22,16 @@ const WorkTypeList = () => {
     }, []);
 
     useEffect(() => {
-        const handleClickOutside = () => setActiveMenu(null);
-        if (activeMenu) {
-            window.addEventListener('click', handleClickOutside);
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && isModalOpen) {
+                closeModal();
+            }
+        };
+        if (isModalOpen) {
+            window.addEventListener('keydown', handleEscape);
         }
-        return () => window.removeEventListener('click', handleClickOutside);
-    }, [activeMenu]);
+        return () => window.removeEventListener('keydown', handleEscape);
+    }, [isModalOpen]);
 
     const fetchWorkTypes = async () => {
         try {
@@ -81,7 +83,7 @@ const WorkTypeList = () => {
             setModalLoading(true);
             setModalError(null);
 
-            if (!formData.code) {
+            if (!formData.code.trim()) {
                 throw new Error('Code is required');
             }
 
@@ -115,287 +117,603 @@ const WorkTypeList = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center" style={{ height: '400px' }}>
-                <Loader2 className="animate-spin" size={48} style={{ opacity: 0.5 }} />
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '400px'
+            }}>
+                <Loader2 className="animate-spin" size={24} style={{ opacity: 0.4 }} />
             </div>
         );
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col gap-6"
-        >
-            <header className="flex justify-between items-center">
-                <div>
-                    <h2 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Work Types</h2>
-                    <p style={{ opacity: 0.7 }}>Configure categories for your billable work items.</p>
-                </div>
-                <div className="flex gap-2">
-                    <div className="glass flex items-center gap-2" style={{ padding: '0 1rem', borderRadius: 'var(--radius-md)' }}>
-                        <Search size={18} style={{ opacity: 0.5 }} />
-                        <input
-                            type="text"
-                            placeholder="Search work types..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'inherit',
-                                padding: '0.625rem 0',
-                                outline: 'none',
-                                width: '200px'
-                            }}
-                        />
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%'
+        }}>
+            {/* Header */}
+            <div style={{
+                marginBottom: '32px',
+                paddingBottom: '16px',
+                borderBottom: '1px solid var(--border)'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    flexWrap: 'wrap',
+                    gap: '16px'
+                }}>
+                    <div>
+                        <h1 style={{
+                            fontSize: '28px',
+                            fontWeight: '600',
+                            letterSpacing: '-0.02em',
+                            marginBottom: '4px',
+                            color: 'var(--foreground)'
+                        }}>
+                            Work Types
+                        </h1>
+                        <p style={{
+                            fontSize: '15px',
+                            color: 'var(--foreground)',
+                            opacity: 0.6,
+                            fontWeight: '400'
+                        }}>
+                            Manage categories for billable work items
+                        </p>
                     </div>
-                    <button className="btn btn-primary" onClick={() => openModal()}>
-                        <Plus size={18} />
+                    <button
+                        onClick={() => openModal()}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '10px 20px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            fontFamily: 'inherit',
+                            backgroundColor: 'var(--primary)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--primary-hover)'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--primary)'}
+                    >
+                        <Plus size={16} />
                         Add Work Type
                     </button>
                 </div>
-            </header>
+            </div>
 
+            {/* Search Bar */}
+            <div style={{ marginBottom: '24px' }}>
+                <div style={{
+                    position: 'relative',
+                    maxWidth: '400px'
+                }}>
+                    <Search size={16} style={{
+                        position: 'absolute',
+                        left: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        opacity: 0.4,
+                        pointerEvents: 'none'
+                    }} />
+                    <input
+                        type="text"
+                        placeholder="Search work types..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{
+                            width: '100%',
+                            padding: '10px 12px 10px 36px',
+                            fontSize: '15px',
+                            fontFamily: 'inherit',
+                            backgroundColor: 'var(--background)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            color: 'var(--foreground)',
+                            outline: 'none',
+                            transition: 'border-color 0.15s ease'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                        onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                    />
+                </div>
+            </div>
+
+            {/* Error Message */}
             {error && (
-                <div className="card" style={{ borderColor: 'var(--error)', color: 'var(--error-text)' }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 16px',
+                    marginBottom: '24px',
+                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    color: '#dc2626'
+                }}>
+                    <AlertCircle size={16} />
                     {error}
                 </div>
             )}
 
-            {!error && filteredWorkTypes.length === 0 && (
-                <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-                    <div style={{ opacity: 0.5, marginBottom: '1rem' }}>No work types found.</div>
-                    <button className="btn btn-secondary" onClick={() => openModal()}>
-                        <Plus size={18} />
-                        Create your first work type
-                    </button>
+            {/* Empty State */}
+            {!error && filteredWorkTypes.length === 0 && !loading && (
+                <div style={{
+                    backgroundColor: 'var(--card-bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    padding: '48px 24px',
+                    textAlign: 'center'
+                }}>
+                    <p style={{
+                        fontSize: '15px',
+                        color: 'var(--foreground)',
+                        opacity: 0.6,
+                        marginBottom: '20px'
+                    }}>
+                        {searchTerm ? 'No work types match your search.' : 'No work types found.'}
+                    </p>
+                    {!searchTerm && (
+                        <button
+                            onClick={() => openModal()}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '10px 20px',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                fontFamily: 'inherit',
+                                backgroundColor: 'var(--primary)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                transition: 'background-color 0.15s ease'
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--primary-hover)'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--primary)'}
+                        >
+                            <Plus size={16} />
+                            Create your first work type
+                        </button>
+                    )}
                 </div>
             )}
 
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                {filteredWorkTypes.map((wt) => (
-                    <motion.div
-                        key={wt.id}
-                        layout
-                        className="card"
-                        style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative' }}
-                    >
-                        <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-3">
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    background: 'var(--ring)',
-                                    color: 'var(--primary)',
-                                    borderRadius: '10px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
+            {/* Work Types List */}
+            {filteredWorkTypes.length > 0 && (
+                <div style={{
+                    backgroundColor: 'var(--card-bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    overflow: 'hidden'
+                }}>
+                    <table style={{
+                        width: '100%',
+                        borderCollapse: 'collapse'
+                    }}>
+                        <thead>
+                            <tr style={{
+                                backgroundColor: 'var(--background)',
+                                borderBottom: '1px solid var(--border)'
+                            }}>
+                                <th style={{
+                                    padding: '12px 16px',
+                                    textAlign: 'left',
+                                    fontSize: '13px',
+                                    fontWeight: '500',
+                                    color: 'var(--foreground)',
+                                    opacity: 0.7,
+                                    letterSpacing: '0.01em'
                                 }}>
-                                    <Tag size={20} />
-                                </div>
-                                <div>
-                                    <h3 style={{ fontSize: '1.125rem', textTransform: 'capitalize' }}>{wt.code}</h3>
-                                    <div style={{ fontSize: '0.875rem', opacity: 0.6 }}>
-                                        Work Category
-                                    </div>
-                                </div>
-                            </div>
-                            <div style={{ position: 'relative' }}>
-                                <button
-                                    className="btn btn-secondary"
-                                    style={{ padding: '0.5rem' }}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveMenu(activeMenu === wt.id ? null : wt.id);
+                                    Code
+                                </th>
+                                <th style={{
+                                    padding: '12px 16px',
+                                    textAlign: 'left',
+                                    fontSize: '13px',
+                                    fontWeight: '500',
+                                    color: 'var(--foreground)',
+                                    opacity: 0.7,
+                                    letterSpacing: '0.01em'
+                                }}>
+                                    Description
+                                </th>
+                                <th style={{
+                                    padding: '12px 16px',
+                                    width: '100px',
+                                    textAlign: 'right',
+                                    fontSize: '13px',
+                                    fontWeight: '500',
+                                    color: 'var(--foreground)',
+                                    opacity: 0.7,
+                                    letterSpacing: '0.01em'
+                                }}>
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredWorkTypes.map((wt, index) => (
+                                <tr
+                                    key={wt.id}
+                                    style={{
+                                        borderBottom: index < filteredWorkTypes.length - 1 ? '1px solid var(--border)' : 'none',
+                                        transition: 'background-color 0.15s ease'
                                     }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                 >
-                                    <MoreVertical size={18} />
-                                </button>
-
-                                <AnimatePresence>
-                                    {activeMenu === wt.id && (
-                                        <motion.div
-                                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                            style={{
-                                                position: 'absolute',
-                                                top: '100%',
-                                                right: 0,
-                                                marginTop: '0.5rem',
-                                                background: 'var(--card-bg)',
-                                                border: '1px solid var(--border)',
-                                                borderRadius: 'var(--radius-md)',
-                                                boxShadow: 'var(--shadow-lg)',
-                                                zIndex: 10,
-                                                minWidth: '150px',
-                                                overflow: 'hidden'
-                                            }}
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
+                                    <td style={{
+                                        padding: '14px 16px',
+                                        fontSize: '15px',
+                                        fontWeight: '500',
+                                        color: 'var(--foreground)'
+                                    }}>
+                                        {wt.code}
+                                    </td>
+                                    <td style={{
+                                        padding: '14px 16px',
+                                        fontSize: '15px',
+                                        color: 'var(--foreground)',
+                                        opacity: 0.8
+                                    }}>
+                                        {wt.description || <span style={{ opacity: 0.5, fontStyle: 'italic' }}>No description</span>}
+                                    </td>
+                                    <td style={{
+                                        padding: '14px 16px',
+                                        textAlign: 'right'
+                                    }}>
+                                        <div style={{
+                                            display: 'flex',
+                                            gap: '8px',
+                                            justifyContent: 'flex-end'
+                                        }}>
                                             <button
-                                                className="btn-menu-item"
-                                                onClick={() => {
-                                                    openModal(wt);
-                                                    setActiveMenu(null);
+                                                onClick={() => openModal(wt)}
+                                                style={{
+                                                    padding: '6px 10px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '500',
+                                                    fontFamily: 'inherit',
+                                                    backgroundColor: 'transparent',
+                                                    color: 'var(--foreground)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    transition: 'background-color 0.15s ease'
                                                 }}
+                                                onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--border)'}
+                                                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                                             >
                                                 <Edit2 size={14} />
                                                 Edit
                                             </button>
                                             <button
-                                                className="btn-menu-item"
-                                                style={{ color: 'var(--error)' }}
-                                                onClick={() => {
-                                                    handleDelete(wt.id);
-                                                    setActiveMenu(null);
+                                                onClick={() => handleDelete(wt.id)}
+                                                style={{
+                                                    padding: '6px 10px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '500',
+                                                    fontFamily: 'inherit',
+                                                    backgroundColor: 'transparent',
+                                                    color: '#dc2626',
+                                                    border: '1px solid rgba(220, 38, 38, 0.2)',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    transition: 'background-color 0.15s ease'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.target.style.backgroundColor = 'rgba(220, 38, 38, 0.1)';
+                                                    e.target.style.borderColor = 'rgba(220, 38, 38, 0.3)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.target.style.backgroundColor = 'transparent';
+                                                    e.target.style.borderColor = 'rgba(220, 38, 38, 0.2)';
                                                 }}
                                             >
                                                 <Trash2 size={14} />
                                                 Delete
                                             </button>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        </div>
-
-                        <div style={{ fontSize: '0.925rem', opacity: 0.8, minHeight: '3em' }}>
-                            {wt.description || 'No description provided.'}
-                        </div>
-
-                        <div style={{
-                            paddingTop: '1rem',
-                            borderTop: '1px solid var(--border)',
-                            fontSize: '0.75rem',
-                            opacity: 0.5,
-                            fontFamily: 'monospace'
-                        }}>
-                            ID: {wt.id.toString().padStart(3, '0')}
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {/* Modal */}
-            <AnimatePresence>
-                {isModalOpen && (
-                    <div style={{
+            {isModalOpen && (
+                <div
+                    style={{
                         position: 'fixed',
                         inset: 0,
-                        background: 'rgba(0,0,0,0.5)',
-                        backdropFilter: 'blur(4px)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.4)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         zIndex: 1000,
-                        padding: '2rem'
-                    }} onClick={closeModal}>
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            style={{
-                                background: 'var(--background)',
-                                width: '100%',
-                                maxWidth: '500px',
-                                borderRadius: 'var(--radius-lg)',
-                                boxShadow: 'var(--shadow-lg)',
-                                overflow: 'hidden',
-                                display: 'flex',
-                                flexDirection: 'column'
-                            }}
-                            onClick={e => e.stopPropagation()}
-                        >
-                            <header style={{
-                                padding: '1.5rem',
-                                borderBottom: '1px solid var(--border)',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
+                        padding: '24px'
+                    }}
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                            closeModal();
+                        }
+                    }}
+                >
+                    <div
+                        style={{
+                            backgroundColor: 'var(--card-bg)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '8px',
+                            width: '100%',
+                            maxWidth: '500px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            maxHeight: '90vh',
+                            overflow: 'hidden'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div style={{
+                            padding: '20px 24px',
+                            borderBottom: '1px solid var(--border)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <h2 style={{
+                                fontSize: '20px',
+                                fontWeight: '600',
+                                color: 'var(--foreground)'
                             }}>
-                                <h2 style={{ fontSize: '1.5rem' }}>{editingWorkType ? 'Edit Work Type' : 'Add Work Type'}</h2>
-                                <button className="btn btn-secondary" style={{ padding: '0.5rem' }} onClick={closeModal}>
-                                    <X size={20} />
-                                </button>
-                            </header>
+                                {editingWorkType ? 'Edit Work Type' : 'Add Work Type'}
+                            </h2>
+                            <button
+                                onClick={closeModal}
+                                style={{
+                                    padding: '6px',
+                                    backgroundColor: 'transparent',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    color: 'var(--foreground)',
+                                    opacity: 0.6,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'opacity 0.15s ease'
+                                }}
+                                onMouseEnter={(e) => e.target.style.opacity = '1'}
+                                onMouseLeave={(e) => e.target.style.opacity = '0.6'}
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
 
-                            <form onSubmit={handleSubmit}>
-                                <div style={{ padding: '2rem' }}>
-                                    <div className="flex flex-col gap-5">
-                                        {modalError && (
-                                            <div className="card" style={{ borderColor: 'var(--error)', color: 'var(--error-text)', padding: '1rem' }}>
-                                                {modalError}
-                                            </div>
-                                        )}
+                        {/* Modal Body */}
+                        <form onSubmit={handleSubmit}>
+                            <div style={{ padding: '24px' }}>
+                                {modalError && (
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '12px 16px',
+                                        marginBottom: '24px',
+                                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        color: '#dc2626'
+                                    }}>
+                                        <AlertCircle size={16} />
+                                        {modalError}
+                                    </div>
+                                )}
 
-                                        <div className="flex flex-col gap-2">
-                                            <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Code (identifer)</label>
-                                            <div className="glass flex items-center gap-2" style={{ padding: '0 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--card-bg)' }}>
-                                                <Tag size={18} style={{ opacity: 0.5 }} />
-                                                <input
-                                                    type="text"
-                                                    placeholder="e.g. backend"
-                                                    required
-                                                    value={formData.code}
-                                                    onChange={e => setFormData({ ...formData, code: e.target.value.toLowerCase() })}
-                                                    style={{
-                                                        padding: '0.75rem 0',
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        outline: 'none',
-                                                        width: '100%',
-                                                        color: 'inherit'
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
+                                <div style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '24px'
+                                }}>
+                                    {/* Code Field */}
+                                    <div>
+                                        <label style={{
+                                            display: 'block',
+                                            fontSize: '13px',
+                                            fontWeight: '500',
+                                            marginBottom: '8px',
+                                            color: 'var(--foreground)',
+                                            letterSpacing: '0.01em'
+                                        }}>
+                                            Code <span style={{ color: '#dc2626' }}>*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. backend"
+                                            required
+                                            value={formData.code}
+                                            onChange={e => setFormData({ ...formData, code: e.target.value.toLowerCase().trim() })}
+                                            style={{
+                                                width: '100%',
+                                                padding: '10px 12px',
+                                                fontSize: '15px',
+                                                fontFamily: 'inherit',
+                                                backgroundColor: 'var(--background)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: '6px',
+                                                color: 'var(--foreground)',
+                                                outline: 'none',
+                                                transition: 'border-color 0.15s ease'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                                            onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                                        />
+                                        <p style={{
+                                            fontSize: '12px',
+                                            color: 'var(--foreground)',
+                                            opacity: 0.5,
+                                            marginTop: '6px',
+                                            lineHeight: '1.4'
+                                        }}>
+                                            Unique identifier for this work type
+                                        </p>
+                                    </div>
 
-                                        <div className="flex flex-col gap-2">
-                                            <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Description</label>
-                                            <div className="glass flex items-start gap-2" style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--card-bg)' }}>
-                                                <FileText size={18} style={{ opacity: 0.5, marginTop: '0.25rem' }} />
-                                                <textarea
-                                                    placeholder="Describe this work type..."
-                                                    value={formData.description}
-                                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                                    style={{
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        outline: 'none',
-                                                        width: '100%',
-                                                        color: 'inherit',
-                                                        minHeight: '100px',
-                                                        resize: 'none',
-                                                        fontFamily: 'inherit'
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
+                                    {/* Description Field */}
+                                    <div>
+                                        <label style={{
+                                            display: 'block',
+                                            fontSize: '13px',
+                                            fontWeight: '500',
+                                            marginBottom: '8px',
+                                            color: 'var(--foreground)',
+                                            letterSpacing: '0.01em'
+                                        }}>
+                                            Description
+                                        </label>
+                                        <textarea
+                                            placeholder="Describe this work type..."
+                                            value={formData.description}
+                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                            rows={4}
+                                            style={{
+                                                width: '100%',
+                                                padding: '10px 12px',
+                                                fontSize: '15px',
+                                                fontFamily: 'inherit',
+                                                backgroundColor: 'var(--background)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: '6px',
+                                                color: 'var(--foreground)',
+                                                outline: 'none',
+                                                resize: 'vertical',
+                                                transition: 'border-color 0.15s ease',
+                                                lineHeight: '1.5'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                                            onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                                        />
+                                        <p style={{
+                                            fontSize: '12px',
+                                            color: 'var(--foreground)',
+                                            opacity: 0.5,
+                                            marginTop: '6px',
+                                            lineHeight: '1.4'
+                                        }}>
+                                            Optional. Brief description of what this work type represents.
+                                        </p>
                                     </div>
                                 </div>
+                            </div>
 
-                                <footer style={{
-                                    padding: '1.5rem',
-                                    borderTop: '1px solid var(--border)',
-                                    display: 'flex',
-                                    justifyContent: 'flex-end',
-                                    gap: '1rem',
-                                    background: 'var(--background)'
-                                }}>
-                                    <button type="button" className="btn btn-secondary" onClick={closeModal} disabled={modalLoading}>Cancel</button>
-                                    <button type="submit" className="btn btn-primary" disabled={modalLoading}>
-                                        {modalLoading ? <Loader2 className="animate-spin" size={18} /> : (editingWorkType ? 'Update' : 'Save')}
-                                    </button>
-                                </footer>
-                            </form>
-                        </motion.div>
+                            {/* Modal Footer */}
+                            <div style={{
+                                padding: '16px 24px',
+                                borderTop: '1px solid var(--border)',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: '12px',
+                                backgroundColor: 'var(--background)'
+                            }}>
+                                <button
+                                    type="button"
+                                    onClick={closeModal}
+                                    disabled={modalLoading}
+                                    style={{
+                                        padding: '10px 20px',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        fontFamily: 'inherit',
+                                        backgroundColor: 'transparent',
+                                        color: 'var(--foreground)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '6px',
+                                        cursor: modalLoading ? 'not-allowed' : 'pointer',
+                                        opacity: modalLoading ? 0.5 : 1,
+                                        transition: 'background-color 0.15s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!modalLoading) {
+                                            e.target.style.backgroundColor = 'var(--border)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!modalLoading) {
+                                            e.target.style.backgroundColor = 'transparent';
+                                        }
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={modalLoading}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '10px 20px',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        fontFamily: 'inherit',
+                                        backgroundColor: modalLoading ? 'var(--border)' : 'var(--primary)',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        cursor: modalLoading ? 'not-allowed' : 'pointer',
+                                        transition: 'background-color 0.15s ease',
+                                        opacity: modalLoading ? 0.7 : 1
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!modalLoading) {
+                                            e.target.style.backgroundColor = 'var(--primary-hover)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!modalLoading) {
+                                            e.target.style.backgroundColor = 'var(--primary)';
+                                        }
+                                    }}
+                                >
+                                    {modalLoading ? (
+                                        <>
+                                            <Loader2 className="animate-spin" size={16} />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        editingWorkType ? 'Update' : 'Create'
+                                    )}
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                )}
-            </AnimatePresence>
-        </motion.div>
+                </div>
+            )}
+        </div>
     );
 };
 
