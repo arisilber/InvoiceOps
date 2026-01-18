@@ -7,7 +7,10 @@ const formatDateInput = (date) => date.toISOString().split('T')[0];
 
 const formatDisplayDate = (dateStr) => {
   if (!dateStr) return '';
-  const date = new Date(`${dateStr}T00:00:00`);
+  // Accept either "YYYY-MM-DD" or an ISO timestamp like "YYYY-MM-DDTHH:mm:ss.sssZ"
+  const normalized = String(dateStr);
+  const date = normalized.includes('T') ? new Date(normalized) : new Date(`${normalized}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return '';
   return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

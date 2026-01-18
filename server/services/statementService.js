@@ -1,6 +1,33 @@
 import { query } from '../db/connection.js';
 
 /**
+ * Normalize a date-ish value (pg DATE may come back as a JS Date in some envs)
+ * into a stable YYYY-MM-DD string for statement rendering.
+ *
+ * @param {string|Date|null|undefined} value
+ * @returns {string|null}
+ */
+function normalizeDateToYMD(value) {
+  if (!value) return null;
+
+  // If pg returns a JS Date, JSON serialization would otherwise become an ISO timestamp.
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString().split('T')[0];
+  }
+
+  if (typeof value === 'string') {
+    // Handles both "YYYY-MM-DD" and ISO timestamps like "YYYY-MM-DDTHH:mm:ss.sssZ"
+    const ymdMatch = value.match(/^\d{4}-\d{2}-\d{2}/);
+    if (ymdMatch) return ymdMatch[0];
+
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().split('T')[0];
+  }
+
+  return null;
+}
+
+/**
  * Calculates the beginning AR balance for a client prior to the statement period.
  * Formula: Sum of invoices - Sum of payments (before start_date)
  * Excludes voided invoices.
@@ -101,7 +128,7 @@ export async function fetchStatementData(clientId, startDate, endDate) {
       type: 'invoice',
       invoice_id: invoice.invoice_id,
       invoice_number: invoice.invoice_number,
-      date: invoice.invoice_date,
+      date: normalizeDateToYMD(invoice.invoice_date),
       amount_cents: invoice.total_cents,
       status: invoice.status,
       client_name: invoice.client_name
@@ -115,7 +142,7 @@ export async function fetchStatementData(clientId, startDate, endDate) {
       payment_id: payment.payment_id,
       invoice_id: payment.invoice_id,
       invoice_number: payment.invoice_number,
-      date: payment.payment_date,
+      date: normalizeDateToYMD(payment.payment_date),
       amount_cents: -payment.amount_cents, // Negative for payments
       payment_note: payment.payment_note,
       application_id: payment.application_id
