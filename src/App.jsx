@@ -137,6 +137,7 @@ function App() {
             }
           />
           <Route path="/clients/:id/dashboard" element={<ClientDashboard />} />
+          <Route path="/payments" element={<PaymentList />} />
           <Route path="/time-entry" element={<TimeEntryList />} />
           <Route path="/work-types" element={<WorkTypeList />} />
           <Route path="/settings" element={<Settings />} />
