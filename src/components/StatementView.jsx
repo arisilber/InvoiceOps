@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, Printer, Loader2, AlertCircle } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Download, Printer, Loader2, AlertCircle } from 'lucide-react';
 import api from '../services/api';
 
 const formatDateInput = (date) => date.toISOString().split('T')[0];
@@ -30,7 +30,6 @@ const formatCurrency = (cents) => {
 
 const StatementView = () => {
   const { clientId } = useParams();
-  const navigate = useNavigate();
   const [clients, setClients] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState(clientId || '');
   const [startDate, setStartDate] = useState('');
@@ -155,13 +154,6 @@ const StatementView = () => {
         borderBottom: '1px solid var(--border)'
       }}>
         <div className="flex items-start gap-2" style={{ alignItems: 'center' }}>
-          <button
-            className="btn btn-secondary"
-            style={{ padding: '0.5rem' }}
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft size={18} />
-          </button>
           <div>
             <h1 style={{ fontSize: '28px', fontWeight: 600, letterSpacing: '-0.02em', marginBottom: '4px' }}>
               Customer Statement

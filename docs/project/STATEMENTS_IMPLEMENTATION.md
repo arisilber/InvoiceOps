@@ -354,8 +354,8 @@ downloadStatementPDF: async (clientId, startDate, endDate) => {
 - ✅ Added route: `<Route path="/statements/:clientId?" element={<StatementView />} />`
 
 **Optional Enhancement**:
-- Add link in ClientDashboard to generate statement
-- Add link in Sidebar for Statements page
+- ✅ Add link in ClientDashboard to generate statement
+- ✅ Add link in Sidebar for Statements page
 
 ---
 

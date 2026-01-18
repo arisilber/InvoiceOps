@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag, LogOut, DollarSign } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag, LogOut, DollarSign, FileStack } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = ({ onNewInvoice }) => {
@@ -10,6 +10,7 @@ const Sidebar = ({ onNewInvoice }) => {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { id: 'invoices', label: 'Invoices', icon: FileText, path: '/invoices' },
     { id: 'payments', label: 'Payments', icon: DollarSign, path: '/payments' },
+    { id: 'statements', label: 'Statements', icon: FileStack, path: '/statements' },
     { id: 'time-entry', label: 'Time Tracking', icon: Clock, path: '/time-entry' },
     { id: 'clients', label: 'Clients', icon: Users, path: '/clients' },
     { id: 'work-types', label: 'Work Types', icon: Tag, path: '/work-types' },

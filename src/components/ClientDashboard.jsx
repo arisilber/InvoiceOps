@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, DollarSign, Clock, FileText, TrendingUp, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, DollarSign, Clock, FileText, Loader2, AlertCircle } from 'lucide-react';
 import api from '../services/api';
 
 const StatCard = ({ title, value, icon: Icon, subtitle }) => (
@@ -138,6 +138,16 @@ const ClientDashboard = () => {
                         opacity: 0.6,
                         fontWeight: '400'
                     }}>Client performance and billing overview</p>
+                </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'flex-start' }}>
+                    <Link
+                        to={`/statements/${client.id}`}
+                        className="btn btn-primary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}
+                    >
+                        <FileText size={16} />
+                        Generate Statement
+                    </Link>
                 </div>
             </header>
 
