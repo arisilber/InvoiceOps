@@ -763,7 +763,7 @@ const TimeEntryList = () => {
                                                                                     <div style={{
                                                                                         display: 'flex',
                                                                                         flexDirection: 'column',
-                                                                                        gap: '0.25rem',
+                                                                                        gap: '0.5rem',
                                                                                         fontSize: '0.75rem',
                                                                                         color: 'var(--foreground)',
                                                                                         opacity: 0.6
@@ -771,9 +771,11 @@ const TimeEntryList = () => {
                                                                                         <div>
                                                                                             {entry.invoice_date ? formatInvoiceDate(entry.invoice_date) : '—'}
                                                                                         </div>
-                                                                                        <div style={{ textTransform: 'capitalize' }}>
-                                                                                            {entry.invoice_status ? getInvoiceStatusLabel(entry.invoice_status) : '—'}
-                                                                                        </div>
+                                                                                        {entry.invoice_status && (
+                                                                                            <span className={`badge badge-${entry.invoice_status}`}>
+                                                                                                {entry.invoice_status.replace('_', ' ')}
+                                                                                            </span>
+                                                                                        )}
                                                                                     </div>
                                                                                 </div>
                                                                             ) : (
@@ -1109,7 +1111,7 @@ const TimeEntryList = () => {
                                                 <div style={{
                                                     display: 'flex',
                                                     flexDirection: 'column',
-                                                    gap: '0.25rem',
+                                                    gap: '0.5rem',
                                                     fontSize: '0.75rem',
                                                     color: 'var(--foreground)',
                                                     opacity: 0.6
@@ -1117,9 +1119,11 @@ const TimeEntryList = () => {
                                                     <div>
                                                         {entry.invoice_date ? formatInvoiceDate(entry.invoice_date) : '—'}
                                                     </div>
-                                                    <div style={{ textTransform: 'capitalize' }}>
-                                                        {entry.invoice_status ? getInvoiceStatusLabel(entry.invoice_status) : '—'}
-                                                    </div>
+                                                    {entry.invoice_status && (
+                                                        <span className={`badge badge-${entry.invoice_status}`}>
+                                                            {entry.invoice_status.replace('_', ' ')}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         ) : (
