@@ -533,7 +533,7 @@ const InvoiceDetail = () => {
                             {isEditing ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                                 <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.125rem' }}>
-                                  {line.work_type_code || line.work_type_description || 'Work'}
+                                  {line.work_type_description || line.work_type_code || 'Work'}
                                   {line.project_name && ` - ${line.project_name}`}
                                 </div>
                                 <textarea
@@ -587,7 +587,7 @@ const InvoiceDetail = () => {
                             ) : (
                               <div style={{ position: 'relative', paddingRight: '3rem' }}>
                                 <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.375rem' }}>
-                                  {line.work_type_code || line.work_type_description || 'Work'}
+                                  {line.work_type_description || line.work_type_code || 'Work'}
                                   {line.project_name && ` - ${line.project_name}`}
                                 </div>
                                 <div style={{ 
@@ -633,7 +633,7 @@ const InvoiceDetail = () => {
                             {formatCurrency(line.hourly_rate_cents)}
                           </td>
                           <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontSize: '0.875rem', color: 'var(--secondary)', verticalAlign: 'top' }}>
-                            {line.discount_cents > 0 ? `-${formatCurrency(line.discount_cents)}` : formatCurrency(0)}
+                            {invoice.discount_percent > 0 ? `${invoice.discount_percent}%` : '0%'}
                           </td>
                           <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontWeight: 600, fontSize: '0.875rem', verticalAlign: 'top' }}>
                             {formatCurrency(line.amount_cents)}
@@ -673,7 +673,7 @@ const InvoiceDetail = () => {
               </div>
               {invoice.discount_cents > 0 && (
                 <div className="flex justify-between items-center">
-                  <div style={{ opacity: 0.65, fontSize: '0.875rem' }}>Discount</div>
+                  <div style={{ opacity: 0.65, fontSize: '0.875rem' }}>Discount ({invoice.discount_percent || 0}%)</div>
                   <div style={{ fontWeight: 600, color: 'var(--secondary)', fontSize: '0.9375rem' }}>
                     -{formatCurrency(invoice.discount_cents)}
                   </div>

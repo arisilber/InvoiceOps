@@ -93,6 +93,9 @@ const fetchInvoiceWithLines = async (id) => {
   );
   const discount_percent = clientResult.rows[0]?.discount_percent || 0;
 
+  // Add discount_percent to invoice object
+  invoice.discount_percent = discount_percent;
+
   // Calculate discount_cents for each line
   invoice.lines = linesResult.rows.map(line => {
     if (discount_percent > 0 && discount_percent < 100) {
@@ -241,6 +244,9 @@ router.get('/:id', async (req, res, next) => {
       [invoice.client_id]
     );
     const discount_percent = clientResult.rows[0]?.discount_percent || 0;
+
+    // Add discount_percent to invoice object
+    invoice.discount_percent = discount_percent;
 
     // Calculate discount_cents for each line (amount_cents is already discounted)
     // We need to reverse-calculate: if amount_cents = pre_discount * (1 - discount_percent/100)

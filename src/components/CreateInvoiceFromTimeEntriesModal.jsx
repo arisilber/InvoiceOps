@@ -300,8 +300,10 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                                 {preview.lines.map((line, index) => (
                                                     <tr key={index} style={{ borderBottom: index !== preview.lines.length - 1 ? '1px solid var(--border)' : 'none' }}>
                                                         <td style={{ padding: '1rem' }}>
-                                                            <div style={{ fontWeight: 600 }}>{line.work_type_code}</div>
-                                                            <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>{line.work_type_description}</div>
+                                                            <div style={{ fontWeight: 600 }}>{line.work_type_description || line.work_type_code}</div>
+                                                            {line.work_type_description && line.work_type_code && (
+                                                                <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>{line.work_type_code}</div>
+                                                            )}
                                                         </td>
                                                         <td style={{ padding: '1rem', maxWidth: '300px' }}>
                                                             {line.description ? (

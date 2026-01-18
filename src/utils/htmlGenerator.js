@@ -27,7 +27,7 @@ export const generateInvoiceHTML = (invoice) => {
     let description;
     if (line.description) {
       // Format with work type and project as header, AI description as body
-      const header = line.work_type_code || line.work_type_description || 'Work';
+      const header = line.work_type_description || line.work_type_code || 'Work';
       const projectPart = line.project_name ? ` - ${line.project_name}` : '';
       // Preserve spaces in the description text
       const preservedDescription = preserveSpaces(line.description);
@@ -39,14 +39,14 @@ export const generateInvoiceHTML = (invoice) => {
         : escapeHtml(line.work_type_description || line.work_type_code || 'Work');
     }
     
-    const discount_cents = line.discount_cents || 0;
+    const discount_percent = invoice.discount_percent || 0;
     
     return `
       <tr>
         <td style="white-space: pre-wrap; word-wrap: break-word;">${description}</td>
         <td style="text-align: center;">${formatQuantity(line.total_minutes)}</td>
         <td style="text-align: right;">${formatCurrency(line.hourly_rate_cents)}</td>
-        <td style="text-align: right; color: #22c55e;">${discount_cents > 0 ? '-' + formatCurrency(discount_cents) : formatCurrency(0)}</td>
+        <td style="text-align: right; color: #22c55e;">${discount_percent > 0 ? discount_percent + '%' : '0%'}</td>
         <td style="text-align: right;">${formatCurrency(line.amount_cents)}</td>
       </tr>
     `;

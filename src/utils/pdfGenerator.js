@@ -68,13 +68,13 @@ export const generateInvoicePDF = (invoice) => {
       ? `${line.work_type_description || line.work_type_code || 'Work'} - ${line.project_name}`
       : (line.work_type_description || line.work_type_code || 'Work');
     
-    const discount_cents = line.discount_cents || 0;
+    const discount_percent = invoice.discount_percent || 0;
     
     return [
       description,
       formatTime(line.total_minutes),
       formatCurrency(line.hourly_rate_cents),
-      discount_cents > 0 ? `-${formatCurrency(discount_cents)}` : formatCurrency(0),
+      discount_percent > 0 ? `${discount_percent}%` : '0%',
       formatCurrency(line.amount_cents)
     ];
   }) || [];
