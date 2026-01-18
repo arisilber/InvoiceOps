@@ -56,7 +56,7 @@ export const generateInvoiceHTML = (invoice) => {
     // Description row (only if there's a long description)
     const descriptionRow = longDescription ? `
       <tr style="background: #f9fafb;">
-        <td colspan="5" style="padding: 0.75rem 1rem; color: #6b7280; font-size: 0.9em; white-space: pre-wrap; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; letter-spacing: normal; border-top: none;"><em>${longDescription}</em></td>
+        <td colspan="5" style="padding: 0.75rem 1rem; color: #6b7280; font-size: 0.75em; white-space: pre-wrap; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; letter-spacing: normal; border-top: none;"><em>${longDescription}</em></td>
       </tr>
     ` : '';
     
@@ -123,14 +123,21 @@ export const generateInvoiceHTML = (invoice) => {
       color: #1a1a1a;
       font-weight: 500;
     }
+    .invoice-top-row {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      align-items: flex-start;
+    }
     .invoice-total-section {
       background: #ffffff;
       border: 1px solid #1a1a1a;
       padding: 1.25rem 1.75rem;
-      margin-bottom: 2rem;
+      flex: 1;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
     }
     .invoice-total-label {
       font-size: 0.8125rem;
@@ -138,23 +145,30 @@ export const generateInvoiceHTML = (invoice) => {
       color: #374151;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      line-height: 1.4;
     }
     .invoice-total-amount {
-      font-size: 2rem;
+      font-size: 1.5rem;
       font-weight: 600;
       color: #1a1a1a;
       letter-spacing: -0.01em;
       font-variant-numeric: tabular-nums;
     }
     .client-info {
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid #e5e7eb;
+      flex: 1;
+      padding: 1.25rem 1.75rem;
+      background: #ffffff;
+      border: 1px solid #1a1a1a;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
     }
     .client-info-row {
       display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
       font-size: 0.9375rem;
       color: #1a1a1a;
       line-height: 1.6;
@@ -321,16 +335,17 @@ export const generateInvoiceHTML = (invoice) => {
       </div>
     </div>
 
-    <div class="invoice-total-section">
-      <div class="invoice-total-label">Total Amount Due</div>
-      <div class="invoice-total-amount">${formatCurrency(invoice.total_cents)}</div>
-    </div>
+    <div class="invoice-top-row">
+      <div class="invoice-total-section">
+        <div class="invoice-total-label">TOTAL AMOUNT DUE</div>
+        <div class="invoice-total-amount">${formatCurrency(invoice.total_cents)}</div>
+      </div>
 
-    <div class="client-info">
-      <div class="client-info-row">
-        <span class="client-info-label">Bill To:</span>
-        <span class="client-info-name">${escapeHtml(invoice.client_name || 'N/A')}</span>
-        ${invoice.client_email ? `<span class="client-info-email">(${escapeHtml(invoice.client_email)})</span>` : ''}
+      <div class="client-info">
+        <div class="client-info-label">Bill To:</div>
+        <div class="client-info-row">
+          <span class="client-info-name">${escapeHtml(invoice.client_name || 'N/A')}</span>
+        </div>
       </div>
     </div>
 
