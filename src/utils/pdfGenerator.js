@@ -122,13 +122,6 @@ export const generateInvoicePDF = (invoice) => {
   doc.text(formatCurrency(invoice.total_cents), pageWidth - margin, yPosition);
   yPosition += 10;
 
-  // Status
-  if (invoice.status) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text(`Status: ${invoice.status.toUpperCase()}`, margin, yPosition);
-  }
-
   // Footer
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
