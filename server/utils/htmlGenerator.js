@@ -164,6 +164,7 @@ export const generateInvoiceHTML = (invoice) => {
       text-align: left;
       font-weight: 600;
       font-size: 0.9rem;
+      vertical-align: top;
     }
     th:nth-child(2) {
       text-align: center;
@@ -189,6 +190,7 @@ export const generateInvoiceHTML = (invoice) => {
       word-wrap: break-word;
       letter-spacing: normal;
       font-kerning: normal;
+      vertical-align: top;
     }
     td:first-child {
       white-space: pre-wrap;

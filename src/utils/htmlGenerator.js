@@ -130,6 +130,7 @@ export const generateInvoiceHTML = (invoice) => {
       text-align: left;
       font-weight: 600;
       font-size: 0.9rem;
+      vertical-align: top;
     }
     th:nth-child(2) {
       text-align: center;
@@ -153,6 +154,7 @@ export const generateInvoiceHTML = (invoice) => {
       color: #374151;
       white-space: pre-wrap;
       word-wrap: break-word;
+      vertical-align: top;
     }
     .totals {
       margin-top: 1.5rem;
