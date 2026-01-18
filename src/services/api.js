@@ -387,6 +387,116 @@ const api = {
             method: 'PUT',
             body: JSON.stringify(settingsData),
         });
+    },
+
+    // Statements
+    getStatement: async (clientId, startDate, endDate) => {
+        return makeRequest(`${API_BASE_URL}/statements/${clientId}?start_date=${startDate}&end_date=${endDate}`);
+    },
+    getStatementHTML: async (clientId, startDate, endDate) => {
+        const headers = {};
+
+        // Add auth token if available
+        if (getAuthHeaders) {
+            const authHeaders = await getAuthHeaders();
+            if (authHeaders) {
+                Object.assign(headers, authHeaders);
+            }
+        }
+
+        let response = await fetch(`${API_BASE_URL}/statements/${clientId}/html?start_date=${startDate}&end_date=${endDate}`, {
+            method: 'GET',
+            headers,
+        });
+
+        // Handle token refresh if needed
+        if ((response.status === 401 || response.status === 403) && refreshAccessToken) {
+            try {
+                const newToken = await refreshAccessToken();
+                if (newToken) {
+                    headers['Authorization'] = `Bearer ${newToken}`;
+                    response = await fetch(`${API_BASE_URL}/statements/${clientId}/html?start_date=${startDate}&end_date=${endDate}`, {
+                        method: 'GET',
+                        headers,
+                    });
+                }
+            } catch (error) {
+                if (logout) {
+                    logout();
+                }
+                throw new Error('Session expired. Please log in again.');
+            }
+        }
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Failed to fetch statement HTML' }));
+            throw new Error(error.error || `Request failed with status ${response.status}`);
+        }
+
+        return response.text();
+    },
+    downloadStatementPDF: async (clientId, startDate, endDate) => {
+        const headers = {};
+
+        // Add auth token if available
+        if (getAuthHeaders) {
+            const authHeaders = await getAuthHeaders();
+            if (authHeaders) {
+                Object.assign(headers, authHeaders);
+            }
+        }
+
+        let response = await fetch(`${API_BASE_URL}/statements/${clientId}/pdf?start_date=${startDate}&end_date=${endDate}`, {
+            method: 'GET',
+            headers,
+        });
+
+        // Handle token refresh if needed
+        if ((response.status === 401 || response.status === 403) && refreshAccessToken) {
+            try {
+                const newToken = await refreshAccessToken();
+                if (newToken) {
+                    headers['Authorization'] = `Bearer ${newToken}`;
+                    response = await fetch(`${API_BASE_URL}/statements/${clientId}/pdf?start_date=${startDate}&end_date=${endDate}`, {
+                        method: 'GET',
+                        headers,
+                    });
+                }
+            } catch (error) {
+                if (logout) {
+                    logout();
+                }
+                throw new Error('Session expired. Please log in again.');
+            }
+        }
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Failed to download statement PDF' }));
+            throw new Error(error.error || `Request failed with status ${response.status}`);
+        }
+
+        // Get the PDF blob
+        const blob = await response.blob();
+        
+        // Get filename from Content-Disposition header or use default
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `Statement-${clientId}-${startDate}-to-${endDate}.pdf`;
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+            if (filenameMatch) {
+                filename = filenameMatch[1];
+            }
+        }
+
+        // Create download link and trigger download
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
     }
 };
 

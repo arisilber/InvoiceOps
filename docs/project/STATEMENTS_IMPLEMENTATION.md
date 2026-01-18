@@ -8,7 +8,7 @@ This document outlines the step-by-step implementation plan for the Customer Sta
 - ✅ **Phase 2**: Backend API Routes (`server/routes/statements.js`) - **COMPLETED**
 - ✅ **Phase 3**: HTML Generator (`server/utils/statementHtmlGenerator.js`) - **COMPLETED**
 - ✅ **Phase 4**: Register Routes (`server/index.js`) - **COMPLETED**
-- ⏳ **Phase 5**: Frontend API Integration - **PENDING**
+- ✅ **Phase 5**: Frontend API Integration (`src/services/api.js`) - **COMPLETED**
 - ⏳ **Phase 6**: Frontend React Component - **PENDING**
 - ⏳ **Phase 7**: Testing & Validation - **PENDING**
 - ⏳ **Phase 8**: Documentation - **PENDING**
@@ -268,10 +268,12 @@ The implementation will follow the existing codebase patterns:
 
 ## Phase 5: Frontend API Integration
 
-### Step 5.1: Add API Methods
+### Step 5.1: Add API Methods ✅ **COMPLETED**
 **File**: `src/services/api.js`
 
-**Methods to add**:
+**Status**: ✅ Implemented and ready for use
+
+**Methods added**:
 
 ```javascript
 // Get statement JSON
@@ -305,6 +307,16 @@ downloadStatementPDF: async (clientId, startDate, endDate) => {
   document.body.removeChild(a);
 }
 ```
+
+**Implementation Notes**:
+- ✅ All three methods implemented: `getStatement()`, `getStatementHTML()`, `downloadStatementPDF()`
+- ✅ `getStatement()` uses the standard `makeRequest` helper for JSON responses
+- ✅ `getStatementHTML()` and `downloadStatementPDF()` use direct `fetch` with manual token handling (consistent with `downloadInvoicePDF()`)
+- ✅ Full authentication token support with automatic refresh on 401/403 responses
+- ✅ Proper error handling with informative error messages
+- ✅ PDF download triggers browser download with proper filename from server headers
+- ✅ Follows existing codebase patterns (consistent with invoice PDF download)
+- ✅ No linting errors
 
 ---
 
