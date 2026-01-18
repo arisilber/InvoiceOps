@@ -32,6 +32,7 @@ import { formatDate as formatDateUtil } from '../utils/timeParser';
 const TimeEntryList = () => {
     const navigate = useNavigate();
     const [entries, setEntries] = useState([]);
+    const [allEntries, setAllEntries] = useState([]); // For stats calculation
     const [clients, setClients] = useState([]);
     const [workTypes, setWorkTypes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -59,12 +60,14 @@ const TimeEntryList = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [entriesData, clientsData, workTypesData] = await Promise.all([
+            const [entriesData, allEntriesData, clientsData, workTypesData] = await Promise.all([
                 api.getTimeEntries(filters),
+                api.getTimeEntries({}), // Fetch all entries for stats
                 api.getClients(),
                 api.getWorkTypes()
             ]);
             setEntries(entriesData);
+            setAllEntries(allEntriesData);
             setClients(clientsData);
             setWorkTypes(workTypesData);
             setError(null);
@@ -86,6 +89,7 @@ const TimeEntryList = () => {
         try {
             await api.deleteTimeEntry(id);
             setEntries(entries.filter(e => e.id !== id));
+            setAllEntries(allEntries.filter(e => e.id !== id));
         } catch (err) {
             alert('Failed to delete entry');
         }
@@ -107,6 +111,53 @@ const TimeEntryList = () => {
         if (h > 0) return `${h}h ${m}m`;
         return `${m}m`;
     };
+
+    // Calculate stats for last 7 days and this week
+    const getTimeStats = () => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Last 7 days (including today)
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // 7 days including today
+        
+        // This week (Monday to Sunday)
+        const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay; // If Sunday, go back 6 days, else go to Monday
+        const weekStart = new Date(today);
+        weekStart.setDate(weekStart.getDate() + mondayOffset);
+        weekStart.setHours(0, 0, 0, 0);
+        
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6); // Sunday
+        weekEnd.setHours(23, 59, 59, 999);
+        
+        let last7DaysMinutes = 0;
+        let thisWeekMinutes = 0;
+        
+        allEntries.forEach(entry => {
+            const entryDate = new Date(entry.work_date);
+            entryDate.setHours(0, 0, 0, 0);
+            const minutes = entry.minutes_spent || 0;
+            
+            // Last 7 days
+            if (entryDate >= sevenDaysAgo && entryDate <= today) {
+                last7DaysMinutes += minutes;
+            }
+            
+            // This week (Monday to Sunday)
+            if (entryDate >= weekStart && entryDate <= weekEnd) {
+                thisWeekMinutes += minutes;
+            }
+        });
+        
+        return {
+            last7Days: last7DaysMinutes,
+            thisWeek: thisWeekMinutes
+        };
+    };
+
+    const timeStats = getTimeStats();
 
     // Calculate daily summary from filtered entries
     const getDailySummary = () => {
@@ -312,6 +363,76 @@ const TimeEntryList = () => {
                         <Plus size={20} style={{ flexShrink: 0 }} />
                         <span>Log Time</span>
                     </button>
+                </div>
+            </div>
+
+            {/* Time Stats Section */}
+            <div style={{
+                display: 'flex',
+                gap: '1rem',
+                marginBottom: '1.5rem',
+                paddingBottom: '1rem',
+                borderBottom: '1px solid var(--border)'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    paddingRight: '1.5rem',
+                    borderRight: '1px solid var(--border)'
+                }}>
+                    <Clock size={16} style={{ color: 'var(--foreground)', opacity: 0.5 }} />
+                    <div>
+                        <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                            color: 'var(--foreground)',
+                            opacity: 0.6,
+                            marginBottom: '0.25rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.02em'
+                        }}>
+                            Last 7 Days
+                        </div>
+                        <div style={{
+                            fontSize: '1.125rem',
+                            fontWeight: 600,
+                            color: 'var(--foreground)',
+                            fontVariantNumeric: 'tabular-nums'
+                        }}>
+                            {formatMinutes(timeStats.last7Days)}
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    paddingLeft: '1.5rem'
+                }}>
+                    <CalendarIcon size={16} style={{ color: 'var(--foreground)', opacity: 0.5 }} />
+                    <div>
+                        <div style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                            color: 'var(--foreground)',
+                            opacity: 0.6,
+                            marginBottom: '0.25rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.02em'
+                        }}>
+                            This Week
+                        </div>
+                        <div style={{
+                            fontSize: '1.125rem',
+                            fontWeight: 600,
+                            color: 'var(--foreground)',
+                            fontVariantNumeric: 'tabular-nums'
+                        }}>
+                            {formatMinutes(timeStats.thisWeek)}
+                        </div>
+                    </div>
                 </div>
             </div>
 
