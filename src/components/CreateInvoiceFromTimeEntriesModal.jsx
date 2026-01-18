@@ -9,6 +9,8 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
     const [previewLoading, setPreviewLoading] = useState(false);
     const [preview, setPreview] = useState(null);
     const [previewError, setPreviewError] = useState(null);
+    const [earliestEntryLoading, setEarliestEntryLoading] = useState(false);
+    const [earliestEntry, setEarliestEntry] = useState(null);
 
     const [formData, setFormData] = useState({
         client_id: '',
@@ -33,8 +35,17 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
             }));
             setPreview(null);
             setPreviewError(null);
+            setEarliestEntry(null);
         }
     }, [isOpen]);
+
+    useEffect(() => {
+        if (isOpen && formData.client_id) {
+            fetchEarliestUninvoicedEntry();
+        } else {
+            setEarliestEntry(null);
+        }
+    }, [formData.client_id, isOpen]);
 
     useEffect(() => {
         if (isOpen && formData.client_id && formData.start_date && formData.end_date) {
@@ -58,6 +69,44 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
             setClients(clientsData);
         } catch (err) {
             console.error('Error fetching clients:', err);
+        }
+    };
+
+    const fetchEarliestUninvoicedEntry = async () => {
+        if (!formData.client_id) {
+            return;
+        }
+
+        setEarliestEntryLoading(true);
+        try {
+            const entries = await api.getTimeEntries({
+                client_id: formData.client_id,
+                is_invoiced: 'false'
+            });
+
+            if (entries && entries.length > 0) {
+                // Sort by work_date ascending to get earliest
+                const sortedEntries = [...entries].sort((a, b) => 
+                    new Date(a.work_date) - new Date(b.work_date)
+                );
+                const earliest = sortedEntries[0];
+                setEarliestEntry(earliest);
+
+                // Auto-populate start date with earliest entry date
+                if (earliest.work_date) {
+                    setFormData(prev => ({
+                        ...prev,
+                        start_date: earliest.work_date
+                    }));
+                }
+            } else {
+                setEarliestEntry(null);
+            }
+        } catch (err) {
+            console.error('Error fetching earliest uninvoiced entry:', err);
+            setEarliestEntry(null);
+        } finally {
+            setEarliestEntryLoading(false);
         }
     };
 
@@ -182,7 +231,7 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                         <div style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
                             {/* Selection Form */}
-                            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                                 <div className="flex flex-col gap-2">
                                     <label style={{ fontWeight: 600, fontSize: '0.875rem' }}>Client *</label>
                                     <select
@@ -248,6 +297,42 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                     />
                                 </div>
                             </div>
+
+                            {/* Earliest Uninvoiced Entry Information */}
+                            {formData.client_id && (
+                                <div style={{ 
+                                    marginBottom: '1.5rem',
+                                    padding: '0.875rem 1rem',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 'var(--radius-md)',
+                                    background: 'var(--card-bg)',
+                                    fontSize: '0.875rem',
+                                    lineHeight: '1.5'
+                                }}>
+                                    {earliestEntryLoading ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: 0.7 }}>
+                                            <Loader2 className="animate-spin" size={16} />
+                                            <span>Retrieving earliest uninvoiced time entry...</span>
+                                        </div>
+                                    ) : earliestEntry ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <Calendar size={16} style={{ opacity: 0.6, flexShrink: 0 }} />
+                                            <span style={{ opacity: 0.85 }}>
+                                                <strong>Earliest uninvoiced time entry:</strong> {new Date(earliestEntry.work_date).toLocaleDateString('en-US', { 
+                                                    year: 'numeric', 
+                                                    month: 'long', 
+                                                    day: 'numeric' 
+                                                })}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: 0.7 }}>
+                                            <AlertCircle size={16} />
+                                            <span>No uninvoiced time entries found for this client.</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Preview Section */}
                             {previewLoading && (
