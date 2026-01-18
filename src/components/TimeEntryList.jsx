@@ -17,7 +17,8 @@ import {
     Loader2,
     AlertCircle,
     FileText,
-    Upload
+    Upload,
+    ExternalLink
 } from 'lucide-react';
 import api from '../services/api';
 import LogTimeEntry from './LogTimeEntry';
@@ -102,6 +103,35 @@ const TimeEntryList = () => {
 
     const formatDate = (dateString) => {
         return formatDateUtil(dateString);
+    };
+
+    const formatCurrency = (cents) => {
+        if (!cents) return '$0.00';
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(cents / 100);
+    };
+
+    const formatInvoiceDate = (dateString) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
+
+    const getInvoiceStatusLabel = (status) => {
+        const statusMap = {
+            'draft': 'Draft',
+            'sent': 'Sent',
+            'paid': 'Paid',
+            'overdue': 'Overdue'
+        };
+        return statusMap[status] || status || 'Unknown';
     };
 
     return (
@@ -293,54 +323,122 @@ const TimeEntryList = () => {
                                         </td>
                                         <td style={{ padding: '1.25rem 1.5rem' }}>
                                             {entry.invoice_id ? (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                                    <span style={{
-                                                        fontSize: '0.75rem',
-                                                        padding: '0.2rem 0.5rem',
-                                                        borderRadius: '0.5rem',
-                                                        background: 'rgba(34, 197, 94, 0.1)',
-                                                        color: '#22c55e',
-                                                        border: '1px solid rgba(34, 197, 94, 0.2)',
-                                                        fontWeight: 600,
-                                                        width: 'fit-content'
+                                                <div style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '0.5rem',
+                                                    minWidth: '200px'
+                                                }}>
+                                                    {/* Invoice Reference */}
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.5rem',
+                                                        paddingBottom: '0.5rem',
+                                                        borderBottom: '1px solid var(--border)'
                                                     }}>
-                                                        Invoiced
-                                                    </span>
-                                                    {entry.invoice_number && (
+                                                        <FileText size={14} style={{ opacity: 0.6, flexShrink: 0 }} />
                                                         <button
                                                             onClick={() => navigate(`/invoices/${entry.invoice_id}`)}
                                                             style={{
-                                                                fontSize: '0.7rem',
+                                                                fontSize: '0.875rem',
+                                                                fontWeight: 600,
                                                                 background: 'none',
                                                                 border: 'none',
-                                                                color: 'var(--primary)',
+                                                                color: 'var(--foreground)',
                                                                 cursor: 'pointer',
-                                                                textDecoration: 'underline',
                                                                 padding: 0,
                                                                 textAlign: 'left',
-                                                                fontWeight: 500,
-                                                                opacity: 0.9
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '0.375rem',
+                                                                fontFamily: 'monospace',
+                                                                letterSpacing: '0.025em'
                                                             }}
-                                                            onMouseEnter={(e) => e.target.style.opacity = '1'}
-                                                            onMouseLeave={(e) => e.target.style.opacity = '0.9'}
+                                                            onMouseEnter={(e) => {
+                                                                e.target.style.color = 'var(--primary)';
+                                                                e.target.querySelector('svg').style.opacity = '1';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.target.style.color = 'var(--foreground)';
+                                                                e.target.querySelector('svg').style.opacity = '0.5';
+                                                            }}
                                                         >
-                                                            #{entry.invoice_number}
+                                                            INV-{entry.invoice_number}
+                                                            <ExternalLink size={12} style={{ opacity: 0.5, transition: 'opacity 0.2s' }} />
                                                         </button>
-                                                    )}
+                                                    </div>
+                                                    
+                                                    {/* Invoice Details Grid */}
+                                                    <div style={{
+                                                        display: 'grid',
+                                                        gridTemplateColumns: 'auto 1fr',
+                                                        gap: '0.375rem 0.75rem',
+                                                        fontSize: '0.8125rem',
+                                                        lineHeight: '1.5'
+                                                    }}>
+                                                        <span style={{ 
+                                                            color: 'var(--foreground)', 
+                                                            opacity: 0.6,
+                                                            fontWeight: 500
+                                                        }}>Date:</span>
+                                                        <span style={{ 
+                                                            color: 'var(--foreground)', 
+                                                            opacity: 0.85,
+                                                            fontFamily: 'monospace'
+                                                        }}>
+                                                            {entry.invoice_date ? formatInvoiceDate(entry.invoice_date) : '—'}
+                                                        </span>
+                                                        
+                                                        <span style={{ 
+                                                            color: 'var(--foreground)', 
+                                                            opacity: 0.6,
+                                                            fontWeight: 500
+                                                        }}>Status:</span>
+                                                        <span style={{ 
+                                                            color: 'var(--foreground)', 
+                                                            opacity: 0.85,
+                                                            textTransform: 'capitalize',
+                                                            fontWeight: 500
+                                                        }}>
+                                                            {entry.invoice_status ? getInvoiceStatusLabel(entry.invoice_status) : '—'}
+                                                        </span>
+                                                        
+                                                        <span style={{ 
+                                                            color: 'var(--foreground)', 
+                                                            opacity: 0.6,
+                                                            fontWeight: 500
+                                                        }}>Amount:</span>
+                                                        <span style={{ 
+                                                            color: 'var(--foreground)', 
+                                                            opacity: 0.95,
+                                                            fontWeight: 600,
+                                                            fontFamily: 'monospace',
+                                                            letterSpacing: '0.025em'
+                                                        }}>
+                                                            {entry.invoice_total_cents ? formatCurrency(entry.invoice_total_cents) : '—'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             ) : (
-                                                <span style={{
-                                                    fontSize: '0.75rem',
-                                                    padding: '0.2rem 0.5rem',
-                                                    borderRadius: '0.5rem',
-                                                    background: 'rgba(255, 255, 255, 0.05)',
+                                                <div style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5rem',
+                                                    fontSize: '0.8125rem',
                                                     color: 'var(--foreground)',
                                                     opacity: 0.5,
-                                                    border: '1px solid var(--border)',
-                                                    fontWeight: 600
+                                                    fontWeight: 500
                                                 }}>
+                                                    <span style={{
+                                                        width: '6px',
+                                                        height: '6px',
+                                                        borderRadius: '50%',
+                                                        background: 'currentColor',
+                                                        opacity: 0.4
+                                                    }}></span>
                                                     Uninvoiced
-                                                </span>
+                                                </div>
                                             )}
                                         </td>
                                         <td style={{ padding: '1.25rem 1.5rem', maxWidth: '300px' }}>
