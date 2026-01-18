@@ -186,11 +186,11 @@ router.get('/:id/pdf', async (req, res, next) => {
     });
 
     // Wait for fonts to load - this is crucial for proper text spacing
-    await page.evaluateHandle(() => document.fonts.ready);
+    await page.evaluate(() => document.fonts.ready);
     
     // Additional wait to ensure all rendering is complete
     // Using Promise-based delay instead of deprecated waitForTimeout
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Generate PDF with better settings for text rendering
     const pdfBuffer = await page.pdf({
