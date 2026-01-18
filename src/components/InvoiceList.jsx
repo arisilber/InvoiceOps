@@ -79,13 +79,7 @@ const InvoiceList = () => {
         
         if (!matchesSearch) return false;
 
-        // Overdue filter
-        if (overdueFilter) {
-            const now = new Date();
-            const dueDate = new Date(invoice.due_date);
-            const isOverdue = dueDate < now && (invoice.status === 'sent' || invoice.status === 'partially_paid');
-            if (!isOverdue) return false;
-        }
+        if (overdueFilter && !isOverdue(invoice)) return false;
 
         // Date range filters
         if (dateFromFilter) {
@@ -212,12 +206,19 @@ const InvoiceList = () => {
         return colors[status] || colors.draft;
     };
 
-    const isOverdue = (invoice) => {
+    function getOutstandingAmount(invoice) {
+        const total = invoice.total_cents || 0;
+        const paid = invoice.paid_amount_cents || 0;
+        return Math.max(total - paid, 0);
+    }
+
+    function isOverdue(invoice) {
         if (invoice.status !== 'sent' && invoice.status !== 'partially_paid') return false;
+        if (getOutstandingAmount(invoice) <= 0) return false;
         const now = new Date();
         const dueDate = new Date(invoice.due_date);
         return dueDate < now;
-    };
+    }
 
     // Calculate totals
     const calculateTotals = () => {
@@ -237,6 +238,7 @@ const InvoiceList = () => {
         filteredInvoices.forEach(invoice => {
             const amount = invoice.total_cents || 0;
             totals.totalAmount += amount;
+            const outstandingAmount = getOutstandingAmount(invoice);
             
             const status = invoice.status || 'draft';
             if (totals.byStatus[status]) {
@@ -245,7 +247,7 @@ const InvoiceList = () => {
             }
 
             if (isOverdue(invoice)) {
-                totals.overdueAmount += amount;
+                totals.overdueAmount += outstandingAmount;
                 totals.overdueCount += 1;
             }
         });

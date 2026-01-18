@@ -20,9 +20,15 @@ router.get('/', async (req, res, next) => {
   try {
     const { client_id, status } = req.query;
     let queryText = `
-      SELECT i.*, c.name as client_name, c.email as client_email
+      SELECT i.*, c.name as client_name, c.email as client_email,
+             COALESCE(pa.total_paid_cents, 0) AS paid_amount_cents
       FROM invoices i
       JOIN clients c ON i.client_id = c.id
+      LEFT JOIN (
+        SELECT invoice_id, SUM(amount_cents)::int AS total_paid_cents
+        FROM payment_applications
+        GROUP BY invoice_id
+      ) pa ON pa.invoice_id = i.id
       WHERE 1=1
     `;
     const params = [];

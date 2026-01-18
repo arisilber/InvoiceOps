@@ -245,8 +245,9 @@ const StatementView = () => {
             }}
           />
         </div>
-        <div className="flex items-end">
-          <button type="submit" className="btn btn-primary" disabled={generating}>
+        <div className="flex flex-col gap-2">
+          <label style={{ fontWeight: 600, fontSize: '0.875rem', visibility: 'hidden' }}>Generate</label>
+          <button type="submit" className="btn btn-primary" disabled={generating} style={{ padding: '0.75rem' }}>
             {generating ? <Loader2 className="animate-spin" size={16} /> : 'Generate Statement'}
           </button>
         </div>
