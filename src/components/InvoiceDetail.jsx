@@ -209,16 +209,16 @@ const InvoiceDetail = () => {
       style={{
         maxWidth: '1400px',
         margin: '0 auto',
-        padding: '2rem 2.5rem',
+        padding: '1.5rem 2rem',
         width: '100%'
       }}
     >
-      <div className="flex flex-col gap-8" style={{ width: '100%' }}>
+      <div className="flex flex-col" style={{ width: '100%', gap: '1.5rem' }}>
         {/* Header */}
         <div 
           className="flex justify-between items-start invoice-detail-header"
           style={{
-            paddingBottom: '1.5rem',
+            paddingBottom: '1rem',
             borderBottom: '1px solid var(--border)'
           }}
         >
@@ -227,29 +227,30 @@ const InvoiceDetail = () => {
               className="btn btn-secondary"
               onClick={() => navigate('/invoices')}
               style={{ 
-                marginBottom: '1.5rem'
+                marginBottom: '1rem'
               }}
             >
               <ArrowLeft size={16} />
               Back to Invoices
             </button>
             <h2 style={{ 
-              fontSize: '2.25rem', 
-              marginBottom: '0.5rem',
-              fontWeight: 700,
-              letterSpacing: '-0.02em'
+              fontSize: '1.875rem', 
+              marginBottom: '0.375rem',
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
+              color: 'var(--foreground)'
             }}>
               Invoice INV-{invoice.invoice_number}
             </h2>
             <p style={{ 
-              opacity: 0.7,
-              fontSize: '1.125rem',
-              marginTop: '0.25rem'
+              opacity: 0.65,
+              fontSize: '0.9375rem',
+              marginTop: 0
             }}>
               {invoice.client_name}
             </p>
           </div>
-          <div className="flex gap-3 invoice-detail-header-actions" style={{ marginLeft: '2rem', alignItems: 'flex-start' }}>
+          <div className="flex gap-2 invoice-detail-header-actions" style={{ marginLeft: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
             {invoice.status === 'draft' && (
               <button
                 className="btn"
@@ -319,7 +320,7 @@ const InvoiceDetail = () => {
             style={{ 
               borderColor: 'var(--error)', 
               color: 'var(--error-text)',
-              marginBottom: '1rem'
+              padding: '1rem 1.25rem'
             }}
           >
             {error}
@@ -330,36 +331,40 @@ const InvoiceDetail = () => {
           className="grid invoice-detail-grid" 
           style={{ 
             gridTemplateColumns: '2fr 1fr', 
-            gap: '2rem',
+            gap: '1.5rem',
             alignItems: 'start'
           }}
         >
         {/* Main Content */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col" style={{ gap: '1.25rem' }}>
           {/* Invoice Information */}
-          <div className="card invoice-detail-card" style={{ padding: '2rem' }}>
+          <div className="card invoice-detail-card" style={{ padding: '1.5rem' }}>
             <h3 style={{ 
-              marginBottom: '2rem', 
-              fontSize: '1.375rem',
-              fontWeight: 700,
-              letterSpacing: '-0.01em'
+              marginBottom: '1.25rem', 
+              fontSize: '1.125rem',
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
+              color: 'var(--foreground)'
             }}>
               Invoice Information
             </h3>
-            <div className="grid invoice-detail-info-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
+            <div className="grid invoice-detail-info-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem 2rem' }}>
               <div>
                 <div style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '0.5rem', 
-                  marginBottom: '0.5rem',
-                  opacity: 0.7,
-                  fontSize: '0.875rem'
+                  gap: '0.375rem', 
+                  marginBottom: '0.375rem',
+                  opacity: 0.65,
+                  fontSize: '0.8125rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontWeight: 500
                 }}>
-                  <Calendar size={16} />
+                  <Calendar size={14} />
                   Invoice Date
                 </div>
-                <div style={{ fontWeight: 600 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>
                   {new Date(invoice.invoice_date).toLocaleDateString()}
                 </div>
               </div>
@@ -367,15 +372,18 @@ const InvoiceDetail = () => {
                 <div style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '0.5rem', 
-                  marginBottom: '0.5rem',
-                  opacity: 0.7,
-                  fontSize: '0.875rem'
+                  gap: '0.375rem', 
+                  marginBottom: '0.375rem',
+                  opacity: 0.65,
+                  fontSize: '0.8125rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontWeight: 500
                 }}>
-                  <Calendar size={16} />
+                  <Calendar size={14} />
                   Due Date
                 </div>
-                <div style={{ fontWeight: 600 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>
                   {new Date(invoice.due_date).toLocaleDateString()}
                 </div>
               </div>
@@ -383,19 +391,22 @@ const InvoiceDetail = () => {
                 <div style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '0.5rem', 
-                  marginBottom: '0.5rem',
-                  opacity: 0.7,
-                  fontSize: '0.875rem'
+                  gap: '0.375rem', 
+                  marginBottom: '0.375rem',
+                  opacity: 0.65,
+                  fontSize: '0.8125rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontWeight: 500
                 }}>
-                  <User size={16} />
+                  <User size={14} />
                   Client
                 </div>
-                <div style={{ fontWeight: 600 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>
                   {invoice.client_name}
                 </div>
                 {invoice.client_email && (
-                  <div style={{ fontSize: '0.875rem', opacity: 0.6, marginTop: '0.25rem' }}>
+                  <div style={{ fontSize: '0.8125rem', opacity: 0.6, marginTop: '0.25rem' }}>
                     {invoice.client_email}
                   </div>
                 )}
@@ -404,12 +415,15 @@ const InvoiceDetail = () => {
                 <div style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '0.5rem', 
-                  marginBottom: '0.5rem',
-                  opacity: 0.7,
-                  fontSize: '0.875rem'
+                  gap: '0.375rem', 
+                  marginBottom: '0.375rem',
+                  opacity: 0.65,
+                  fontSize: '0.8125rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontWeight: 500
                 }}>
-                  <FileText size={16} />
+                  <FileText size={14} />
                   Status
                 </div>
                 <div>
@@ -424,13 +438,14 @@ const InvoiceDetail = () => {
           {/* Invoice Lines */}
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ 
-              padding: '2rem 2rem 1.5rem 2rem', 
+              padding: '1.25rem 1.5rem', 
               borderBottom: '1px solid var(--border)' 
             }}>
               <h3 style={{ 
-                fontSize: '1.375rem',
-                fontWeight: 700,
-                letterSpacing: '-0.01em'
+                fontSize: '1.125rem',
+                fontWeight: 600,
+                letterSpacing: '-0.01em',
+                color: 'var(--foreground)'
               }}>
                 Line Items
               </h3>
@@ -441,57 +456,57 @@ const InvoiceDetail = () => {
                   <thead>
                     <tr style={{ background: 'var(--glass-bg)', borderBottom: '1px solid var(--border)' }}>
                       <th style={{ 
-                        padding: '1.25rem 2rem', 
+                        padding: '0.875rem 1.5rem', 
                         fontWeight: 600, 
                         textAlign: 'left',
-                        fontSize: '0.875rem',
+                        fontSize: '0.75rem',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        opacity: 0.7
+                        opacity: 0.65
                       }}>
                         Description
                       </th>
                       <th style={{ 
-                        padding: '1.25rem 2rem', 
+                        padding: '0.875rem 1.5rem', 
                         fontWeight: 600, 
                         textAlign: 'center',
-                        fontSize: '0.875rem',
+                        fontSize: '0.75rem',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        opacity: 0.7
+                        opacity: 0.65
                       }}>
                         Qty
                       </th>
                       <th style={{ 
-                        padding: '1.25rem 2rem', 
+                        padding: '0.875rem 1.5rem', 
                         fontWeight: 600, 
                         textAlign: 'right',
-                        fontSize: '0.875rem',
+                        fontSize: '0.75rem',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        opacity: 0.7
+                        opacity: 0.65
                       }}>
                         Rate
                       </th>
                       <th style={{ 
-                        padding: '1.25rem 2rem', 
+                        padding: '0.875rem 1.5rem', 
                         fontWeight: 600, 
                         textAlign: 'right',
-                        fontSize: '0.875rem',
+                        fontSize: '0.75rem',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        opacity: 0.7
+                        opacity: 0.65
                       }}>
                         Discount
                       </th>
                       <th style={{ 
-                        padding: '1.25rem 2rem', 
+                        padding: '0.875rem 1.5rem', 
                         fontWeight: 600, 
                         textAlign: 'right',
-                        fontSize: '0.875rem',
+                        fontSize: '0.75rem',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        opacity: 0.7
+                        opacity: 0.65
                       }}>
                         Amount
                       </th>
@@ -509,15 +524,15 @@ const InvoiceDetail = () => {
                           key={line.id}
                           style={{
                             borderBottom: index !== invoice.lines.length - 1 ? '1px solid var(--border)' : 'none',
-                            transition: 'background 0.2s ease'
+                            transition: 'background 0.15s ease'
                           }}
                           onMouseEnter={(e) => !isEditing && (e.currentTarget.style.background = 'var(--glass-bg)')}
                           onMouseLeave={(e) => !isEditing && (e.currentTarget.style.background = 'transparent')}
                         >
-                          <td style={{ padding: '1.25rem 2rem' }}>
+                          <td style={{ padding: '1rem 1.5rem', verticalAlign: 'top' }}>
                             {isEditing ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                                <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.125rem' }}>
                                   {line.work_type_code || line.work_type_description || 'Work'}
                                   {line.project_name && ` - ${line.project_name}`}
                                 </div>
@@ -526,15 +541,16 @@ const InvoiceDetail = () => {
                                   onChange={(e) => setEditingDescription(e.target.value)}
                                   style={{
                                     width: '100%',
-                                    minHeight: '80px',
-                                    padding: '0.75rem',
+                                    minHeight: '70px',
+                                    padding: '0.625rem',
                                     borderRadius: 'var(--radius-md)',
                                     border: '1px solid var(--border)',
                                     background: 'var(--card-bg)',
                                     color: 'inherit',
                                     fontFamily: 'inherit',
-                                    fontSize: '0.875rem',
-                                    resize: 'vertical'
+                                    fontSize: '0.8125rem',
+                                    resize: 'vertical',
+                                    lineHeight: 1.5
                                   }}
                                   placeholder="Enter description..."
                                 />
@@ -543,25 +559,25 @@ const InvoiceDetail = () => {
                                     onClick={handleCancelEdit}
                                     disabled={savingDescription}
                                     className="btn btn-secondary"
-                                    style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+                                    style={{ padding: '0.375rem 0.875rem', fontSize: '0.8125rem' }}
                                   >
-                                    <X size={14} />
+                                    <X size={13} />
                                     Cancel
                                   </button>
                                   <button
                                     onClick={() => handleSaveDescription(line.id)}
                                     disabled={savingDescription}
                                     className="btn btn-primary"
-                                    style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+                                    style={{ padding: '0.375rem 0.875rem', fontSize: '0.8125rem' }}
                                   >
                                     {savingDescription ? (
                                       <>
-                                        <Loader2 className="animate-spin" size={14} />
+                                        <Loader2 className="animate-spin" size={13} />
                                         Saving...
                                       </>
                                     ) : (
                                       <>
-                                        <Check size={14} />
+                                        <Check size={13} />
                                         Save
                                       </>
                                     )}
@@ -569,17 +585,17 @@ const InvoiceDetail = () => {
                                 </div>
                               </div>
                             ) : (
-                              <div style={{ position: 'relative' }}>
-                                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                              <div style={{ position: 'relative', paddingRight: '3rem' }}>
+                                <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.375rem' }}>
                                   {line.work_type_code || line.work_type_description || 'Work'}
                                   {line.project_name && ` - ${line.project_name}`}
                                 </div>
                                 <div style={{ 
-                                  fontSize: '0.875rem', 
-                                  opacity: 0.8, 
-                                  lineHeight: 1.5,
+                                  fontSize: '0.8125rem', 
+                                  opacity: 0.75, 
+                                  lineHeight: 1.6,
                                   whiteSpace: 'pre-wrap',
-                                  minHeight: line.description ? 'auto' : '1.5rem'
+                                  minHeight: line.description ? 'auto' : '1.25rem'
                                 }}>
                                   {line.description || <span style={{ opacity: 0.5, fontStyle: 'italic' }}>No description</span>}
                                 </div>
@@ -594,31 +610,32 @@ const InvoiceDetail = () => {
                                     border: '1px solid var(--border)',
                                     borderRadius: 'var(--radius-sm)',
                                     cursor: 'pointer',
-                                    opacity: 0.7,
+                                    opacity: 0.6,
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '0.25rem',
-                                    fontSize: '0.75rem'
+                                    fontSize: '0.6875rem',
+                                    transition: 'opacity 0.15s ease'
                                   }}
                                   onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                                  onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+                                  onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
                                 >
-                                  <Edit2 size={12} />
+                                  <Edit2 size={11} />
                                   Edit
                                 </button>
                               </div>
                             )}
                           </td>
-                          <td style={{ padding: '1.25rem 2rem', textAlign: 'center' }}>
+                          <td style={{ padding: '1rem 1.5rem', textAlign: 'center', fontSize: '0.875rem', verticalAlign: 'top' }}>
                             {formatQuantity(line.total_minutes)}
                           </td>
-                          <td style={{ padding: '1.25rem 2rem', textAlign: 'right' }}>
+                          <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontSize: '0.875rem', verticalAlign: 'top' }}>
                             {formatCurrency(line.hourly_rate_cents)}
                           </td>
-                          <td style={{ padding: '1.25rem 2rem', textAlign: 'right', color: 'var(--secondary)' }}>
+                          <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontSize: '0.875rem', color: 'var(--secondary)', verticalAlign: 'top' }}>
                             {line.discount_cents > 0 ? `-${formatCurrency(line.discount_cents)}` : formatCurrency(0)}
                           </td>
-                          <td style={{ padding: '1.25rem 2rem', textAlign: 'right', fontWeight: 600 }}>
+                          <td style={{ padding: '1rem 1.5rem', textAlign: 'right', fontWeight: 600, fontSize: '0.875rem', verticalAlign: 'top' }}>
                             {formatCurrency(line.amount_cents)}
                           </td>
                         </tr>
@@ -628,7 +645,7 @@ const InvoiceDetail = () => {
                 </table>
               </div>
             ) : (
-              <div style={{ padding: '3rem 2rem', textAlign: 'center', opacity: 0.5 }}>
+              <div style={{ padding: '2rem 1.5rem', textAlign: 'center', opacity: 0.5, fontSize: '0.875rem' }}>
                 No line items found
               </div>
             )}
@@ -636,27 +653,28 @@ const InvoiceDetail = () => {
         </div>
 
         {/* Summary Sidebar */}
-        <div className="flex flex-col gap-6 invoice-detail-sidebar" style={{ position: 'sticky', top: '2rem' }}>
-          <div className="card invoice-detail-card" style={{ padding: '2rem' }}>
+        <div className="flex flex-col invoice-detail-sidebar" style={{ position: 'sticky', top: '1.5rem', gap: '1.25rem' }}>
+          <div className="card invoice-detail-card" style={{ padding: '1.5rem' }}>
             <h3 style={{ 
-              marginBottom: '2rem', 
-              fontSize: '1.375rem',
-              fontWeight: 700,
-              letterSpacing: '-0.01em'
+              marginBottom: '1.25rem', 
+              fontSize: '1.125rem',
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
+              color: 'var(--foreground)'
             }}>
               Summary
             </h3>
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col" style={{ gap: '0.875rem' }}>
               <div className="flex justify-between items-center">
-                <div style={{ opacity: 0.7, fontSize: '0.9375rem' }}>Subtotal</div>
-                <div style={{ fontWeight: 600, fontSize: '1.125rem' }}>
+                <div style={{ opacity: 0.65, fontSize: '0.875rem' }}>Subtotal</div>
+                <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>
                   {formatCurrency(invoice.subtotal_cents)}
                 </div>
               </div>
               {invoice.discount_cents > 0 && (
                 <div className="flex justify-between items-center">
-                  <div style={{ opacity: 0.7, fontSize: '0.9375rem' }}>Discount</div>
-                  <div style={{ fontWeight: 600, color: 'var(--secondary)', fontSize: '1.125rem' }}>
+                  <div style={{ opacity: 0.65, fontSize: '0.875rem' }}>Discount</div>
+                  <div style={{ fontWeight: 600, color: 'var(--secondary)', fontSize: '0.9375rem' }}>
                     -{formatCurrency(invoice.discount_cents)}
                   </div>
                 </div>
@@ -664,14 +682,14 @@ const InvoiceDetail = () => {
               <div style={{ 
                 height: '1px', 
                 background: 'var(--border)', 
-                margin: '0.75rem 0' 
+                margin: '0.5rem 0' 
               }} />
-              <div className="flex justify-between items-center" style={{ paddingTop: '0.5rem' }}>
-                <div style={{ fontWeight: 700, fontSize: '1.25rem' }}>Total</div>
+              <div className="flex justify-between items-center" style={{ paddingTop: '0.25rem' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.9375rem', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.8 }}>Total</div>
                 <div style={{ 
-                  fontWeight: 800, 
-                  fontSize: '1.75rem',
-                  color: 'var(--primary)'
+                  fontWeight: 700, 
+                  fontSize: '1.5rem',
+                  color: 'var(--foreground)'
                 }}>
                   {formatCurrency(invoice.total_cents)}
                 </div>
@@ -680,59 +698,60 @@ const InvoiceDetail = () => {
           </div>
 
           {/* Additional Info */}
-          <div className="card invoice-detail-card" style={{ padding: '2rem' }}>
+          <div className="card invoice-detail-card" style={{ padding: '1.5rem' }}>
             <h3 style={{ 
-              marginBottom: '2rem', 
-              fontSize: '1.375rem',
-              fontWeight: 700,
-              letterSpacing: '-0.01em'
+              marginBottom: '1.25rem', 
+              fontSize: '1.125rem',
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
+              color: 'var(--foreground)'
             }}>
               Details
             </h3>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col" style={{ gap: '1rem' }}>
               <div>
                 <div style={{ 
-                  opacity: 0.7, 
-                  fontSize: '0.875rem', 
-                  marginBottom: '0.5rem',
+                  opacity: 0.65, 
+                  fontSize: '0.75rem', 
+                  marginBottom: '0.375rem',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  fontWeight: 600
+                  fontWeight: 500
                 }}>
                   Invoice Number
                 </div>
-                <div style={{ fontWeight: 600, fontSize: '1rem' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>
                   INV-{invoice.invoice_number}
                 </div>
               </div>
               <div>
                 <div style={{ 
-                  opacity: 0.7, 
-                  fontSize: '0.875rem', 
-                  marginBottom: '0.5rem',
+                  opacity: 0.65, 
+                  fontSize: '0.75rem', 
+                  marginBottom: '0.375rem',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
-                  fontWeight: 600
+                  fontWeight: 500
                 }}>
                   Created
                 </div>
-                <div style={{ fontWeight: 600, fontSize: '1rem' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>
                   {new Date(invoice.created_at).toLocaleDateString()}
                 </div>
               </div>
               {invoice.updated_at && (
                 <div>
                   <div style={{ 
-                    opacity: 0.7, 
-                    fontSize: '0.875rem', 
-                    marginBottom: '0.5rem',
+                    opacity: 0.65, 
+                    fontSize: '0.75rem', 
+                    marginBottom: '0.375rem',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
-                    fontWeight: 600
+                    fontWeight: 500
                   }}>
                     Last Updated
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: '1rem' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>
                     {new Date(invoice.updated_at).toLocaleDateString()}
                   </div>
                 </div>
