@@ -23,11 +23,19 @@ const NewInvoiceModal = ({ isOpen, onClose, onInvoiceCreated }) => {
     useEffect(() => {
         if (isOpen) {
             fetchInitialData();
-            // Generate a random invoice number for now
-            setFormData(prev => ({
-                ...prev,
-                invoice_number: Math.floor(1000 + Math.random() * 9000).toString()
-            }));
+            // Fetch the next sequential invoice number
+            const fetchNextInvoiceNumber = async () => {
+                try {
+                    const nextNumber = await api.getNextInvoiceNumber();
+                    setFormData(prev => ({
+                        ...prev,
+                        invoice_number: nextNumber.toString()
+                    }));
+                } catch (err) {
+                    console.error('Error fetching next invoice number:', err);
+                }
+            };
+            fetchNextInvoiceNumber();
         }
     }, [isOpen]);
 
