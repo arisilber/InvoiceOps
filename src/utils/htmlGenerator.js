@@ -324,7 +324,12 @@ export const generateInvoiceHTML = (invoice) => {
 <body>
   <div class="invoice-container">
     <div class="invoice-header">
-      <h1 class="invoice-title">INVOICE</h1>
+      <div>
+        ${invoice.company_name ? `<div style="font-size: 1.125rem; font-weight: 600; color: #1a1a1a; margin-bottom: 0.5rem;">${escapeHtml(invoice.company_name)}</div>` : ''}
+        ${invoice.company_address ? `<div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem; white-space: pre-line;">${escapeHtml(invoice.company_address)}</div>` : ''}
+        ${invoice.company_email ? `<div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">${escapeHtml(invoice.company_email)}</div>` : ''}
+        <h1 class="invoice-title" style="margin-top: 0;">INVOICE</h1>
+      </div>
       <div class="invoice-meta">
         <p><strong>Invoice #:</strong> INV-${invoice.invoice_number}</p>
         <p><strong>Date:</strong> ${invoiceDate}</p>

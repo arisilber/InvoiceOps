@@ -376,6 +376,17 @@ const api = {
         return makeRequest(`${API_BASE_URL}/payments/${id}`, {
             method: 'DELETE',
         });
+    },
+
+    // Settings
+    getSettings: async () => {
+        return makeRequest(`${API_BASE_URL}/settings`);
+    },
+    updateSettings: async (settingsData) => {
+        return makeRequest(`${API_BASE_URL}/settings`, {
+            method: 'PUT',
+            body: JSON.stringify(settingsData),
+        });
     }
 };
 

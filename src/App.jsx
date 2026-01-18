@@ -16,6 +16,7 @@ import WorkTypeList from './components/WorkTypeList';
 import Login from './components/Login';
 import Register from './components/Register';
 import PaymentList from './components/PaymentList';
+import Settings from './components/Settings';
 
 function App() {
   const { user, loading, getAuthHeaders, refreshAccessToken, logout } = useAuth();
@@ -138,15 +139,7 @@ function App() {
           <Route path="/clients/:id/dashboard" element={<ClientDashboard />} />
           <Route path="/time-entry" element={<TimeEntryList />} />
           <Route path="/work-types" element={<WorkTypeList />} />
-          <Route
-            path="/settings"
-            element={
-              <div className="card">
-                <h2>Settings</h2>
-                <p style={{ opacity: 0.7 }}>Settings coming soon...</p>
-              </div>
-            }
-          />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </main>
 

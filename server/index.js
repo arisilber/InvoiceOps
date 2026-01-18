@@ -9,6 +9,7 @@ import workTypesRoutes from './routes/workTypes.js';
 import timeEntriesRoutes from './routes/timeEntries.js';
 import invoicesRoutes from './routes/invoices.js';
 import paymentsRoutes from './routes/payments.js';
+import settingsRoutes from './routes/settings.js';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use('/api/work-types', workTypesRoutes);
 app.use('/api/time-entries', timeEntriesRoutes);
 app.use('/api/invoices', invoicesRoutes);
 app.use('/api/payments', paymentsRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // 404 handler
 app.use((req, res) => {

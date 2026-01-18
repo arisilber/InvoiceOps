@@ -76,6 +76,27 @@ const fetchInvoiceWithLines = async (id) => {
 
   const invoice = invoiceResult.rows[0];
 
+  // Get company settings from system_settings
+  try {
+    const settingsResult = await query(
+      "SELECT key, value FROM system_settings WHERE key IN ('company_name', 'company_address', 'company_email')"
+    );
+    settingsResult.rows.forEach(row => {
+      if (row.key === 'company_name' && row.value) {
+        invoice.company_name = row.value;
+      } else if (row.key === 'company_address' && row.value) {
+        invoice.company_address = row.value;
+      } else if (row.key === 'company_email' && row.value) {
+        invoice.company_email = row.value;
+      }
+    });
+  } catch (error) {
+    // If system_settings table doesn't exist yet, ignore the error
+    if (error.code !== '42P01') {
+      console.error('Error fetching company settings:', error);
+    }
+  }
+
   // Get invoice lines and calculate discount per line
   const linesResult = await query(
     `SELECT il.*, wt.code as work_type_code, wt.description as work_type_description
@@ -262,6 +283,27 @@ router.get('/:id', async (req, res, next) => {
     if (workDatesResult.rows[0]?.earliest_work_date) {
       invoice.earliest_work_date = workDatesResult.rows[0].earliest_work_date;
       invoice.latest_work_date = workDatesResult.rows[0].latest_work_date;
+    }
+
+    // Get company settings from system_settings
+    try {
+      const settingsResult = await query(
+        "SELECT key, value FROM system_settings WHERE key IN ('company_name', 'company_address', 'company_email')"
+      );
+      settingsResult.rows.forEach(row => {
+        if (row.key === 'company_name' && row.value) {
+          invoice.company_name = row.value;
+        } else if (row.key === 'company_address' && row.value) {
+          invoice.company_address = row.value;
+        } else if (row.key === 'company_email' && row.value) {
+          invoice.company_email = row.value;
+        }
+      });
+    } catch (error) {
+      // If system_settings table doesn't exist yet, ignore the error
+      if (error.code !== '42P01') {
+        console.error('Error fetching company settings:', error);
+      }
     }
 
     // Get client discount_percent to calculate discount per line
