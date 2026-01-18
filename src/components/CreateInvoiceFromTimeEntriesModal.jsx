@@ -210,6 +210,7 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                     <input
                                         type="date"
                                         required
+                                        disabled={!formData.client_id}
                                         value={formData.start_date}
                                         onChange={e => setFormData({ ...formData, start_date: e.target.value })}
                                         className="glass"
@@ -219,7 +220,9 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                             border: '1px solid var(--border)',
                                             outline: 'none',
                                             background: 'var(--card-bg)',
-                                            color: 'inherit'
+                                            color: 'inherit',
+                                            opacity: !formData.client_id ? 0.5 : 1,
+                                            cursor: !formData.client_id ? 'not-allowed' : 'auto'
                                         }}
                                     />
                                 </div>
@@ -228,6 +231,7 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                     <input
                                         type="date"
                                         required
+                                        disabled={!formData.client_id}
                                         value={formData.end_date}
                                         onChange={e => setFormData({ ...formData, end_date: e.target.value })}
                                         className="glass"
@@ -237,7 +241,9 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
                                             border: '1px solid var(--border)',
                                             outline: 'none',
                                             background: 'var(--card-bg)',
-                                            color: 'inherit'
+                                            color: 'inherit',
+                                            opacity: !formData.client_id ? 0.5 : 1,
+                                            cursor: !formData.client_id ? 'not-allowed' : 'auto'
                                         }}
                                     />
                                 </div>
