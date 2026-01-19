@@ -21,12 +21,14 @@ import {
     Upload,
     ExternalLink,
     LayoutGrid,
-    List
+    List,
+    Timer as TimerIcon
 } from 'lucide-react';
 import api from '../services/api';
 import LogTimeEntry from './LogTimeEntry';
 import CreateInvoiceFromTimeEntriesModal from './CreateInvoiceFromTimeEntriesModal';
 import CSVTimeEntryUpload from './CSVTimeEntryUpload';
+import Timer from './Timer';
 import { formatDate as formatDateUtil } from '../utils/timeParser';
 
 const TimeEntryList = () => {
@@ -49,6 +51,7 @@ const TimeEntryList = () => {
 
     // View State
     const [showSummaryView, setShowSummaryView] = useState(false);
+    const [showTimer, setShowTimer] = useState(false);
     const [expandedDates, setExpandedDates] = useState(new Set());
 
     // Modal State
@@ -335,6 +338,45 @@ const TimeEntryList = () => {
                         <span>Create Invoice</span>
                     </button>
                     <button 
+                        onClick={() => setShowTimer(!showTimer)}
+                        style={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            gap: '8px',
+                            padding: '10px 20px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            fontFamily: 'inherit',
+                            color: showTimer ? 'white' : 'var(--foreground)',
+                            backgroundColor: showTimer ? 'var(--primary)' : 'transparent',
+                            border: '1px solid ' + (showTimer ? 'var(--primary)' : 'var(--border)'),
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.15s ease',
+                            whiteSpace: 'nowrap'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!showTimer) {
+                                e.currentTarget.style.backgroundColor = 'var(--background)';
+                                e.currentTarget.style.borderColor = 'var(--foreground)';
+                            } else {
+                                e.currentTarget.style.backgroundColor = 'var(--primary-hover)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!showTimer) {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.borderColor = 'var(--border)';
+                            } else {
+                                e.currentTarget.style.backgroundColor = 'var(--primary)';
+                            }
+                        }}
+                    >
+                        <TimerIcon size={18} style={{ flexShrink: 0 }} />
+                        <span>{showTimer ? 'Hide Timer' : 'Timer'}</span>
+                    </button>
+                    <button 
                         onClick={handleAdd}
                         style={{ 
                             display: 'inline-flex', 
@@ -365,6 +407,16 @@ const TimeEntryList = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Timer Section */}
+            {showTimer && (
+                <div style={{ marginBottom: '2rem' }}>
+                    <Timer onTimeLogged={() => {
+                        fetchData();
+                        setShowTimer(false);
+                    }} />
+                </div>
+            )}
 
             {/* Time Stats Section */}
             <div style={{
