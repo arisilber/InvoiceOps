@@ -1,11 +1,20 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag, LogOut, DollarSign, FileStack } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag, LogOut, DollarSign, FileStack, Upload } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = ({ onNewInvoice }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { id: 'invoices', label: 'Invoices', icon: FileText, path: '/invoices' },
@@ -14,6 +23,7 @@ const Sidebar = ({ onNewInvoice }) => {
     { id: 'time-entry', label: 'Time Tracking', icon: Clock, path: '/time-entry' },
     { id: 'clients', label: 'Clients', icon: Users, path: '/clients' },
     { id: 'work-types', label: 'Work Types', icon: Tag, path: '/work-types' },
+    { id: 'legacy-import', label: 'Import Legacy Data', icon: Upload, path: '/legacy-import' },
     { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
   ];
 
@@ -45,12 +55,14 @@ const Sidebar = ({ onNewInvoice }) => {
         borderBottom: '1px solid var(--border)',
         minHeight: '72px',
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: 'column',
+        justifyContent: 'center',
       }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
+          marginBottom: '8px',
         }}>
           <div style={{
             width: '28px',
@@ -75,6 +87,17 @@ const Sidebar = ({ onNewInvoice }) => {
           }}>
             InvoiceOps
           </h1>
+        </div>
+        <div style={{
+          fontSize: '12px',
+          color: 'var(--foreground)',
+          opacity: 0.6,
+          fontFamily: 'var(--font-sans)',
+          paddingLeft: '38px',
+          lineHeight: '1.4',
+        }}>
+          <div>{currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</div>
+          <div>{currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
         </div>
       </div>
 
