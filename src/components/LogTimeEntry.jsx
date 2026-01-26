@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Calendar, Briefcase, FileText, User, Plus, Check, Loader2 } from 'lucide-react';
 import api from '../services/api';
-import { parseTimeToMinutes } from '../utils/timeParser';
+import { parseTimeToMinutes, getLocalDateString, utcDateToLocalDateString, localDateStringToUtc } from '../utils/timeParser';
 
 const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
     const [clients, setClients] = useState([]);
@@ -17,7 +17,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
         client_id: initialData?.client_id || '',
         work_type_id: initialData?.work_type_id || '',
         project_name: initialData?.project_name || '',
-        work_date: initialData?.work_date ? new Date(initialData.work_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        work_date: initialData?.work_date ? utcDateToLocalDateString(initialData.work_date) : getLocalDateString(),
         time_spent: initialData?.minutes_spent ?
             (initialData.minutes_spent >= 60 ?
                 `${Math.floor(initialData.minutes_spent / 60)}:${(initialData.minutes_spent % 60).toString().padStart(2, '0')}` :
@@ -105,7 +105,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                 client_id: parseInt(formData.client_id),
                 work_type_id: parseInt(formData.work_type_id),
                 project_name: formData.project_name,
-                work_date: formData.work_date,
+                work_date: localDateStringToUtc(formData.work_date),
                 minutes_spent,
                 detail: formData.detail,
                 invoice_id: formData.invoice_id ? parseInt(formData.invoice_id) : null
@@ -134,7 +134,7 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                     client_id: '',
                     work_type_id: workTypes[0]?.id || '',
                     project_name: '',
-                    work_date: new Date().toISOString().split('T')[0],
+                    work_date: getLocalDateString(),
                     time_spent: '',
                     detail: ''
                 });

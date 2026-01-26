@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileText, X, Check, AlertCircle, Loader2, Download } from 'lucide-react';
 import api from '../services/api';
-import { parseTimeToMinutes, formatDate } from '../utils/timeParser';
+import { parseTimeToMinutes, formatDate, localDateStringToUtc } from '../utils/timeParser';
 
 const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
     const [file, setFile] = useState(null);
@@ -118,11 +118,14 @@ const CSVTimeEntryUpload = ({ onUploadComplete, clients, workTypes }) => {
                 work_date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
             }
 
+            // Convert local date to UTC before submitting to backend
+            const utcDate = localDateStringToUtc(work_date);
+
             entries.push({
                 client_id: client.id,
                 work_type_id: workType.id,
                 project_name: row.project_name || '',
-                work_date: work_date,
+                work_date: utcDate,
                 minutes_spent: minutes_spent,
                 detail: row.detail || null
             });

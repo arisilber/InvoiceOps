@@ -101,3 +101,56 @@ export const formatDate = (dateString) => {
     return `${monthStr}/${dayStr}/${year}`;
 };
 
+/**
+ * Gets the local date string (YYYY-MM-DD) from a Date object
+ * This ensures we get the date in the user's local timezone, not UTC
+ * 
+ * @param {Date} date - Date object (defaults to current date)
+ * @returns {string} Date string in YYYY-MM-DD format (local timezone)
+ */
+export const getLocalDateString = (date = new Date()) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+/**
+ * Converts a UTC date string (YYYY-MM-DD) to local date string (YYYY-MM-DD)
+ * This is useful when displaying dates from the backend that are stored in UTC
+ * 
+ * @param {string} utcDateString - Date string in YYYY-MM-DD format (UTC)
+ * @returns {string} Date string in YYYY-MM-DD format (local timezone)
+ */
+export const utcDateToLocalDateString = (utcDateString) => {
+    if (!utcDateString) return '';
+    
+    // Parse the UTC date string as UTC midnight
+    const utcDate = new Date(utcDateString + 'T00:00:00Z');
+    
+    // Convert to local date string
+    return getLocalDateString(utcDate);
+};
+
+/**
+ * Converts a local date string (YYYY-MM-DD) to UTC date string (YYYY-MM-DD)
+ * This is useful when submitting dates to the backend that should be stored in UTC
+ * 
+ * @param {string} localDateString - Date string in YYYY-MM-DD format (local timezone)
+ * @returns {string} Date string in YYYY-MM-DD format (UTC)
+ */
+export const localDateStringToUtc = (localDateString) => {
+    if (!localDateString) return '';
+    
+    // Parse the local date string and create a Date at midnight local time
+    const [year, month, day] = localDateString.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    
+    // Convert to UTC and get the date string
+    const utcYear = localDate.getUTCFullYear();
+    const utcMonth = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+    const utcDay = String(localDate.getUTCDate()).padStart(2, '0');
+    
+    return `${utcYear}-${utcMonth}-${utcDay}`;
+};
+

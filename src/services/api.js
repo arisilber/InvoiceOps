@@ -1,3 +1,5 @@
+import { localDateStringToUtc, utcDateToLocalDateString } from '../utils/timeParser';
+
 const API_BASE_URL = '/api';
 
 // Helper function to make authenticated requests with automatic token refresh
@@ -104,8 +106,11 @@ const api = {
     getInvoice: async (id) => {
         return makeRequest(`${API_BASE_URL}/invoices/${id}`);
     },
-    getNextInvoiceNumber: async () => {
-        const data = await makeRequest(`${API_BASE_URL}/invoices/next-invoice-number`);
+    getNextInvoiceNumber: async (invoiceDate) => {
+        const url = invoiceDate 
+            ? `${API_BASE_URL}/invoices/next-invoice-number?invoice_date=${encodeURIComponent(invoiceDate)}`
+            : `${API_BASE_URL}/invoices/next-invoice-number`;
+        const data = await makeRequest(url);
         return data.next_invoice_number;
     },
     createInvoice: async (invoiceData) => {
@@ -283,7 +288,16 @@ const api = {
 
     // Time Entries
     getTimeEntries: async (filters = {}) => {
-        const params = new URLSearchParams(filters);
+        // Convert date filters from local to UTC before sending to backend
+        const convertedFilters = { ...filters };
+        if (convertedFilters.work_date_from) {
+            convertedFilters.work_date_from = localDateStringToUtc(convertedFilters.work_date_from);
+        }
+        if (convertedFilters.work_date_to) {
+            convertedFilters.work_date_to = localDateStringToUtc(convertedFilters.work_date_to);
+        }
+        
+        const params = new URLSearchParams(convertedFilters);
         return makeRequest(`${API_BASE_URL}/time-entries?${params.toString()}`);
     },
     getProjectNames: async (clientId) => {
@@ -497,6 +511,35 @@ const api = {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
+    },
+
+    // Legacy Import
+    importLegacyInvoices: async (invoices) => {
+        return makeRequest(`${API_BASE_URL}/legacy-import/invoices`, {
+            method: 'POST',
+            body: JSON.stringify({ invoices }),
+        });
+    },
+    importLegacyPayments: async (payments) => {
+        return makeRequest(`${API_BASE_URL}/legacy-import/payments`, {
+            method: 'POST',
+            body: JSON.stringify({ payments }),
+        });
+    },
+    importLegacyTimeEntries: async (time_entries) => {
+        return makeRequest(`${API_BASE_URL}/legacy-import/time-entries`, {
+            method: 'POST',
+            body: JSON.stringify({ time_entries }),
+        });
+    },
+
+    // Server timezone (no auth required)
+    getServerTimezone: async () => {
+        const response = await fetch(`${API_BASE_URL}/server-timezone`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch server timezone');
+        }
+        return response.json();
     }
 };
 

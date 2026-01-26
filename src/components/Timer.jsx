@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Square, Clock, X, Loader2 } from 'lucide-react';
 import api from '../services/api';
 import LogTimeEntry from './LogTimeEntry';
+import { getLocalDateString } from '../utils/timeParser';
 
 const Timer = ({ onTimeLogged }) => {
     const [isRunning, setIsRunning] = useState(false);
@@ -387,7 +388,7 @@ const Timer = ({ onTimeLogged }) => {
                             <LogTimeEntry
                                 initialData={{
                                     minutes_spent: finalMinutesSpent > 0 ? finalMinutesSpent : minutesSpent,
-                                    work_date: new Date().toISOString().split('T')[0]
+                                    work_date: getLocalDateString()
                                 }}
                                 isModal={true}
                                 onSave={handleSaveEntry}

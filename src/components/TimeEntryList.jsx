@@ -29,7 +29,7 @@ import LogTimeEntry from './LogTimeEntry';
 import CreateInvoiceFromTimeEntriesModal from './CreateInvoiceFromTimeEntriesModal';
 import CSVTimeEntryUpload from './CSVTimeEntryUpload';
 import Timer from './Timer';
-import { formatDate as formatDateUtil } from '../utils/timeParser';
+import { formatDate as formatDateUtil, utcDateToLocalDateString } from '../utils/timeParser';
 
 const TimeEntryList = () => {
     const navigate = useNavigate();
@@ -53,6 +53,10 @@ const TimeEntryList = () => {
     const [showSummaryView, setShowSummaryView] = useState(false);
     const [showTimer, setShowTimer] = useState(false);
     const [expandedDates, setExpandedDates] = useState(new Set());
+    const [expandedStats, setExpandedStats] = useState({
+        last7Days: false,
+        thisWeek: false
+    });
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -69,8 +73,15 @@ const TimeEntryList = () => {
                 api.getClients(),
                 api.getWorkTypes()
             ]);
-            setEntries(entriesData);
-            setAllEntries(allEntriesData);
+            
+            // Convert UTC dates from backend to local dates for display
+            const convertEntryDates = (entry) => ({
+                ...entry,
+                work_date: entry.work_date ? utcDateToLocalDateString(entry.work_date) : entry.work_date
+            });
+            
+            setEntries(entriesData.map(convertEntryDates));
+            setAllEntries(allEntriesData.map(convertEntryDates));
             setClients(clientsData);
             setWorkTypes(workTypesData);
             setError(null);
@@ -115,6 +126,33 @@ const TimeEntryList = () => {
         return `${m}m`;
     };
 
+    const parseDateKeyToLocalDate = (dateKey) => {
+        if (!dateKey) return null;
+        const [year, month, day] = dateKey.split('-').map(Number);
+        if (!year || !month || !day) return null;
+        return new Date(year, month - 1, day);
+    };
+
+    const toLocalDateKey = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
+
+    const formatDayLabel = (dateKey) => {
+        const dt = parseDateKeyToLocalDate(dateKey);
+        if (!dt) return dateKey;
+        const weekday = dt.toLocaleDateString('en-US', { weekday: 'short' });
+        return `${weekday} ${formatDateUtil(dateKey)}`;
+    };
+
+    const formatShortDate = (dateKey) => {
+        const dt = parseDateKeyToLocalDate(dateKey);
+        if (!dt) return dateKey;
+        return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
     // Calculate stats for last 7 days and this week
     const getTimeStats = () => {
         const today = new Date();
@@ -135,28 +173,57 @@ const TimeEntryList = () => {
         weekEnd.setDate(weekEnd.getDate() + 6); // Sunday
         weekEnd.setHours(23, 59, 59, 999);
         
-        let last7DaysMinutes = 0;
-        let thisWeekMinutes = 0;
-        
-        allEntries.forEach(entry => {
-            const entryDate = new Date(entry.work_date);
-            entryDate.setHours(0, 0, 0, 0);
-            const minutes = entry.minutes_spent || 0;
-            
-            // Last 7 days
-            if (entryDate >= sevenDaysAgo && entryDate <= today) {
-                last7DaysMinutes += minutes;
-            }
-            
-            // This week (Monday to Sunday)
-            if (entryDate >= weekStart && entryDate <= weekEnd) {
-                thisWeekMinutes += minutes;
-            }
+        // Build a per-day minutes map using date keys (YYYY-MM-DD) to avoid timezone shifts
+        const minutesByDateKey = new Map();
+        allEntries.forEach((entry) => {
+            const dateKey = entry?.work_date?.split('T')?.[0];
+            if (!dateKey) return;
+            const minutes = entry?.minutes_spent || 0;
+            minutesByDateKey.set(dateKey, (minutesByDateKey.get(dateKey) || 0) + minutes);
         });
+
+        const buildBreakdownBetween = (startDateInclusive, endDateInclusive) => {
+            const rows = [];
+            const start = new Date(startDateInclusive);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(endDateInclusive);
+            end.setHours(0, 0, 0, 0);
+
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dateKey = toLocalDateKey(d);
+                rows.push({
+                    date: dateKey,
+                    minutes: minutesByDateKey.get(dateKey) || 0
+                });
+            }
+            return rows;
+        };
+
+        const last7DaysBreakdown = buildBreakdownBetween(sevenDaysAgo, today);
+
+        // For "This week", only include days that have occurred so far (Mon..today)
+        const weekEndDay = new Date(weekStart);
+        weekEndDay.setDate(weekEndDay.getDate() + 6);
+        weekEndDay.setHours(0, 0, 0, 0);
+        const thisWeekEndDay = today <= weekEndDay ? today : weekEndDay;
+        const thisWeekBreakdown = buildBreakdownBetween(weekStart, thisWeekEndDay);
+
+        const last7DaysMinutes = last7DaysBreakdown.reduce((sum, r) => sum + (r.minutes || 0), 0);
+        const thisWeekMinutes = thisWeekBreakdown.reduce((sum, r) => sum + (r.minutes || 0), 0);
         
         return {
             last7Days: last7DaysMinutes,
-            thisWeek: thisWeekMinutes
+            thisWeek: thisWeekMinutes,
+            last7DaysBreakdown,
+            thisWeekBreakdown,
+            last7DaysRange: {
+                start: toLocalDateKey(sevenDaysAgo),
+                end: toLocalDateKey(today)
+            },
+            thisWeekRange: {
+                start: toLocalDateKey(weekStart),
+                end: toLocalDateKey(thisWeekEndDay)
+            }
         };
     };
 
@@ -418,74 +485,236 @@ const TimeEntryList = () => {
                 </div>
             )}
 
-            {/* Time Stats Section */}
+            {/* Time Summary (Accordion) */}
             <div style={{
-                display: 'flex',
-                gap: '1rem',
                 marginBottom: '1.5rem',
-                paddingBottom: '1rem',
-                borderBottom: '1px solid var(--border)'
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                background: 'var(--card-bg)',
+                overflow: 'hidden'
             }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    paddingRight: '1.5rem',
-                    borderRight: '1px solid var(--border)'
-                }}>
-                    <Clock size={16} style={{ color: 'var(--foreground)', opacity: 0.5 }} />
-                    <div>
-                        <div style={{
-                            fontSize: '0.75rem',
-                            fontWeight: 500,
-                            color: 'var(--foreground)',
-                            opacity: 0.6,
-                            marginBottom: '0.25rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.02em'
-                        }}>
-                            Last 7 Days
+                {/* Last 7 Days */}
+                <button
+                    type="button"
+                    aria-expanded={expandedStats.last7Days}
+                    aria-controls="time-stats-last7days"
+                    onClick={() => setExpandedStats(prev => ({ ...prev, last7Days: !prev.last7Days }))}
+                    style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1rem',
+                        padding: '0.875rem 1rem',
+                        border: 'none',
+                        background: 'transparent',
+                        color: 'var(--foreground)',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--background)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                        <Clock size={16} style={{ opacity: 0.6, flexShrink: 0 }} />
+                        <div style={{ minWidth: 0 }}>
+                            <div style={{
+                                fontSize: '0.9375rem',
+                                fontWeight: 600,
+                                letterSpacing: '-0.01em'
+                            }}>
+                                Last 7 days
+                            </div>
+                            <div style={{
+                                fontSize: '0.8125rem',
+                                opacity: 0.65,
+                                marginTop: '0.125rem'
+                            }}>
+                                {formatShortDate(timeStats.last7DaysRange.start)}–{formatShortDate(timeStats.last7DaysRange.end)}
+                            </div>
                         </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
                         <div style={{
-                            fontSize: '1.125rem',
-                            fontWeight: 600,
-                            color: 'var(--foreground)',
-                            fontVariantNumeric: 'tabular-nums'
+                            fontSize: '1rem',
+                            fontWeight: 700,
+                            fontVariantNumeric: 'tabular-nums',
+                            letterSpacing: '0.01em'
                         }}>
                             {formatMinutes(timeStats.last7Days)}
                         </div>
+                        {expandedStats.last7Days ? (
+                            <ChevronDown size={16} style={{ opacity: 0.6 }} />
+                        ) : (
+                            <ChevronRight size={16} style={{ opacity: 0.6 }} />
+                        )}
                     </div>
-                </div>
-
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    paddingLeft: '1.5rem'
-                }}>
-                    <CalendarIcon size={16} style={{ color: 'var(--foreground)', opacity: 0.5 }} />
-                    <div>
+                </button>
+                {expandedStats.last7Days && (
+                    <div
+                        id="time-stats-last7days"
+                        role="region"
+                        aria-label="Last 7 days daily breakdown"
+                        style={{
+                            borderTop: '1px solid var(--border)'
+                        }}
+                    >
                         <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr auto',
+                            gap: '0.75rem',
+                            padding: '0.625rem 1rem',
+                            background: 'var(--background)',
+                            borderBottom: '1px solid var(--border)',
                             fontSize: '0.75rem',
-                            fontWeight: 500,
-                            color: 'var(--foreground)',
-                            opacity: 0.6,
-                            marginBottom: '0.25rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.02em'
-                        }}>
-                            This Week
-                        </div>
-                        <div style={{
-                            fontSize: '1.125rem',
                             fontWeight: 600,
+                            letterSpacing: '0.02em',
                             color: 'var(--foreground)',
-                            fontVariantNumeric: 'tabular-nums'
+                            opacity: 0.7,
+                            textTransform: 'uppercase'
+                        }}>
+                            <div>Date</div>
+                            <div>Time</div>
+                        </div>
+                        <div style={{ display: 'grid' }}>
+                            {timeStats.last7DaysBreakdown.map((row, idx) => (
+                                <div
+                                    key={row.date}
+                                    style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '1fr auto',
+                                        gap: '0.75rem',
+                                        padding: '0.625rem 1rem',
+                                        borderBottom: idx < timeStats.last7DaysBreakdown.length - 1 ? '1px solid var(--border)' : 'none',
+                                        fontSize: '0.875rem',
+                                        color: 'var(--foreground)'
+                                    }}
+                                >
+                                    <div style={{ opacity: 0.85 }}>{formatDayLabel(row.date)}</div>
+                                    <div style={{
+                                        fontWeight: 700,
+                                        fontVariantNumeric: 'tabular-nums',
+                                        letterSpacing: '0.01em'
+                                    }}>
+                                        {formatMinutes(row.minutes)}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* This Week */}
+                <div style={{ borderTop: '1px solid var(--border)' }} />
+                <button
+                    type="button"
+                    aria-expanded={expandedStats.thisWeek}
+                    aria-controls="time-stats-thisweek"
+                    onClick={() => setExpandedStats(prev => ({ ...prev, thisWeek: !prev.thisWeek }))}
+                    style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1rem',
+                        padding: '0.875rem 1rem',
+                        border: 'none',
+                        background: 'transparent',
+                        color: 'var(--foreground)',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--background)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                        <CalendarIcon size={16} style={{ opacity: 0.6, flexShrink: 0 }} />
+                        <div style={{ minWidth: 0 }}>
+                            <div style={{
+                                fontSize: '0.9375rem',
+                                fontWeight: 600,
+                                letterSpacing: '-0.01em'
+                            }}>
+                                This week
+                            </div>
+                            <div style={{
+                                fontSize: '0.8125rem',
+                                opacity: 0.65,
+                                marginTop: '0.125rem'
+                            }}>
+                                {formatShortDate(timeStats.thisWeekRange.start)}–{formatShortDate(timeStats.thisWeekRange.end)}
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                        <div style={{
+                            fontSize: '1rem',
+                            fontWeight: 700,
+                            fontVariantNumeric: 'tabular-nums',
+                            letterSpacing: '0.01em'
                         }}>
                             {formatMinutes(timeStats.thisWeek)}
                         </div>
+                        {expandedStats.thisWeek ? (
+                            <ChevronDown size={16} style={{ opacity: 0.6 }} />
+                        ) : (
+                            <ChevronRight size={16} style={{ opacity: 0.6 }} />
+                        )}
                     </div>
-                </div>
+                </button>
+                {expandedStats.thisWeek && (
+                    <div
+                        id="time-stats-thisweek"
+                        role="region"
+                        aria-label="This week daily breakdown"
+                        style={{
+                            borderTop: '1px solid var(--border)'
+                        }}
+                    >
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr auto',
+                            gap: '0.75rem',
+                            padding: '0.625rem 1rem',
+                            background: 'var(--background)',
+                            borderBottom: '1px solid var(--border)',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            letterSpacing: '0.02em',
+                            color: 'var(--foreground)',
+                            opacity: 0.7,
+                            textTransform: 'uppercase'
+                        }}>
+                            <div>Date</div>
+                            <div>Time</div>
+                        </div>
+                        <div style={{ display: 'grid' }}>
+                            {timeStats.thisWeekBreakdown.map((row, idx) => (
+                                <div
+                                    key={row.date}
+                                    style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '1fr auto',
+                                        gap: '0.75rem',
+                                        padding: '0.625rem 1rem',
+                                        borderBottom: idx < timeStats.thisWeekBreakdown.length - 1 ? '1px solid var(--border)' : 'none',
+                                        fontSize: '0.875rem',
+                                        color: 'var(--foreground)'
+                                    }}
+                                >
+                                    <div style={{ opacity: 0.85 }}>{formatDayLabel(row.date)}</div>
+                                    <div style={{
+                                        fontWeight: 700,
+                                        fontVariantNumeric: 'tabular-nums',
+                                        letterSpacing: '0.01em'
+                                    }}>
+                                        {formatMinutes(row.minutes)}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Filter Bar */}
