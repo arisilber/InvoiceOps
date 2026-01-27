@@ -100,7 +100,8 @@ const Dashboard = ({ onExploreInvoices }) => {
         expensesAllTime: 0,
         expensesPrev30Days: 0,
         expensesPrev60Days: 0,
-        expensesPrev90Days: 0
+        expensesPrev90Days: 0,
+        averageDaysToInvoice: 0
     });
     const [loading, setLoading] = useState(true);
 
@@ -243,6 +244,19 @@ const Dashboard = ({ onExploreInvoices }) => {
                 }
             });
 
+            // Calculate average days to invoice
+            const invoicedTimeEntries = timeEntries.filter(te => te.invoice_id && te.invoice_date);
+            let totalDays = 0;
+            let entryCount = 0;
+            invoicedTimeEntries.forEach(te => {
+                const workDate = new Date(te.work_date);
+                const invoiceDate = new Date(te.invoice_date);
+                const daysDiff = Math.round((invoiceDate - workDate) / (1000 * 60 * 60 * 24));
+                totalDays += daysDiff;
+                entryCount++;
+            });
+            const averageDaysToInvoice = entryCount > 0 ? totalDays / entryCount : 0;
+
             // Calculate expenses by period (net of refunds)
             let expensesLast30Days = 0;
             let expensesLast60Days = 0;
@@ -331,7 +345,8 @@ const Dashboard = ({ onExploreInvoices }) => {
                 expensesAllTime: Math.round(expensesAllTime * 100) / 100,
                 expensesPrev30Days: Math.round(expensesPrev30Days * 100) / 100,
                 expensesPrev60Days: Math.round(expensesPrev60Days * 100) / 100,
-                expensesPrev90Days: Math.round(expensesPrev90Days * 100) / 100
+                expensesPrev90Days: Math.round(expensesPrev90Days * 100) / 100,
+                averageDaysToInvoice: Math.round(averageDaysToInvoice * 10) / 10
             });
         } catch (err) {
             console.error('Error fetching dashboard stats:', err);
@@ -593,6 +608,16 @@ const Dashboard = ({ onExploreInvoices }) => {
                         title="Uninvoiced Amount"
                         value={formatCurrency(stats.uninvoicedAmount)}
                         onClick={() => navigate('/time-entries?is_invoiced=false')}
+                    />
+                    <StatCard
+                        title="Avg Invoice Amount"
+                        value={formatCurrency(stats.averageInvoiceValue)}
+                        onClick={() => navigate('/invoices')}
+                    />
+                    <StatCard
+                        title="Avg Days to Invoice"
+                        value={stats.averageDaysToInvoice > 0 ? `${stats.averageDaysToInvoice} days` : 'N/A'}
+                        onClick={() => navigate('/time-entries?is_invoiced=true')}
                     />
                 </div>
             </div>
