@@ -18,6 +18,8 @@ import Register from './components/Register';
 import PaymentList from './components/PaymentList';
 import Settings from './components/Settings';
 import StatementView from './components/StatementView';
+import LegacyDataImport from './components/LegacyDataImport';
+import ExpenseList from './components/ExpenseList';
 
 function App() {
   const { user, loading, getAuthHeaders, refreshAccessToken, logout } = useAuth();
@@ -142,7 +144,12 @@ function App() {
           <Route path="/statements/:clientId?" element={<StatementView />} />
           <Route path="/time-entry" element={<TimeEntryList />} />
           <Route path="/work-types" element={<WorkTypeList />} />
+          <Route path="/expenses" element={<ExpenseList />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/legacy-import" element={<LegacyDataImport onImportComplete={() => {
+            setInvoiceRefreshKey(prev => prev + 1);
+            navigate('/invoices');
+          }} />} />
         </Routes>
       </main>
 

@@ -1,13 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag, LogOut, DollarSign, FileStack, Upload } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag, LogOut, DollarSign, FileStack, Upload, Receipt } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 const Sidebar = ({ onNewInvoice }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [serverTimezone, setServerTimezone] = useState(null);
 
+  // Fetch server timezone on mount
+  useEffect(() => {
+    const fetchServerTimezone = async () => {
+      try {
+        const data = await api.getServerTimezone();
+        setServerTimezone(data.timezone);
+      } catch (error) {
+        console.error('Failed to fetch server timezone:', error);
+        // Fallback to local timezone if fetch fails
+        setServerTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+      }
+    };
+    fetchServerTimezone();
+  }, []);
+
+  // Update time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -21,6 +39,7 @@ const Sidebar = ({ onNewInvoice }) => {
     { id: 'payments', label: 'Payments', icon: DollarSign, path: '/payments' },
     { id: 'statements', label: 'Statements', icon: FileStack, path: '/statements' },
     { id: 'time-entry', label: 'Time Tracking', icon: Clock, path: '/time-entry' },
+    { id: 'expenses', label: 'Expenses', icon: Receipt, path: '/expenses' },
     { id: 'clients', label: 'Clients', icon: Users, path: '/clients' },
     { id: 'work-types', label: 'Work Types', icon: Tag, path: '/work-types' },
     { id: 'legacy-import', label: 'Import Legacy Data', icon: Upload, path: '/legacy-import' },
@@ -96,8 +115,32 @@ const Sidebar = ({ onNewInvoice }) => {
           paddingLeft: '38px',
           lineHeight: '1.4',
         }}>
-          <div>{currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</div>
-          <div>{currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+          {serverTimezone ? (
+            <>
+              <div>
+                {new Intl.DateTimeFormat('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  timeZone: serverTimezone
+                }).format(currentTime)}
+              </div>
+              <div>
+                {new Intl.DateTimeFormat('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  timeZone: serverTimezone
+                }).format(currentTime)}
+              </div>
+            </>
+          ) : (
+            <>
+              <div>{currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</div>
+              <div>{currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+            </>
+          )}
         </div>
       </div>
 

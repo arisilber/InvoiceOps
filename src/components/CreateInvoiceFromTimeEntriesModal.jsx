@@ -27,15 +27,28 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
             // Calculate start date as 30 days ago
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - 30);
+            const invoiceDate = new Date().toISOString().split('T')[0];
             setFormData(prev => ({
                 ...prev,
                 start_date: startDate.toISOString().split('T')[0],
                 client_id: '',
-                invoice_number: ''
+                invoice_number: '',
+                invoice_date: invoiceDate
             }));
             setPreview(null);
             setPreviewError(null);
             setEarliestEntry(null);
+            
+            // Generate invoice number immediately when modal opens
+            const generateInitialInvoiceNumber = async () => {
+                try {
+                    const nextNumber = await api.getNextInvoiceNumber(invoiceDate);
+                    setFormData(prev => ({ ...prev, invoice_number: nextNumber.toString() }));
+                } catch (err) {
+                    console.error('Error fetching next invoice number:', err);
+                }
+            };
+            generateInitialInvoiceNumber();
         }
     }, [isOpen]);
 
@@ -59,6 +72,23 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
             setPreviewError(null);
         }
     }, [formData.client_id, formData.start_date, formData.end_date, isOpen]);
+
+    // Regenerate invoice number when invoice_date changes (only if preview exists)
+    useEffect(() => {
+        if (isOpen && formData.invoice_date && preview && preview.lines.length > 0) {
+            const generateInvoiceNumber = async () => {
+                try {
+                    const nextNumber = await api.getNextInvoiceNumber(formData.invoice_date);
+                    setFormData(prev => ({ ...prev, invoice_number: nextNumber.toString() }));
+                } catch (err) {
+                    console.error('Error fetching next invoice number:', err);
+                }
+            };
+            // Small delay to avoid regenerating on every keystroke if user is typing
+            const timer = setTimeout(generateInvoiceNumber, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [formData.invoice_date, isOpen, preview]);
 
 
     // Generate AI descriptions line by line when preview loads
@@ -125,10 +155,10 @@ const CreateInvoiceFromTimeEntriesModal = ({ isOpen, onClose, onInvoiceCreated }
             );
             setPreview(previewData);
 
-            // Auto-fetch next invoice number if not set
-            if (!formData.invoice_number && previewData.lines.length > 0) {
+            // Auto-fetch next invoice number if not set (regenerate to ensure it matches current invoice_date)
+            if (previewData.lines.length > 0) {
                 try {
-                    const nextNumber = await api.getNextInvoiceNumber();
+                    const nextNumber = await api.getNextInvoiceNumber(formData.invoice_date);
                     setFormData(prev => ({ ...prev, invoice_number: nextNumber.toString() }));
                 } catch (err) {
                     console.error('Error fetching next invoice number:', err);

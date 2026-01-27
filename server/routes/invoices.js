@@ -90,7 +90,8 @@ router.get('/', async (req, res, next) => {
 // GET next invoice number (must come before /:id route)
 router.get('/next-invoice-number', async (req, res, next) => {
   try {
-    const nextNumber = await getNextInvoiceNumber();
+    const invoiceDate = req.query.invoice_date; // Optional: YYYY-MM-DD format
+    const nextNumber = await getNextInvoiceNumber(invoiceDate);
     res.json({ next_invoice_number: nextNumber });
   } catch (error) {
     next(error);

@@ -23,10 +23,10 @@ const NewInvoiceModal = ({ isOpen, onClose, onInvoiceCreated }) => {
     useEffect(() => {
         if (isOpen) {
             fetchInitialData();
-            // Fetch the next sequential invoice number
+            // Fetch the next invoice number based on invoice date
             const fetchNextInvoiceNumber = async () => {
                 try {
-                    const nextNumber = await api.getNextInvoiceNumber();
+                    const nextNumber = await api.getNextInvoiceNumber(formData.invoice_date);
                     setFormData(prev => ({
                         ...prev,
                         invoice_number: nextNumber.toString()
@@ -38,6 +38,21 @@ const NewInvoiceModal = ({ isOpen, onClose, onInvoiceCreated }) => {
             fetchNextInvoiceNumber();
         }
     }, [isOpen]);
+
+    // Regenerate invoice number when invoice_date changes
+    useEffect(() => {
+        if (isOpen && formData.invoice_date) {
+            const generateInvoiceNumber = async () => {
+                try {
+                    const nextNumber = await api.getNextInvoiceNumber(formData.invoice_date);
+                    setFormData(prev => ({ ...prev, invoice_number: nextNumber.toString() }));
+                } catch (err) {
+                    console.error('Error fetching next invoice number:', err);
+                }
+            };
+            generateInvoiceNumber();
+        }
+    }, [formData.invoice_date, isOpen]);
 
     const fetchInitialData = async () => {
         try {

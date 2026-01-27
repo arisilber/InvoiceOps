@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Calendar, Briefcase, FileText, User, Plus, Check, Loader2 } from 'lucide-react';
 import api from '../services/api';
-import { parseTimeToMinutes, getLocalDateString, utcDateToLocalDateString, localDateStringToUtc } from '../utils/timeParser';
+import { parseTimeToMinutes, formatMinutes, getLocalDateString, utcDateToLocalDateString, localDateStringToUtc } from '../utils/timeParser';
 
 const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
     const [clients, setClients] = useState([]);
@@ -89,6 +89,20 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
     const parseTimeSpent = (value) => {
         return parseTimeToMinutes(value);
     };
+
+    // Calculate preview of what will be recorded
+    const getTimePreview = () => {
+        if (!formData.time_spent || formData.time_spent.trim() === '') {
+            return null;
+        }
+        const minutes = parseTimeSpent(formData.time_spent);
+        if (minutes <= 0) {
+            return null;
+        }
+        return formatMinutes(minutes);
+    };
+
+    const timePreview = getTimePreview();
 
     const handleSubmit = async (e, addAnother = false) => {
         e.preventDefault();
@@ -370,6 +384,23 @@ const LogTimeEntry = ({ initialData, onSave, onCancel, isModal = false }) => {
                                 onFocus={e => e.target.style.borderColor = 'var(--primary)'}
                                 onBlur={e => e.target.style.borderColor = 'var(--border)'}
                             />
+                            {timePreview && (
+                                <div style={{
+                                    padding: '0.625rem 0.875rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    background: 'rgba(59, 130, 246, 0.1)',
+                                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                                    color: '#3b82f6',
+                                    fontSize: '0.875rem',
+                                    fontWeight: 500,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}>
+                                    <Clock size={14} />
+                                    <span>Will record: <strong>{timePreview}</strong> ({parseTimeSpent(formData.time_spent)} minutes)</span>
+                                </div>
+                            )}
                             <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>Use minutes (90), hours:minutes (1:30), or decimal hours (0.75). Rounds up to nearest 5 minutes.</span>
                         </div>
                     </div>

@@ -244,14 +244,49 @@ export async function createInvoiceFromTimeEntries(
 }
 
 /**
- * Get the next available invoice number
- * @returns {Promise<number>} The next sequential invoice number
+ * Get the next available invoice number in MMDDYYYYxx format
+ * @param {string} invoiceDate - Invoice date in YYYY-MM-DD format
+ * @returns {Promise<number>} A unique invoice number in MMDDYYYYxx format
  */
-export async function getNextInvoiceNumber() {
-    const result = await query(
-        'SELECT COALESCE(MAX(invoice_number), 0) + 1 as next_number FROM invoices'
-    );
-    return result.rows[0].next_number;
+export async function getNextInvoiceNumber(invoiceDate) {
+    if (!invoiceDate) {
+        // Fallback to current date if no date provided
+        invoiceDate = new Date().toISOString().split('T')[0];
+    }
+
+    // Parse the date string directly to avoid timezone issues
+    // invoiceDate is in YYYY-MM-DD format
+    const [year, month, day] = invoiceDate.split('-').map(Number);
+    
+    // Format with leading zeros
+    const monthStr = String(month).padStart(2, '0');
+    const dayStr = String(day).padStart(2, '0');
+    
+    // Generate base string: MMDDYYYY
+    const baseString = `${monthStr}${dayStr}${year}`;
+    
+    // Try up to 100 times to find a unique number
+    for (let attempt = 0; attempt < 100; attempt++) {
+        // Generate random 2-digit suffix (00-99)
+        const randomSuffix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+        
+        // Combine: MMDDYYYYxx (parse as integer to store in database)
+        const invoiceNumber = parseInt(`${baseString}${randomSuffix}`);
+        
+        // Check if this number already exists
+        const result = await query(
+            'SELECT id FROM invoices WHERE invoice_number = $1',
+            [invoiceNumber]
+        );
+        
+        if (result.rows.length === 0) {
+            // Number is unique, return it
+            return invoiceNumber;
+        }
+    }
+    
+    // If we couldn't find a unique number after 100 attempts, throw an error
+    throw new Error('Unable to generate unique invoice number after multiple attempts');
 }
 
 /**

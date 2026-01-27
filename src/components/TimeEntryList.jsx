@@ -128,8 +128,12 @@ const TimeEntryList = () => {
 
     const parseDateKeyToLocalDate = (dateKey) => {
         if (!dateKey) return null;
-        const [year, month, day] = dateKey.split('-').map(Number);
-        if (!year || !month || !day) return null;
+        const parts = dateKey.split('-');
+        if (parts.length !== 3) return null;
+        const year = Number(parts[0]);
+        const month = Number(parts[1]);
+        const day = Number(parts[2]);
+        if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
         return new Date(year, month - 1, day);
     };
 
@@ -860,13 +864,16 @@ const TimeEntryList = () => {
                         </div>
                     </div>
 
-                    <button
-                        className="btn btn-secondary"
-                        onClick={() => setFilters({ client_id: '', work_type_id: '', work_date_from: '', work_date_to: '', is_invoiced: '' })}
-                        style={{ height: '2.8rem' }}
-                    >
-                        Clear
-                    </button>
+                    <div className="flex flex-col gap-2">
+                        <label style={{ fontSize: '0.85rem', fontWeight: 600, opacity: 0.8 }}>&nbsp;</label>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => setFilters({ client_id: '', work_type_id: '', work_date_from: '', work_date_to: '', is_invoiced: '' })}
+                            style={{ height: '2.8rem', width: '100%' }}
+                        >
+                            Clear
+                        </button>
+                    </div>
                 </div>
             </div>
 
