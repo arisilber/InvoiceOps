@@ -91,9 +91,29 @@ export const formatDate = (dateString) => {
     // Handle ISO format strings (e.g., "2025-11-05T00:00:00.000Z")
     const datePart = dateString.split('T')[0];
     
+    // Validate the date part is in YYYY-MM-DD format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+        console.warn('Invalid date format in formatDate:', dateString);
+        return '';
+    }
+    
     // Parse date string as local date to avoid timezone issues
-    const [year, month, day] = datePart.split('-').map(Number);
-    if (!year || !month || !day) return dateString; // Return original if parsing fails
+    const parts = datePart.split('-');
+    if (parts.length !== 3) {
+        console.warn('Invalid date format in formatDate:', dateString);
+        return '';
+    }
+    
+    const year = Number(parts[0]);
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+    
+    // Check if any part is NaN or invalid
+    if (isNaN(year) || isNaN(month) || isNaN(day) || 
+        month < 1 || month > 12 || day < 1 || day > 31) {
+        console.warn('Invalid date values in formatDate:', dateString, { year, month, day });
+        return '';
+    }
     
     // Format as MM/DD/YYYY
     const monthStr = month.toString().padStart(2, '0');
@@ -119,14 +139,29 @@ export const getLocalDateString = (date = new Date()) => {
  * Converts a UTC date string (YYYY-MM-DD) to local date string (YYYY-MM-DD)
  * This is useful when displaying dates from the backend that are stored in UTC
  * 
- * @param {string} utcDateString - Date string in YYYY-MM-DD format (UTC)
+ * @param {string} utcDateString - Date string in YYYY-MM-DD format or ISO format (UTC)
  * @returns {string} Date string in YYYY-MM-DD format (local timezone)
  */
 export const utcDateToLocalDateString = (utcDateString) => {
     if (!utcDateString) return '';
     
+    // Extract date part if it's an ISO string (e.g., "2025-01-26T00:00:00.000Z")
+    const datePart = utcDateString.split('T')[0];
+    
+    // Validate the date part is in YYYY-MM-DD format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+        console.warn('Invalid date format:', utcDateString);
+        return '';
+    }
+    
     // Parse the UTC date string as UTC midnight
-    const utcDate = new Date(utcDateString + 'T00:00:00Z');
+    const utcDate = new Date(datePart + 'T00:00:00Z');
+    
+    // Check if date is valid
+    if (isNaN(utcDate.getTime())) {
+        console.warn('Invalid date:', utcDateString);
+        return '';
+    }
     
     // Convert to local date string
     return getLocalDateString(utcDate);
