@@ -11,6 +11,8 @@ import invoicesRoutes from './routes/invoices.js';
 import paymentsRoutes from './routes/payments.js';
 import settingsRoutes from './routes/settings.js';
 import statementsRoutes from './routes/statements.js';
+import legacyImportRoutes from './routes/legacyImport.js';
+import expensesRoutes from './routes/expenses.js';
 
 dotenv.config();
 
@@ -27,6 +29,16 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'InvoiceOps API is running' });
 });
 
+// Server timezone endpoint
+app.get('/api/server-timezone', (req, res) => {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const offset = new Date().getTimezoneOffset();
+  res.json({ 
+    timezone,
+    offset: -offset // Convert to positive for east of UTC
+  });
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientsRoutes);
@@ -36,6 +48,8 @@ app.use('/api/invoices', invoicesRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/statements', statementsRoutes);
+app.use('/api/legacy-import', legacyImportRoutes);
+app.use('/api/expenses', expensesRoutes);
 
 // 404 handler
 app.use((req, res) => {
