@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
     DollarSign,
@@ -20,6 +20,7 @@ import {
     ChevronDown,
     ChevronRight
 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import NewExpenseModal from './NewExpenseModal';
 
@@ -34,6 +35,11 @@ const ExpenseList = () => {
     const [editingExpense, setEditingExpense] = useState(null);
     const [showMonthlyView, setShowMonthlyView] = useState(false);
     const [expandedMonths, setExpandedMonths] = useState(new Set());
+    const [chartColors, setChartColors] = useState({
+        foreground: '#1d1d1f',
+        border: '#d2d2d7',
+        cardBg: '#ffffff'
+    });
 
     // Filters
     const [filters, setFilters] = useState({
@@ -64,7 +70,59 @@ const ExpenseList = () => {
 
     useEffect(() => {
         fetchData();
+        
+        // Get computed CSS variable values for chart colors
+        const root = document.documentElement;
+        const computedStyle = getComputedStyle(root);
+        setChartColors({
+            foreground: computedStyle.getPropertyValue('--foreground').trim() || '#1d1d1f',
+            border: computedStyle.getPropertyValue('--border').trim() || '#d2d2d7',
+            cardBg: computedStyle.getPropertyValue('--card-bg').trim() || '#ffffff'
+        });
     }, [filters]);
+
+    // Calculate chart data for expenses over last 12 months
+    const chartData = useMemo(() => {
+        if (!expenses.length) {
+            return [];
+        }
+
+        const now = new Date();
+        const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1); // Start of current month
+        
+        // Initialize monthly data structure for last 12 months (including current month)
+        const monthlyData = {};
+        for (let i = 11; i >= 0; i--) {
+            const date = new Date(currentMonth);
+            date.setMonth(date.getMonth() - i);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            monthlyData[monthKey] = {
+                month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                expenses: 0
+            };
+        }
+
+        // Calculate expenses (net of refunds) by expense date
+        expenses.forEach(exp => {
+            const expDate = new Date(exp.expense_date);
+            const monthKey = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}`;
+            if (monthlyData[monthKey]) {
+                const amount = (exp.total_cents || (exp.price_cents * (exp.quantity || 1))) / 100;
+                // Refunds are negative, expenses are positive
+                if (exp.is_refund) {
+                    monthlyData[monthKey].expenses -= Math.abs(amount);
+                } else {
+                    monthlyData[monthKey].expenses += amount;
+                }
+            }
+        });
+
+        // Convert to array and round values
+        return Object.values(monthlyData).map(data => ({
+            ...data,
+            expenses: Math.round(data.expenses * 100) / 100
+        }));
+    }, [expenses]);
 
     const handleDelete = async (id) => {
         const expense = expenses.find(e => e.id === id);
@@ -399,6 +457,76 @@ const ExpenseList = () => {
                     </div>
                 </div>
             )}
+
+            {/* Expenses Chart */}
+            <div style={{ marginBottom: '2rem' }}>
+                <h2 style={{
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    color: 'var(--foreground)',
+                    marginBottom: '1rem',
+                    letterSpacing: '-0.01em'
+                }}>
+                    Expenses (Last 12 Months)
+                </h2>
+                <div style={{
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--card-bg)',
+                    padding: '1.5rem'
+                }}>
+                    {chartData.length === 0 ? (
+                        <div style={{
+                            padding: '3rem 1.5rem',
+                            textAlign: 'center',
+                            color: 'var(--foreground)',
+                            opacity: 0.4,
+                            fontSize: '0.875rem'
+                        }}>
+                            No data available for chart
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height={300}>
+                            <LineChart
+                                data={chartData}
+                                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.border} opacity={0.3} />
+                                <XAxis
+                                    dataKey="month"
+                                    stroke={chartColors.foreground}
+                                    style={{ fontSize: '0.75rem', opacity: 0.7 }}
+                                />
+                                <YAxis
+                                    stroke={chartColors.foreground}
+                                    style={{ fontSize: '0.75rem', opacity: 0.7 }}
+                                    tickFormatter={(value) => `$${value.toLocaleString()}`}
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: chartColors.cardBg,
+                                        border: `1px solid ${chartColors.border}`,
+                                        borderRadius: '6px',
+                                        color: chartColors.foreground
+                                    }}
+                                    formatter={(value) => `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                />
+                                <Legend
+                                    wrapperStyle={{ fontSize: '0.8125rem', color: chartColors.foreground }}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="expenses"
+                                    stroke="hsl(0, 84%, 60%)"
+                                    strokeWidth={2}
+                                    dot={{ fill: 'hsl(0, 84%, 60%)', r: 4 }}
+                                    name="Expenses"
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
+            </div>
 
             {/* Filters */}
             <div style={{ marginBottom: '1.5rem' }}>
