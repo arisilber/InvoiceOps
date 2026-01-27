@@ -513,6 +513,73 @@ const api = {
         window.URL.revokeObjectURL(url);
     },
 
+    // Expenses
+    getExpenses: async (filters = {}) => {
+        const params = new URLSearchParams();
+        if (filters.vendor) {
+            params.append('vendor', filters.vendor);
+        }
+        if (filters.expense_date_from) {
+            params.append('expense_date_from', filters.expense_date_from);
+        }
+        if (filters.expense_date_to) {
+            params.append('expense_date_to', filters.expense_date_to);
+        }
+        if (filters.is_refund !== undefined) {
+            params.append('is_refund', filters.is_refund.toString());
+        }
+        const queryString = params.toString();
+        const url = queryString ? `${API_BASE_URL}/expenses?${queryString}` : `${API_BASE_URL}/expenses`;
+        return makeRequest(url);
+    },
+    getExpense: async (id) => {
+        return makeRequest(`${API_BASE_URL}/expenses/${id}`);
+    },
+    createExpense: async (expenseData) => {
+        return makeRequest(`${API_BASE_URL}/expenses`, {
+            method: 'POST',
+            body: JSON.stringify(expenseData),
+        });
+    },
+    updateExpense: async (id, expenseData) => {
+        return makeRequest(`${API_BASE_URL}/expenses/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(expenseData),
+        });
+    },
+    deleteExpense: async (id) => {
+        return makeRequest(`${API_BASE_URL}/expenses/${id}`, {
+            method: 'DELETE',
+        });
+    },
+    getExpenseStats: async (filters = {}) => {
+        const params = new URLSearchParams();
+        if (filters.expense_date_from) {
+            params.append('expense_date_from', filters.expense_date_from);
+        }
+        if (filters.expense_date_to) {
+            params.append('expense_date_to', filters.expense_date_to);
+        }
+        const queryString = params.toString();
+        const url = queryString ? `${API_BASE_URL}/expenses/stats/summary?${queryString}` : `${API_BASE_URL}/expenses/stats/summary`;
+        return makeRequest(url);
+    },
+    getPreviousExpensePrice: async (item) => {
+        if (!item || !item.trim()) {
+            return { price_cents: null };
+        }
+        const params = new URLSearchParams({ item: item.trim() });
+        return makeRequest(`${API_BASE_URL}/expenses/previous-price?${params.toString()}`);
+    },
+    getUniqueVendors: async () => {
+        const data = await makeRequest(`${API_BASE_URL}/expenses/vendors/unique`);
+        return data.vendors;
+    },
+    getUniqueItems: async () => {
+        const data = await makeRequest(`${API_BASE_URL}/expenses/items/unique`);
+        return data.items;
+    },
+
     // Legacy Import
     importLegacyInvoices: async (invoices) => {
         return makeRequest(`${API_BASE_URL}/legacy-import/invoices`, {

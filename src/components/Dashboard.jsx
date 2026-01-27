@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Loader2, RefreshCw, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 
 const StatCard = ({ title, value, onClick, label }) => (
@@ -57,6 +58,19 @@ const StatCard = ({ title, value, onClick, label }) => (
 
 const Dashboard = ({ onExploreInvoices }) => {
     const navigate = useNavigate();
+    const [accountingBasis, setAccountingBasis] = useState('accrual'); // 'cash', 'accrual', or 'time'
+    const [chartColors, setChartColors] = useState({
+        foreground: '#1d1d1f',
+        border: '#d2d2d7',
+        cardBg: '#ffffff'
+    });
+    const [rawData, setRawData] = useState({
+        invoices: [],
+        clients: [],
+        timeEntries: [],
+        payments: [],
+        expenses: []
+    });
     const [stats, setStats] = useState({
         totalRevenue: 0,
         pendingAmount: 0,
@@ -76,18 +90,29 @@ const Dashboard = ({ onExploreInvoices }) => {
         invoicedLast30Days: 0,
         invoicedLast60Days: 0,
         invoicedLast90Days: 0,
-        invoicedAllTime: 0
+        invoicedAllTime: 0,
+        invoicedPrev30Days: 0,
+        invoicedPrev60Days: 0,
+        invoicedPrev90Days: 0,
+        expensesLast30Days: 0,
+        expensesLast60Days: 0,
+        expensesLast90Days: 0,
+        expensesAllTime: 0,
+        expensesPrev30Days: 0,
+        expensesPrev60Days: 0,
+        expensesPrev90Days: 0
     });
     const [loading, setLoading] = useState(true);
 
     const fetchStats = async () => {
         try {
             setLoading(true);
-            const [invoices, clients, timeEntries, payments] = await Promise.all([
+            const [invoices, clients, timeEntries, payments, expenses] = await Promise.all([
                 api.getInvoices(),
                 api.getClients(),
                 api.getTimeEntries(),
-                api.getPayments()
+                api.getPayments(),
+                api.getExpenses()
             ]);
 
             const now = new Date();
@@ -178,11 +203,18 @@ const Dashboard = ({ onExploreInvoices }) => {
             sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
             const ninetyDaysAgo = new Date(now);
             ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+            const oneTwentyDaysAgo = new Date(now);
+            oneTwentyDaysAgo.setDate(oneTwentyDaysAgo.getDate() - 120);
+            const oneEightyDaysAgo = new Date(now);
+            oneEightyDaysAgo.setDate(oneEightyDaysAgo.getDate() - 180);
 
             let invoicedLast30Days = 0;
             let invoicedLast60Days = 0;
             let invoicedLast90Days = 0;
             let invoicedAllTime = 0;
+            let invoicedPrev30Days = 0; // 30-60 days ago
+            let invoicedPrev60Days = 0; // 60-120 days ago
+            let invoicedPrev90Days = 0; // 90-180 days ago
 
             // Only count non-draft invoices for invoiced amounts
             invoices.filter(inv => inv.status !== 'draft').forEach(inv => {
@@ -198,6 +230,54 @@ const Dashboard = ({ onExploreInvoices }) => {
                 }
                 if (invDate >= ninetyDaysAgo) {
                     invoicedLast90Days += amount;
+                }
+                // Previous periods
+                if (invDate >= sixtyDaysAgo && invDate < thirtyDaysAgo) {
+                    invoicedPrev30Days += amount;
+                }
+                if (invDate >= oneTwentyDaysAgo && invDate < sixtyDaysAgo) {
+                    invoicedPrev60Days += amount;
+                }
+                if (invDate >= oneEightyDaysAgo && invDate < ninetyDaysAgo) {
+                    invoicedPrev90Days += amount;
+                }
+            });
+
+            // Calculate expenses by period (net of refunds)
+            let expensesLast30Days = 0;
+            let expensesLast60Days = 0;
+            let expensesLast90Days = 0;
+            let expensesAllTime = 0;
+            let expensesPrev30Days = 0; // 30-60 days ago
+            let expensesPrev60Days = 0; // 60-120 days ago
+            let expensesPrev90Days = 0; // 90-180 days ago
+
+            expenses.forEach(exp => {
+                const expDate = new Date(exp.expense_date);
+                const amount = (exp.total_cents || (exp.price_cents * (exp.quantity || 1))) / 100;
+                // Refunds are negative, expenses are positive
+                const netAmount = exp.is_refund ? -Math.abs(amount) : amount;
+                
+                expensesAllTime += netAmount;
+                
+                if (expDate >= thirtyDaysAgo) {
+                    expensesLast30Days += netAmount;
+                }
+                if (expDate >= sixtyDaysAgo) {
+                    expensesLast60Days += netAmount;
+                }
+                if (expDate >= ninetyDaysAgo) {
+                    expensesLast90Days += netAmount;
+                }
+                // Previous periods
+                if (expDate >= sixtyDaysAgo && expDate < thirtyDaysAgo) {
+                    expensesPrev30Days += netAmount;
+                }
+                if (expDate >= oneTwentyDaysAgo && expDate < sixtyDaysAgo) {
+                    expensesPrev60Days += netAmount;
+                }
+                if (expDate >= oneEightyDaysAgo && expDate < ninetyDaysAgo) {
+                    expensesPrev90Days += netAmount;
                 }
             });
 
@@ -217,6 +297,15 @@ const Dashboard = ({ onExploreInvoices }) => {
                 .sort((a, b) => b.revenue - a.revenue)
                 .slice(0, 5);
 
+            // Store raw data for chart calculation
+            setRawData({
+                invoices,
+                clients,
+                timeEntries,
+                payments,
+                expenses
+            });
+
             setStats({
                 ...totals,
                 totalClients: clients.length,
@@ -232,7 +321,17 @@ const Dashboard = ({ onExploreInvoices }) => {
                 invoicedLast30Days: Math.round(invoicedLast30Days * 100) / 100,
                 invoicedLast60Days: Math.round(invoicedLast60Days * 100) / 100,
                 invoicedLast90Days: Math.round(invoicedLast90Days * 100) / 100,
-                invoicedAllTime: Math.round(invoicedAllTime * 100) / 100
+                invoicedAllTime: Math.round(invoicedAllTime * 100) / 100,
+                invoicedPrev30Days: Math.round(invoicedPrev30Days * 100) / 100,
+                invoicedPrev60Days: Math.round(invoicedPrev60Days * 100) / 100,
+                invoicedPrev90Days: Math.round(invoicedPrev90Days * 100) / 100,
+                expensesLast30Days: Math.round(expensesLast30Days * 100) / 100,
+                expensesLast60Days: Math.round(expensesLast60Days * 100) / 100,
+                expensesLast90Days: Math.round(expensesLast90Days * 100) / 100,
+                expensesAllTime: Math.round(expensesAllTime * 100) / 100,
+                expensesPrev30Days: Math.round(expensesPrev30Days * 100) / 100,
+                expensesPrev60Days: Math.round(expensesPrev60Days * 100) / 100,
+                expensesPrev90Days: Math.round(expensesPrev90Days * 100) / 100
             });
         } catch (err) {
             console.error('Error fetching dashboard stats:', err);
@@ -241,8 +340,102 @@ const Dashboard = ({ onExploreInvoices }) => {
         }
     };
 
+    // Calculate chart data based on accounting basis and raw data
+    const chartData = useMemo(() => {
+        const { invoices, clients, timeEntries, payments, expenses } = rawData;
+        
+        if (!invoices.length && !payments.length && !timeEntries.length) {
+            return [];
+        }
+
+        const now = new Date();
+        const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1); // Start of current month
+        
+        // Initialize monthly data structure for last 12 months (including current month)
+        const monthlyData = {};
+        for (let i = 11; i >= 0; i--) {
+            const date = new Date(currentMonth);
+            date.setMonth(date.getMonth() - i);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            monthlyData[monthKey] = {
+                month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                income: 0,
+                expenses: 0
+            };
+        }
+
+        // Calculate income based on accounting basis
+        if (accountingBasis === 'cash') {
+            // Cash basis: Use payments (by payment_date)
+            payments.forEach(payment => {
+                const paymentDate = new Date(payment.payment_date);
+                const monthKey = `${paymentDate.getFullYear()}-${String(paymentDate.getMonth() + 1).padStart(2, '0')}`;
+                if (monthlyData[monthKey]) {
+                    monthlyData[monthKey].income += payment.amount_cents / 100;
+                }
+            });
+        } else if (accountingBasis === 'time') {
+            // Time tracked basis: Use time entries (by work_date)
+            timeEntries.forEach(entry => {
+                const workDate = new Date(entry.work_date);
+                const monthKey = `${workDate.getFullYear()}-${String(workDate.getMonth() + 1).padStart(2, '0')}`;
+                if (monthlyData[monthKey]) {
+                    const client = clients.find(c => c.id === entry.client_id);
+                    if (client) {
+                        const hourlyRateCents = client.hourly_rate_cents || 0;
+                        const discountPercent = client.discount_percent || 0;
+                        const preDiscountAmountCents = Math.round((entry.minutes_spent / 60) * hourlyRateCents);
+                        const discountAmountCents = Math.round((preDiscountAmountCents * discountPercent) / 100);
+                        const amount = (preDiscountAmountCents - discountAmountCents) / 100;
+                        monthlyData[monthKey].income += amount;
+                    }
+                }
+            });
+        } else {
+            // Accrual basis: Use invoices (by invoice_date, excluding drafts)
+            invoices.filter(inv => inv.status !== 'draft').forEach(inv => {
+                const invDate = new Date(inv.invoice_date);
+                const monthKey = `${invDate.getFullYear()}-${String(invDate.getMonth() + 1).padStart(2, '0')}`;
+                if (monthlyData[monthKey]) {
+                    monthlyData[monthKey].income += inv.total_cents / 100;
+                }
+            });
+        }
+
+        // Calculate expenses (net of refunds) by expense date
+        expenses.forEach(exp => {
+            const expDate = new Date(exp.expense_date);
+            const monthKey = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}`;
+            if (monthlyData[monthKey]) {
+                const amount = (exp.total_cents || (exp.price_cents * (exp.quantity || 1))) / 100;
+                // Refunds are negative, expenses are positive
+                if (exp.is_refund) {
+                    monthlyData[monthKey].expenses -= Math.abs(amount);
+                } else {
+                    monthlyData[monthKey].expenses += amount;
+                }
+            }
+        });
+
+        // Convert to array and round values
+        return Object.values(monthlyData).map(data => ({
+            ...data,
+            income: Math.round(data.income * 100) / 100,
+            expenses: Math.round(data.expenses * 100) / 100
+        }));
+    }, [rawData, accountingBasis]);
+
     useEffect(() => {
         fetchStats();
+        
+        // Get computed CSS variable values for chart colors
+        const root = document.documentElement;
+        const computedStyle = getComputedStyle(root);
+        setChartColors({
+            foreground: computedStyle.getPropertyValue('--foreground').trim() || '#1d1d1f',
+            border: computedStyle.getPropertyValue('--border').trim() || '#d2d2d7',
+            cardBg: computedStyle.getPropertyValue('--card-bg').trim() || '#ffffff'
+        });
     }, []);
 
     if (loading) {
@@ -269,6 +462,26 @@ const Dashboard = ({ onExploreInvoices }) => {
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    const calculateComparison = (current, previous) => {
+        // Handle zero previous value
+        if (previous === 0) {
+            if (current > 0) return { isHigher: true, percent: 100, text: 'vs previous period' };
+            if (current < 0) return { isHigher: false, percent: 100, text: 'vs previous period' };
+            return null; // Both zero, no comparison
+        }
+        
+        // Calculate percentage change
+        const percent = ((current - previous) / Math.abs(previous)) * 100;
+        const isHigher = current > previous;
+        const percentAbs = Math.abs(percent);
+        
+        return {
+            isHigher,
+            percent: percentAbs,
+            text: `${isHigher ? 'Higher' : 'Lower'} by ${percentAbs.toFixed(1)}%`
+        };
     };
 
     return (
@@ -658,6 +871,165 @@ const Dashboard = ({ onExploreInvoices }) => {
                 </div>
             </div>
 
+            {/* Expenses vs Income Chart */}
+            <div>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '1rem'
+                }}>
+                    <h2 style={{
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        color: 'var(--foreground)',
+                        letterSpacing: '-0.01em'
+                    }}>
+                        Expenses vs Income (Last 12 Months)
+                    </h2>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem'
+                    }}>
+                        <span style={{
+                            fontSize: '0.8125rem',
+                            color: 'var(--foreground)',
+                            opacity: 0.7,
+                            fontWeight: 500
+                        }}>
+                            Accounting Basis:
+                        </span>
+                        <div style={{
+                            display: 'flex',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            overflow: 'hidden',
+                            backgroundColor: 'var(--card-bg)'
+                        }}>
+                            <button
+                                onClick={() => setAccountingBasis('cash')}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 500,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    backgroundColor: accountingBasis === 'cash' ? 'var(--primary)' : 'transparent',
+                                    color: accountingBasis === 'cash' ? 'white' : 'var(--foreground)',
+                                    transition: 'all 0.15s ease'
+                                }}
+                            >
+                                Cash
+                            </button>
+                            <button
+                                onClick={() => setAccountingBasis('accrual')}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 500,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    backgroundColor: accountingBasis === 'accrual' ? 'var(--primary)' : 'transparent',
+                                    color: accountingBasis === 'accrual' ? 'white' : 'var(--foreground)',
+                                    transition: 'all 0.15s ease',
+                                    borderLeft: '1px solid var(--border)'
+                                }}
+                            >
+                                Accrual
+                            </button>
+                            <button
+                                onClick={() => setAccountingBasis('time')}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 500,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    backgroundColor: accountingBasis === 'time' ? 'var(--primary)' : 'transparent',
+                                    color: accountingBasis === 'time' ? 'white' : 'var(--foreground)',
+                                    transition: 'all 0.15s ease',
+                                    borderLeft: '1px solid var(--border)'
+                                }}
+                            >
+                                Time Tracked
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div style={{
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--card-bg)',
+                    padding: '1.5rem'
+                }}>
+                    {chartData.length === 0 ? (
+                        <div style={{
+                            padding: '3rem 1.5rem',
+                            textAlign: 'center',
+                            color: 'var(--foreground)',
+                            opacity: 0.4,
+                            fontSize: '0.875rem'
+                        }}>
+                            No data available for chart
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height={300}>
+                            <LineChart
+                                data={chartData}
+                                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.border} opacity={0.3} />
+                                <XAxis
+                                    dataKey="month"
+                                    stroke={chartColors.foreground}
+                                    style={{ fontSize: '0.75rem', opacity: 0.7 }}
+                                />
+                                <YAxis
+                                    stroke={chartColors.foreground}
+                                    style={{ fontSize: '0.75rem', opacity: 0.7 }}
+                                    tickFormatter={(value) => `$${value.toLocaleString()}`}
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: chartColors.cardBg,
+                                        border: `1px solid ${chartColors.border}`,
+                                        borderRadius: '6px',
+                                        color: chartColors.foreground
+                                    }}
+                                    formatter={(value) => `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                />
+                                <Legend
+                                    wrapperStyle={{ fontSize: '0.8125rem', color: chartColors.foreground }}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="income"
+                                    stroke="hsl(142, 71%, 45%)"
+                                    strokeWidth={2}
+                                    dot={{ fill: 'hsl(142, 71%, 45%)', r: 4 }}
+                                    name={
+                                        accountingBasis === 'cash' 
+                                            ? 'Payments Received' 
+                                            : accountingBasis === 'time'
+                                            ? 'Time Tracked Value'
+                                            : 'Invoices Issued'
+                                    }
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="expenses"
+                                    stroke="hsl(0, 84%, 60%)"
+                                    strokeWidth={2}
+                                    dot={{ fill: 'hsl(0, 84%, 60%)', r: 4 }}
+                                    name="Expenses"
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
+            </div>
+
             {/* Time Period Summary */}
             <div>
                 <h2 style={{
@@ -696,10 +1068,27 @@ const Dashboard = ({ onExploreInvoices }) => {
                                 fontSize: '1.5rem',
                                 fontWeight: 600,
                                 color: 'var(--foreground)',
-                                letterSpacing: '-0.02em'
+                                letterSpacing: '-0.02em',
+                                marginBottom: '0.25rem'
                             }}>
                                 {formatCurrency(stats.invoicedLast30Days)}
                             </div>
+                            {(() => {
+                                const comparison = calculateComparison(stats.invoicedLast30Days, stats.invoicedPrev30Days);
+                                if (!comparison) return null;
+                                return (
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        color: comparison.isHigher ? 'hsl(142, 71%, 45%)' : 'hsl(0, 84%, 60%)',
+                                        fontWeight: 500,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem'
+                                    }}>
+                                        {comparison.isHigher ? '↑' : '↓'} {comparison.text}
+                                    </div>
+                                );
+                            })()}
                         </div>
                         <div>
                             <div style={{
@@ -717,10 +1106,27 @@ const Dashboard = ({ onExploreInvoices }) => {
                                 fontSize: '1.5rem',
                                 fontWeight: 600,
                                 color: 'var(--foreground)',
-                                letterSpacing: '-0.02em'
+                                letterSpacing: '-0.02em',
+                                marginBottom: '0.25rem'
                             }}>
                                 {formatCurrency(stats.invoicedLast60Days)}
                             </div>
+                            {(() => {
+                                const comparison = calculateComparison(stats.invoicedLast60Days, stats.invoicedPrev60Days);
+                                if (!comparison) return null;
+                                return (
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        color: comparison.isHigher ? 'hsl(142, 71%, 45%)' : 'hsl(0, 84%, 60%)',
+                                        fontWeight: 500,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem'
+                                    }}>
+                                        {comparison.isHigher ? '↑' : '↓'} {comparison.text}
+                                    </div>
+                                );
+                            })()}
                         </div>
                         <div>
                             <div style={{
@@ -738,10 +1144,27 @@ const Dashboard = ({ onExploreInvoices }) => {
                                 fontSize: '1.5rem',
                                 fontWeight: 600,
                                 color: 'var(--foreground)',
-                                letterSpacing: '-0.02em'
+                                letterSpacing: '-0.02em',
+                                marginBottom: '0.25rem'
                             }}>
                                 {formatCurrency(stats.invoicedLast90Days)}
                             </div>
+                            {(() => {
+                                const comparison = calculateComparison(stats.invoicedLast90Days, stats.invoicedPrev90Days);
+                                if (!comparison) return null;
+                                return (
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        color: comparison.isHigher ? 'hsl(142, 71%, 45%)' : 'hsl(0, 84%, 60%)',
+                                        fontWeight: 500,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem'
+                                    }}>
+                                        {comparison.isHigher ? '↑' : '↓'} {comparison.text}
+                                    </div>
+                                );
+                            })()}
                         </div>
                         <div>
                             <div style={{
@@ -762,6 +1185,170 @@ const Dashboard = ({ onExploreInvoices }) => {
                                 letterSpacing: '-0.02em'
                             }}>
                                 {formatCurrency(stats.invoicedAllTime)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Expenses by Period */}
+            <div>
+                <h2 style={{
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    color: 'var(--foreground)',
+                    marginBottom: '1rem',
+                    letterSpacing: '-0.01em'
+                }}>
+                    Expenses by Period
+                </h2>
+                <div style={{
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    backgroundColor: 'var(--card-bg)',
+                    padding: '1.5rem'
+                }}>
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                        gap: '2rem'
+                    }}>
+                        <div>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--foreground)',
+                                opacity: 0.5,
+                                marginBottom: '0.5rem',
+                                fontWeight: 500,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>
+                                Last 30 Days
+                            </div>
+                            <div style={{
+                                fontSize: '1.5rem',
+                                fontWeight: 600,
+                                color: 'var(--foreground)',
+                                letterSpacing: '-0.02em',
+                                marginBottom: '0.25rem'
+                            }}>
+                                {formatCurrency(stats.expensesLast30Days)}
+                            </div>
+                            {(() => {
+                                const comparison = calculateComparison(stats.expensesLast30Days, stats.expensesPrev30Days);
+                                if (!comparison) return null;
+                                // For expenses, lower is better, so we reverse the color logic
+                                return (
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        color: comparison.isHigher ? 'hsl(0, 84%, 60%)' : 'hsl(142, 71%, 45%)',
+                                        fontWeight: 500,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem'
+                                    }}>
+                                        {comparison.isHigher ? '↑' : '↓'} {comparison.text}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                        <div>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--foreground)',
+                                opacity: 0.5,
+                                marginBottom: '0.5rem',
+                                fontWeight: 500,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>
+                                Last 60 Days
+                            </div>
+                            <div style={{
+                                fontSize: '1.5rem',
+                                fontWeight: 600,
+                                color: 'var(--foreground)',
+                                letterSpacing: '-0.02em',
+                                marginBottom: '0.25rem'
+                            }}>
+                                {formatCurrency(stats.expensesLast60Days)}
+                            </div>
+                            {(() => {
+                                const comparison = calculateComparison(stats.expensesLast60Days, stats.expensesPrev60Days);
+                                if (!comparison) return null;
+                                // For expenses, lower is better, so we reverse the color logic
+                                return (
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        color: comparison.isHigher ? 'hsl(0, 84%, 60%)' : 'hsl(142, 71%, 45%)',
+                                        fontWeight: 500,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem'
+                                    }}>
+                                        {comparison.isHigher ? '↑' : '↓'} {comparison.text}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                        <div>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--foreground)',
+                                opacity: 0.5,
+                                marginBottom: '0.5rem',
+                                fontWeight: 500,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>
+                                Last 90 Days
+                            </div>
+                            <div style={{
+                                fontSize: '1.5rem',
+                                fontWeight: 600,
+                                color: 'var(--foreground)',
+                                letterSpacing: '-0.02em',
+                                marginBottom: '0.25rem'
+                            }}>
+                                {formatCurrency(stats.expensesLast90Days)}
+                            </div>
+                            {(() => {
+                                const comparison = calculateComparison(stats.expensesLast90Days, stats.expensesPrev90Days);
+                                if (!comparison) return null;
+                                // For expenses, lower is better, so we reverse the color logic
+                                return (
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        color: comparison.isHigher ? 'hsl(0, 84%, 60%)' : 'hsl(142, 71%, 45%)',
+                                        fontWeight: 500,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem'
+                                    }}>
+                                        {comparison.isHigher ? '↑' : '↓'} {comparison.text}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                        <div>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--foreground)',
+                                opacity: 0.5,
+                                marginBottom: '0.5rem',
+                                fontWeight: 500,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>
+                                All Time
+                            </div>
+                            <div style={{
+                                fontSize: '1.5rem',
+                                fontWeight: 600,
+                                color: 'var(--foreground)',
+                                letterSpacing: '-0.02em'
+                            }}>
+                                {formatCurrency(stats.expensesAllTime)}
                             </div>
                         </div>
                     </div>
