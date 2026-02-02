@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Mail, Phone, Building2, User, MoreVertical, ChevronRight, Loader2, BarChart3, Edit2, Trash2 } from 'lucide-react';
+import { Search, Plus, Mail, Phone, Building2, User, MoreVertical, ChevronRight, Loader2, BarChart3, Edit2, Trash2, Target, CheckCircle } from 'lucide-react';
 import api from '../services/api';
+import { usePrioritizedClient } from '../contexts/PrioritizedClientContext';
 
 const ClientList = ({ onNewClient, onEditClient }) => {
     const navigate = useNavigate();
+    const { currentClient, cycleToNext, refresh: refreshPrioritized } = usePrioritizedClient();
     const [searchTerm, setSearchTerm] = useState('');
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeMenu, setActiveMenu] = useState(null);
     const [deletingClient, setDeletingClient] = useState(null);
+    const [cycling, setCycling] = useState(false);
 
     useEffect(() => {
         fetchClients();
@@ -39,11 +42,26 @@ const ClientList = ({ onNewClient, onEditClient }) => {
                 totalBilled: 0 // Placeholder
             })));
             setError(null);
+            refreshPrioritized();
         } catch (err) {
             console.error('Error fetching clients:', err);
             setError('Failed to load clients. Please try again later.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleMarkDoneAndNext = async (e, client) => {
+        e.stopPropagation();
+        if (cycling) return;
+        try {
+            setCycling(true);
+            await cycleToNext();
+            setActiveMenu(null);
+        } catch (err) {
+            alert(err.message || 'Failed to cycle to next client.');
+        } finally {
+            setCycling(false);
         }
     };
 
@@ -409,12 +427,38 @@ const ClientList = ({ onNewClient, onEditClient }) => {
                                             </div>
                                             <div>
                                                 <div style={{
-                                                    fontSize: '15px',
-                                                    fontWeight: '500',
-                                                    color: 'var(--foreground)',
-                                                    marginBottom: '2px'
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    flexWrap: 'wrap'
                                                 }}>
-                                                    {client.name}
+                                                    <span style={{
+                                                        fontSize: '15px',
+                                                        fontWeight: '500',
+                                                        color: 'var(--foreground)',
+                                                        marginBottom: '2px'
+                                                    }}>
+                                                        {client.name}
+                                                    </span>
+                                                    {currentClient && client.id === currentClient.id && (
+                                                        <span style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                            padding: '2px 8px',
+                                                            fontSize: '11px',
+                                                            fontWeight: '600',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.03em',
+                                                            color: 'var(--primary)',
+                                                            backgroundColor: 'var(--ring)',
+                                                            border: '1px solid var(--primary)',
+                                                            borderRadius: '6px'
+                                                        }}>
+                                                            <Target size={10} />
+                                                            Prioritizing
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 {client.phone && (
                                                     <div style={{
@@ -615,6 +659,36 @@ const ClientList = ({ onNewClient, onEditClient }) => {
                                                         <BarChart3 size={16} style={{ opacity: 0.6 }} />
                                                         View Dashboard
                                                     </button>
+                                                    {currentClient && client.id === currentClient.id && (
+                                                        <button
+                                                            onClick={(e) => handleMarkDoneAndNext(e, client)}
+                                                            disabled={cycling}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '12px 16px',
+                                                                textAlign: 'left',
+                                                                backgroundColor: 'transparent',
+                                                                border: 'none',
+                                                                color: 'var(--primary)',
+                                                                cursor: cycling ? 'not-allowed' : 'pointer',
+                                                                fontSize: '14px',
+                                                                fontFamily: 'inherit',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '10px',
+                                                                transition: 'background-color 0.1s ease',
+                                                                borderTop: '1px solid var(--border)',
+                                                                opacity: cycling ? 0.6 : 1
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                if (!cycling) e.target.style.backgroundColor = 'var(--background)';
+                                                            }}
+                                                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                                        >
+                                                            <CheckCircle size={16} />
+                                                            {cycling ? 'Cycling…' : 'Mark done & next'}
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();

@@ -1,12 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag, LogOut, DollarSign, FileStack, Upload, Receipt } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, PlusCircle, Clock, Tag, LogOut, DollarSign, FileStack, Upload, Receipt, Target, CheckCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePrioritizedClient } from '../contexts/PrioritizedClientContext';
 import api from '../services/api';
 
 const Sidebar = ({ onNewInvoice }) => {
   const { user, logout } = useAuth();
+  const { currentClient, loading: prioritizedLoading, cycleToNext } = usePrioritizedClient();
+  const [cycling, setCycling] = useState(false);
   const location = useLocation();
+
+  const handleMarkDoneAndNext = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (cycling || !currentClient) return;
+    try {
+      setCycling(true);
+      await cycleToNext();
+    } finally {
+      setCycling(false);
+    }
+  };
   const [currentTime, setCurrentTime] = useState(new Date());
   const [serverTimezone, setServerTimezone] = useState(null);
 
@@ -207,6 +222,73 @@ const Sidebar = ({ onNewInvoice }) => {
           );
         })}
       </nav>
+
+      {/* Prioritized client (cycle so no client is neglected) */}
+      {!prioritizedLoading && currentClient && (
+        <div style={{
+          padding: '12px 8px',
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}>
+          <div style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            color: 'var(--foreground)',
+            opacity: 0.5,
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            paddingLeft: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}>
+            <Target size={12} />
+            Prioritizing
+          </div>
+          <Link
+            to={`/clients/${currentClient.id}/dashboard`}
+            style={{
+              display: 'block',
+              padding: '10px 12px',
+              backgroundColor: 'var(--ring)',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              color: 'var(--foreground)',
+              fontSize: '13px',
+              fontWeight: 500,
+              border: '1px solid var(--border)',
+            }}
+          >
+            <div style={{ marginBottom: '6px' }}>{currentClient.name}</div>
+            <button
+              type="button"
+              onClick={handleMarkDoneAndNext}
+              disabled={cycling}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '6px 10px',
+                fontSize: '12px',
+                fontWeight: 500,
+                backgroundColor: 'var(--primary)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: cycling ? 'not-allowed' : 'pointer',
+                opacity: cycling ? 0.7 : 1,
+              }}
+            >
+              {cycling ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+              {cycling ? 'Cycling…' : 'Done & next'}
+            </button>
+          </Link>
+        </div>
+      )}
 
       {/* Footer Actions */}
       <div style={{

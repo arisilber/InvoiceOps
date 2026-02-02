@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { PrioritizedClientProvider } from './contexts/PrioritizedClientContext';
 import { setAuthHelpers } from './services/api';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -104,12 +105,13 @@ function App() {
   }
 
   return (
-    <div style={{ display: 'flex' }}>
-      <Sidebar
-        onNewInvoice={() => setIsModalOpen(true)}
-      />
+    <PrioritizedClientProvider>
+      <div style={{ display: 'flex' }}>
+        <Sidebar
+          onNewInvoice={() => setIsModalOpen(true)}
+        />
 
-      <main style={{
+        <main style={{
         marginLeft: '240px',
         width: 'calc(100% - 240px)',
         minHeight: '100vh',
@@ -168,7 +170,8 @@ function App() {
         onClientAdded={handleClientAdded}
         initialData={editingClient}
       />
-    </div>
+      </div>
+    </PrioritizedClientProvider>
   );
 }
 

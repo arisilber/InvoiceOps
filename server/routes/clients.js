@@ -7,6 +7,79 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticateToken);
 
+// GET current prioritized client (for cycling so no client is neglected)
+router.get('/prioritized', async (req, res, next) => {
+  try {
+    const clientsResult = await query(
+      'SELECT id, name, email, type, hourly_rate_cents, discount_percent FROM clients ORDER BY name ASC'
+    );
+    const clients = clientsResult.rows;
+    if (clients.length === 0) {
+      return res.json({ client_id: null, client: null });
+    }
+
+    const settingsResult = await query(
+      "SELECT value FROM system_settings WHERE key = 'current_prioritized_client_id'"
+    );
+    let currentId = settingsResult.rows[0]?.value ? parseInt(settingsResult.rows[0].value, 10) : null;
+    const currentExists = currentId != null && clients.some((c) => c.id === currentId);
+    if (!currentExists) {
+      currentId = clients[0].id;
+      await query(
+        `INSERT INTO system_settings (key, value, updated_at)
+         VALUES ('current_prioritized_client_id', $1, CURRENT_TIMESTAMP)
+         ON CONFLICT (key)
+         DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP`,
+        [String(currentId)]
+      );
+    }
+
+    const client = clients.find((c) => c.id === currentId) || clients[0];
+    res.json({ client_id: client.id, client });
+  } catch (error) {
+    if (error.code === '42P01') {
+      return res.json({ client_id: null, client: null });
+    }
+    next(error);
+  }
+});
+
+// POST cycle to next prioritized client (alphabetically)
+router.post('/prioritized/cycle', async (req, res, next) => {
+  try {
+    const clientsResult = await query(
+      'SELECT id, name, email, type, hourly_rate_cents, discount_percent FROM clients ORDER BY name ASC'
+    );
+    const clients = clientsResult.rows;
+    if (clients.length === 0) {
+      return res.status(400).json({ error: 'No clients to cycle. Add clients first.' });
+    }
+
+    const settingsResult = await query(
+      "SELECT value FROM system_settings WHERE key = 'current_prioritized_client_id'"
+    );
+    let currentId = settingsResult.rows[0]?.value ? parseInt(settingsResult.rows[0].value, 10) : null;
+    const currentIndex = clients.findIndex((c) => c.id === currentId);
+    const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % clients.length : 0;
+    const nextClient = clients[nextIndex];
+
+    await query(
+      `INSERT INTO system_settings (key, value, updated_at)
+       VALUES ('current_prioritized_client_id', $1, CURRENT_TIMESTAMP)
+       ON CONFLICT (key)
+       DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP`,
+      [String(nextClient.id)]
+    );
+
+    res.json({ client_id: nextClient.id, client: nextClient });
+  } catch (error) {
+    if (error.code === '42P01') {
+      return res.status(500).json({ error: 'Settings not available.' });
+    }
+    next(error);
+  }
+});
+
 // GET all clients
 router.get('/', async (req, res, next) => {
   try {

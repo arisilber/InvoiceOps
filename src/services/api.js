@@ -89,6 +89,14 @@ const api = {
             method: 'DELETE',
         });
     },
+    getPrioritizedClient: async () => {
+        return makeRequest(`${API_BASE_URL}/clients/prioritized`);
+    },
+    cyclePrioritizedClient: async () => {
+        return makeRequest(`${API_BASE_URL}/clients/prioritized/cycle`, {
+            method: 'POST',
+        });
+    },
 
     // Invoices
     getInvoices: async (filters = {}) => {
