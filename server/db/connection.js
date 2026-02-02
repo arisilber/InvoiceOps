@@ -1,27 +1,16 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
 
-dotenv.config();
+// Load .env and override any existing env (e.g. DATABASE_URL from shell) so .env wins
+dotenv.config({ override: true });
 
 const { Pool } = pg;
 
-// Supabase connection configuration
-// Supports both hostname and IPv4 addresses
-// If DATABASE_URL is provided, use it (Supabase provides this)
-// Otherwise, use individual connection parameters
-let poolConfig;
+// When DB_HOST is set (e.g. localhost), always use individual params so local dev isn't overridden by DATABASE_URL from shell
+const useIndividualParams = process.env.DB_HOST != null && String(process.env.DB_HOST).trim() !== '';
 
-if (process.env.DATABASE_URL) {
-  // Use connection string (recommended for Supabase)
-  poolConfig = {
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DB_SSL !== 'false' ? { rejectUnauthorized: false } : false,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-  };
-} else {
-  // Use individual connection parameters
+let poolConfig;
+if (useIndividualParams) {
   poolConfig = {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432'),
@@ -31,7 +20,27 @@ if (process.env.DATABASE_URL) {
     ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000, // Increased timeout
+    connectionTimeoutMillis: 10000,
+  };
+} else if (process.env.DATABASE_URL) {
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DB_SSL !== 'false' ? { rejectUnauthorized: false } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  };
+} else {
+  poolConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432'),
+    database: process.env.DB_NAME || 'invoiceops',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
   };
 }
 
