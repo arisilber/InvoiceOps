@@ -50,7 +50,19 @@ npm run migrate
 
 This will execute all pending migrations in order. Migrations are tracked in the database, so you can safely run this command multiple times.
 
-### 3. Verify the Setup
+### 4. Seed Test Data (optional)
+
+To populate the database with a test admin user and sample data (clients, time entries, invoices, expenses):
+
+```bash
+npm run seed
+```
+
+**Test admin login:** `admin@test.com` / `password`
+
+The seed is idempotent: it skips inserting data that already exists (e.g. if you run it again, it won’t duplicate the admin user or clients).
+
+### 5. Verify the Setup
 
 Connect to the database and verify tables were created:
 
